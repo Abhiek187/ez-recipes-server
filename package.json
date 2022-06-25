@@ -1,0 +1,40 @@
+{
+  "name": "ez-recipes-server",
+  "version": "1.0.0",
+  "description": "Server to fetch easy-to-make recipes for the EZ Recipes app",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node index",
+    "server": "ts-node-dev index",
+    "client": "npm start --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abhiek187/ez-recipes-web.git"
+  },
+  "keywords": [
+    "express",
+    "recipes",
+    "api"
+  ],
+  "author": "Abhishek Chaudhuri",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Abhiek187/ez-recipes-web/issues"
+  },
+  "homepage": "https://github.com/Abhiek187/ez-recipes-web#readme",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "express": "^4.18.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/node": "^18.0.0",
+    "concurrently": "^7.2.2",
+    "jest": "^28.1.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.7.4"
+  }
+}
