@@ -1,12 +1,5 @@
 import { SubDigest } from "./SubDigest";
 
-export type Digest = {
-  label: string;
-  tag: string;
-  schemaOrgTag: string;
-  total: number;
-  hasRDI: boolean;
-  daily: number;
-  unit: string;
+export interface Digest extends SubDigest {
   sub?: SubDigest;
-};
+}

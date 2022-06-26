@@ -1,4 +1,4 @@
-export type SubDigest = {
+export interface SubDigest {
   label: string;
   tag: string;
   schemaOrgTag: string;
@@ -6,4 +6,4 @@ export type SubDigest = {
   hasRDI: boolean;
   daily: number;
   unit: string;
-};
+}
