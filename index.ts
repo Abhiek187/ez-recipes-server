@@ -1,6 +1,5 @@
 import "dotenv/config"; // fetch secrets from .env
 import express from "express";
-
 import recipes from "./routes/recipes";
 
 const app = express();

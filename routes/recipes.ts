@@ -1,22 +1,28 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import express from "express";
+import { Recipes } from "../models/Recipes";
+import { getRandomElement } from "../utils/array";
+import { recipeBuilder } from "../utils/recipeBuilder";
 
 const router = express.Router();
-const appId = process.env.APPLICATION_ID;
-const appKey = process.env.APPLICATION_KEY;
 
 // Get a random, low-effort recipe
 router.get("/random", async (req, res) => {
-  const url = encodeURI(
-    `https://api.edamam.com/api/recipes/v2?type=public&q=chicken&app_id=${appId}&app_key=${appKey}`
-  );
+  const url = recipeBuilder();
 
   try {
-    const recipeResponse = await axios.get(url);
-    return res.json(recipeResponse.data);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send("Oops, check the logs!");
+    // Get a list of 20 random recipes, then randomly select one of the recipes
+    const recipeResponse = await axios.get<Recipes>(url);
+    const recipes = recipeResponse.data;
+    const recipe = getRandomElement(recipes.hits).recipe;
+    return res.json(recipe);
+  } catch (err) {
+    const error = err as AxiosError;
+    const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
+      error.message
+    }`;
+    console.error(errorMessage);
+    return res.status(500).json({ error: errorMessage });
   }
 });
 
