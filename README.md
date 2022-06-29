@@ -1,9 +1,9 @@
-# ez-recipes-web
+# ez-recipes-server
 
-[![Node.js CI](https://github.com/Abhiek187/ez-recipes-web/actions/workflows/node.js.yml/badge.svg)](https://github.com/Abhiek187/ez-recipes-web/actions/workflows/node.js.yml)
-[![CodeQL](https://github.com/Abhiek187/ez-recipes-web/actions/workflows/codeql.yml/badge.svg)](https://github.com/Abhiek187/ez-recipes-web/actions/workflows/codeql.yml)
+[![Node.js CI](https://github.com/Abhiek187/ez-recipes-server/actions/workflows/node.js.yml/badge.svg)](https://github.com/Abhiek187/ez-recipes-server/actions/workflows/node.js.yml)
+[![CodeQL](https://github.com/Abhiek187/ez-recipes-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/Abhiek187/ez-recipes-server/actions/workflows/codeql.yml)
 
-Easy recipes finder web app | Frontend: Angular, Backend: Express
+Easy recipes finder Express server
 
 ## Installing Locally
 
