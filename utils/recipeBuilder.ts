@@ -8,6 +8,6 @@ export const recipeBuilder = (): string => {
     */
   const appId = process.env.APPLICATION_ID;
   const appKey = process.env.APPLICATION_KEY;
-  let url = `https://api.edamam.com/api/recipes/v2?type=public&app_id=${appId}&app_key=${appKey}&ingr=5&time=60&random=true`;
+  let url = `https://api.edamam.com/api/recipes/v2?type=public&app_id=${appId}&app_key=${appKey}&ingr=5&time=1-60&random=true`;
   return encodeURI(url);
 };
