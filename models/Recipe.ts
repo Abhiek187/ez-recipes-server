@@ -18,9 +18,9 @@ export type Recipe = {
   ingredientLines: [string];
   ingredients: [Ingredient];
   calories: number;
-  glycemicIndex: number;
-  totalCO2Emissions: number;
-  co2EmissionsClass: string;
+  glycemicIndex?: number;
+  totalCO2Emissions?: number;
+  co2EmissionsClass?: string;
   totalWeight: number;
   totalTime: number;
   cuisineType: [string];
