@@ -1,7 +1,6 @@
 import axios, { AxiosError } from "axios";
 import express from "express";
-import { Recipes } from "../models/Recipes";
-import { getRandomElement } from "../utils/array";
+import { SearchResponse } from "../models/spoonacular/SearchResponse";
 import { recipeBuilder } from "../utils/recipeBuilder";
 
 const router = express.Router();
@@ -11,10 +10,21 @@ router.get("/random", async (req, res) => {
   const url = recipeBuilder();
 
   try {
-    // Get a list of 20 random recipes, then randomly select one of the recipes
-    const recipeResponse = await axios.get<Recipes>(url);
+    const recipeResponse = await axios.get<SearchResponse>(url);
     const recipes = recipeResponse.data;
-    const recipe = getRandomElement(recipes.hits).recipe;
+    const recipe = recipes.results[0];
+
+    // Log the quota used and remaining for developer reference
+    // Response headers are in lowercase
+    const requestQuota = Number(recipeResponse.headers["x-api-quota-request"]);
+    const totalQuota = Number(recipeResponse.headers["x-api-quota-used"]);
+    const remainingQuota = Number(recipeResponse.headers["x-api-quota-left"]);
+    console.log(`GET /random -${requestQuota} pts`);
+    console.log(
+      `${remainingQuota} / ${totalQuota + remainingQuota} pts remaining`
+    );
+
+    // Map the server-side response to the client-side schema
     return res.json(recipe);
   } catch (err) {
     const error = err as AxiosError;
