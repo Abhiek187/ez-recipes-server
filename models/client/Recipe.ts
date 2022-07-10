@@ -1,61 +1,73 @@
 // Properties for the client to consume (literally)
+// TODO: export to Swagger/OpenAPI to generate API docs for clients
 export type Recipe = {
   id: number;
   name: string;
   url: string;
-  nutrients: [
-    {
-      servings: {
-        amount: number;
-        unit: string;
-      };
-      calories: {
-        amount: number;
-        unit: string;
-      };
-      fats: {
-        amount: number;
-        unit: string;
-      };
-      saturatedFats: {
-        amount: number;
-        unit: string;
-      };
-      carbs: {
-        amount: number;
-        unit: string;
-      };
-      fiber: {
-        amount: number;
-        unit: string;
-      };
-      sugars: {
-        amount: number;
-        unit: string;
-      };
-      protein: {
-        amount: number;
-        unit: string;
-      };
-      cholesterol: {
-        amount: number;
-        unit: string;
-      };
-      sodium: {
-        amount: number;
-        unit: string;
-      };
-    }
-  ];
   image: string;
-  rating: number;
+  healthScore: number;
   time: number;
-  ingredients: [
-    {
-      name: string;
-      amount: number;
-      unit: string;
-    }
-  ];
-  steps: [string];
+  servings: number;
+  summary: string;
+  nutrients: {
+    calories: {
+      amount?: number;
+      unit?: string;
+    };
+    fats: {
+      amount?: number;
+      unit?: string;
+    };
+    saturatedFats: {
+      amount?: number;
+      unit?: string;
+    };
+    carbs: {
+      amount?: number;
+      unit?: string;
+    };
+    fiber: {
+      amount?: number;
+      unit?: string;
+    };
+    sugars: {
+      amount?: number;
+      unit?: string;
+    };
+    protein: {
+      amount?: number;
+      unit?: string;
+    };
+    cholesterol: {
+      amount?: number;
+      unit?: string;
+    };
+    sodium: {
+      amount?: number;
+      unit?: string;
+    };
+  };
+  ingredients: {
+    id: number;
+    name: string;
+    amount: number;
+    unit: string;
+  }[];
+  instructions: {
+    name: string;
+    steps: {
+      number: number;
+      step: string;
+      ingredients: {
+        id: number;
+        name: string;
+        image: string;
+      }[];
+      equipment: {
+        id: number;
+        name: string;
+        image: string;
+      }[];
+    }[];
+  }[];
 };
