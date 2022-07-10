@@ -5,6 +5,8 @@ export type Recipe = {
   name: string;
   url: string;
   image: string;
+  credit: string;
+  sourceUrl: string;
   healthScore: number;
   time: number;
   servings: number;

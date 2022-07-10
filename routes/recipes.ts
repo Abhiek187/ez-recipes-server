@@ -48,6 +48,8 @@ router.get("/random", async (req, res) => {
       name: recipe.title,
       url: recipe.spoonacularSourceUrl,
       image: recipe.image,
+      credit: recipe.creditsText,
+      sourceUrl: recipe.sourceUrl,
       healthScore: recipe.healthScore,
       time: recipe.readyInMinutes,
       servings: recipe.servings,
