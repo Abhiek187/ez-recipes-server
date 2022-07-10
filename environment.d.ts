@@ -5,8 +5,7 @@ declare global {
     // https://stackoverflow.com/a/53981706
     interface ProcessEnv {
       PORT?: string;
-      APPLICATION_ID: string;
-      APPLICATION_KEY: string;
+      API_KEY: string;
     }
   }
 }
