@@ -17,7 +17,7 @@ type SearchResponse = {
       gaps: string;
       preparationMinutes: number;
       cookingMinutes: number;
-      aggregateLikeks: number;
+      aggregateLikes: number;
       healthScore: number;
       creditsText: string;
       license: string;
@@ -33,11 +33,11 @@ type SearchResponse = {
       imageType: string;
       nutrition: Nutrition;
       summary: string;
-      cuisines: [string];
-      dishTypes: [string];
-      diets: [string];
-      occasions: [string];
-      analyzedInstructions: [Instruction];
+      cuisines: string[]; // [string] is a tuple with a string, while string[] is an array of strings
+      dishTypes: string[];
+      diets: string[];
+      occasions: string[];
+      analyzedInstructions: Instruction[];
       spoonacularSourceUrl: string;
     }
   ];

@@ -1,42 +1,32 @@
 type Nutrition = {
-  nutrients: [
-    {
+  nutrients: {
+    name: string;
+    amount: number;
+    unit: string;
+    percentOfDailyNeeds: number;
+  }[];
+  properties: {
+    name: string;
+    amount: number;
+    unit: string;
+  }[];
+  flavonoids: {
+    name: string;
+    amount: number;
+    unit: string;
+  }[];
+  ingredients: {
+    id: number;
+    name: string;
+    amount: number;
+    unit: string;
+    nutrients: {
       name: string;
       amount: number;
       unit: string;
       percentOfDailyNeeds: number;
-    }
-  ];
-  properties: [
-    {
-      name: string;
-      amount: number;
-      unit: string;
-    }
-  ];
-  flavonoids: [
-    {
-      name: string;
-      amount: number;
-      unit: string;
-    }
-  ];
-  ingredients: [
-    {
-      id: number;
-      name: string;
-      amount: number;
-      unit: string;
-      nutrients: [
-        {
-          name: string;
-          amount: number;
-          unit: string;
-          percentOfDailyNeeds: number;
-        }
-      ];
-    }
-  ];
+    }[];
+  }[];
   caloricBreakdown: {
     percentProtein: number;
     percentFat: number;
