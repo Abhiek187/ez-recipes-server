@@ -1,4 +1,4 @@
-export type Nutrition = {
+type Nutrition = {
   nutrients: [
     {
       name: string;
@@ -47,3 +47,5 @@ export type Nutrition = {
     unit: string;
   };
 };
+
+export default Nutrition;

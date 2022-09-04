@@ -1,7 +1,7 @@
-import { Instruction } from "./Instruction";
-import { Nutrition } from "./Nutrition";
+import Instruction from "./Instruction";
+import Nutrition from "./Nutrition";
 
-export type SearchResponse = {
+type SearchResponse = {
   results: [
     {
       vegetarian: boolean;
@@ -45,3 +45,5 @@ export type SearchResponse = {
   number: number;
   totalResults: number;
 };
+
+export default SearchResponse;

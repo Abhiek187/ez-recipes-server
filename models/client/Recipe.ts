@@ -1,6 +1,6 @@
 // Properties for the client to consume (literally)
 // TODO: export to Swagger/OpenAPI to generate API docs for clients
-export type Recipe = {
+type Recipe = {
   id: number;
   name: string;
   url: string;
@@ -40,3 +40,5 @@ export type Recipe = {
     }[];
   }[];
 };
+
+export default Recipe;

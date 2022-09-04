@@ -1,4 +1,4 @@
-export type Instruction = {
+type Instruction = {
   // A recipe could be split into multiple instructions
   // The name describes what the instructions are for, or "" if there's only one instruction
   name: string;
@@ -30,3 +30,5 @@ export type Instruction = {
     }
   ];
 };
+
+export default Instruction;

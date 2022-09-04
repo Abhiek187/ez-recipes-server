@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import express from "express";
-import { Recipe } from "../models/client/Recipe";
-import { SearchResponse } from "../models/spoonacular/SearchResponse";
+import Recipe from "../models/client/Recipe";
+import SearchResponse from "../models/spoonacular/SearchResponse";
 import { recipeBuilder } from "../utils/recipeBuilder";
 
 const router = express.Router();
