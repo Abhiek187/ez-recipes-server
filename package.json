@@ -4,8 +4,7 @@
   "description": "Server to fetch easy-to-make recipes for the EZ Recipes app",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node dist/index",
-    "dev": "ts-node-dev index",
+    "start": "ts-node-dev index",
     "test": "jest"
   },
   "repository": {
