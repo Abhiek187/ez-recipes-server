@@ -15,3 +15,10 @@ API_KEY=YOUR_API_KEY
 ```
 
 3. Run `npm run dev`. The server will be listening on `http://localhost:5000`.
+
+## Installing with Docker
+
+1. Follow steps 1-2 above.
+2. Run `docker-compose up -d` to start up both the web and server containers.
+
+To stop the containers, run `docker-compose down`.
