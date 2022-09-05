@@ -26,7 +26,7 @@ router.get("/random", async (req, res) => {
     const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
       error.message
     }`;
-    console.error(errorMessage);
+    console.error(error);
     return res.status(500).json({ error: errorMessage });
   }
 });
