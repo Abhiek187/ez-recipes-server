@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import express from "express";
+import ErrorResponse from "../models/spoonacular/ErrorResponse";
 import RecipeResponse from "../models/spoonacular/RecipeResponse";
 import SearchResponse from "../models/spoonacular/SearchResponse";
 import {
@@ -11,6 +12,21 @@ import {
 import { isNumeric } from "../utils/string";
 
 const router = express.Router();
+
+// Type guard to check if a response contains all the error properties found in spoonacular
+const isErrorResponse = (resp: any): resp is ErrorResponse => {
+  if (resp === undefined) {
+    return false;
+  }
+
+  for (const prop of ["code", "message", "status"]) {
+    if (!resp.hasOwnProperty(prop)) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 // Get a random, low-effort recipe
 router.get("/random", async (req, res) => {
@@ -55,6 +71,15 @@ router.get("/:id", async (req, res) => {
     return res.json(resJson);
   } catch (err) {
     const error = err as AxiosError;
+
+    // Check if the error was due to an invalid recipe ID
+    const errorData = error.response?.data;
+
+    if (isErrorResponse(errorData)) {
+      console.error(errorData);
+      return res.status(errorData.code).json({ error: errorData.message });
+    }
+
     const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
       error.message
     }`;
