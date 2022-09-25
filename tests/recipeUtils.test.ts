@@ -4,7 +4,7 @@ import SearchResponse from "../models/spoonacular/SearchResponse";
 import {
   createClientResponse,
   logSpoonacularQuota,
-  recipeUrlBuilder,
+  randomRecipeUrlBuilder,
 } from "../utils/recipeUtils";
 
 afterEach(() => {
@@ -17,7 +17,7 @@ describe("recipeUrlBuilder", () => {
     const apiKey = process.env.API_KEY;
 
     // When the URL builder method is called
-    const recipeUrl = recipeUrlBuilder();
+    const recipeUrl = randomRecipeUrlBuilder();
 
     // Then it should return the correct spoonacular URL to fetch a random recipe
     expect(recipeUrl).toBe(

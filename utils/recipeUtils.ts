@@ -1,6 +1,7 @@
 // Helper methods for the recipes route
 import { AxiosResponse } from "axios";
 import Recipe from "../models/client/Recipe";
+import RecipeResponse from "../models/spoonacular/RecipeResponse";
 import SearchResponse from "../models/spoonacular/SearchResponse";
 
 /**
@@ -13,26 +14,42 @@ import SearchResponse from "../models/spoonacular/SearchResponse";
  * - 1 hour or less of cook time
  * - Can make 3 or more servings
 
- * @returns {string} an encoded URI string for the recipe API
+ * @returns {string} an encoded URI
  */
-export const recipeUrlBuilder = (): string => {
+export const randomRecipeUrlBuilder = (): string => {
   const apiKey = process.env.API_KEY;
   let url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=${apiKey}&instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`;
   return encodeURI(url);
 };
 
 /**
+ * Build the spoonacular URL to fetch a recipe by ID
+ * @param {string} id the recipe ID
+ * @returns {string} an encoded URI
+ */
+export const recipeIdUrlBuilder = (id: string): string => {
+  const apiKey = process.env.API_KEY;
+  const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${apiKey}&includeNutrition=true`;
+  return encodeURI(url);
+};
+
+/**
  * Log the quota used and remaining for developer reference
+ * @param {string} method the request method
+ * @param {string} path the path of the API
  * @param {AxiosResponse<SearchResponse>} recipeResponse the response gotten from the recipe API
  */
 export const logSpoonacularQuota = (
+  method: string,
+  path: string,
   recipeResponse: AxiosResponse<SearchResponse>
 ) => {
   // Response headers are in lowercase
   const requestQuota = Number(recipeResponse.headers["x-api-quota-request"]);
   const usedQuota = Number(recipeResponse.headers["x-api-quota-used"]);
   const remainingQuota = Number(recipeResponse.headers["x-api-quota-left"]);
-  console.log(`GET /random -${requestQuota} pts`);
+
+  console.log(`${method} ${path} -${requestQuota} pts`);
   console.log(
     `${remainingQuota} / ${usedQuota + remainingQuota} pts remaining`
   );
@@ -40,11 +57,21 @@ export const logSpoonacularQuota = (
 
 /**
  * Map the server-side response to the client-side schema
- * @param {SearchResponse} recipes the response data from the recipe API
+ * @param {SearchResponse | RecipeResponse} recipes the response data from either the random recipe
+ * API or the recipe ID API
  * @returns {Recipe} a recipe object to be consumed by clients
  */
-export const createClientResponse = (recipes: SearchResponse): Recipe => {
-  const recipe = recipes.results[0];
+export const createClientResponse = (
+  recipes: SearchResponse | RecipeResponse
+): Recipe => {
+  let recipe: RecipeResponse;
+
+  if (recipes.hasOwnProperty("results")) {
+    recipe = (recipes as SearchResponse).results[0];
+  } else {
+    recipe = recipes as RecipeResponse;
+  }
+
   const { nutrients, ingredients } = recipe.nutrition;
   // A list of all the nutrients to display in the client apps
   const nutrientNames = [
