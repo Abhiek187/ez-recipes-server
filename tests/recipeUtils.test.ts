@@ -5,30 +5,61 @@ import {
   createClientResponse,
   logSpoonacularQuota,
   randomRecipeUrlBuilder,
+  recipeIdUrlBuilder,
 } from "../utils/recipeUtils";
+
+const OLD_ENV = process.env;
+
+beforeEach(() => {
+  // Clear the cache before making a copy of the environment
+  jest.resetModules();
+  process.env = { ...OLD_ENV };
+});
 
 afterEach(() => {
   jest.restoreAllMocks();
+  process.env = OLD_ENV; // restore the old environment
 });
 
-describe("recipeUrlBuilder", () => {
+describe("randomRecipeUrlBuilder", () => {
   test("returns the correct random recipe URL", () => {
     // Given query params like the API key
-    const apiKey = process.env.API_KEY;
+    // Mock the API key to prevent the real one from being leaked when tests fail
+    process.env.API_KEY = "384ba039c39e90f";
 
     // When the URL builder method is called
     const recipeUrl = randomRecipeUrlBuilder();
 
     // Then it should return the correct spoonacular URL to fetch a random recipe
     expect(recipeUrl).toBe(
-      `https://api.spoonacular.com/recipes/complexSearch?apiKey=${apiKey}&instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`
+      `https://api.spoonacular.com/recipes/complexSearch?apiKey=${process.env.API_KEY}&instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`
+    );
+  });
+});
+
+describe("recipeIdUrlBuilder", () => {
+  test("returns the correct URL with the recipe ID", () => {
+    // Given an API key and a recipe ID
+    process.env.API_KEY = "384ba039c39e90f";
+    const recipeId = "8427";
+
+    // When the URL builder method is called
+    const recipeUrl = recipeIdUrlBuilder(recipeId);
+
+    // Then it should return the correct spoonacular URL to fetch the recipe from recipeId
+    expect(recipeUrl).toBe(
+      `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${process.env.API_KEY}&includeNutrition=true`
     );
   });
 });
 
 describe("logSpoonacularQuota", () => {
   test("logs the points used and the points remaining", () => {
-    // Given a response with quota headers
+    // Given a request & response with quota headers
+    const mockRequest = {
+      method: "GET",
+      path: "/api/recipes/random",
+    };
     const mockResponse: AxiosResponse<SearchResponse> = {
       headers: {
         "x-api-quota-request": "1.0599999999999998",
@@ -43,14 +74,16 @@ describe("logSpoonacularQuota", () => {
 
     // When the log method is called
     const logSpy = jest.spyOn(console, "log");
-    logSpoonacularQuota(mockResponse);
+    logSpoonacularQuota(mockRequest.method, mockRequest.path, mockResponse);
 
     // Then it should output the number of points used from the request and the remaining/total points
     const requestQuota = Number(mockResponse.headers["x-api-quota-request"]);
     const usedQuota = Number(mockResponse.headers["x-api-quota-used"]);
     const remainingQuota = Number(mockResponse.headers["x-api-quota-left"]);
 
-    expect(logSpy).toHaveBeenCalledWith(`GET /random -${requestQuota} pts`);
+    expect(logSpy).toHaveBeenCalledWith(
+      `${mockRequest.method} ${mockRequest.path} -${requestQuota} pts`
+    );
     expect(logSpy).toHaveBeenCalledWith(
       `${remainingQuota} / ${usedQuota + remainingQuota} pts remaining`
     );
@@ -58,336 +91,22 @@ describe("logSpoonacularQuota", () => {
 });
 
 describe("createClientResponse", () => {
-  test("creates the correct recipe object", () => {
+  test("creates the correct recipe object from a search response", () => {
     // Given a search response
     // When the client response method is called
     const recipeResponse = createClientResponse(mockSearchResponse);
 
     // Then it produces an accurate Recipe object for clients
-    const expectedRecipe: Recipe = {
-      id: 660475,
-      name: "Snow Pea Sesame Noodle Salad",
-      url: "https://spoonacular.com/snow-pea-sesame-noodle-salad-660475",
-      image: "https://spoonacular.com/recipeImages/660475-312x231.jpg",
-      credit: "Foodista.com – The Cooking Encyclopedia Everyone Can Edit",
-      sourceUrl:
-        "http://www.foodista.com/recipe/GVH4JXJ2/snow-pea-sesame-noodle-salad",
-      healthScore: 48,
-      time: 45,
-      servings: 8,
-      summary:
-        'Need a <b>dairy free and vegetarian main course</b>? Snow Pea Sesame Noodle Salad could be a super recipe to try. One serving contains <b>527 calories</b>, <b>14g of protein</b>, and <b>30g of fat</b>. For <b>$2.43 per serving</b>, this recipe <b>covers 26%</b> of your daily requirements of vitamins and minerals. A mixture of vegetable oil, scallions, rice wine vinegar, and a handful of other ingredients are all it takes to make this recipe so yummy. To use up the honey you could follow this main course with the <a href="https://spoonacular.com/recipes/honey-gingerbread-133051">Honey Gingerbread</a> as a dessert. 1 person has made this recipe and would make it again. All things considered, we decided this recipe <b>deserves a spoonacular score of 83%</b>. This score is tremendous. Try <a href="https://spoonacular.com/recipes/snow-pea-salad-with-sesame-dressing-17551">Snow Pea Salad with Sesame Dressing</a>, <a href="https://spoonacular.com/recipes/sesame-snow-pea-and-shiitake-pasta-salad-37175">Sesame, Snow Pea, And Shiitake Pasta Salad</a>, and <a href="https://spoonacular.com/recipes/snow-pea-and-red-onion-salad-with-sesame-vinaigrette-recipe-18570">Snow Pean And Red Onion Salad With Sesame Vinaigrette Recipe</a> for similar recipes.',
-      nutrients: [
-        {
-          amount: 408.19,
-          name: "Calories",
-          unit: "kcal",
-        },
-        {
-          amount: 16.67,
-          name: "Fat",
-          unit: "g",
-        },
-        {
-          amount: 2.51,
-          name: "Saturated Fat",
-          unit: "g",
-        },
-        {
-          amount: 56.16,
-          name: "Carbohydrates",
-          unit: "g",
-        },
-        {
-          amount: 3.25,
-          name: "Fiber",
-          unit: "g",
-        },
-        {
-          amount: 6.85,
-          name: "Sugar",
-          unit: "g",
-        },
-        {
-          amount: 13.75,
-          name: "Protein",
-          unit: "g",
-        },
-        {
-          amount: 0,
-          name: "Cholesterol",
-          unit: "mg",
-        },
-        {
-          amount: 89.55,
-          name: "Sodium",
-          unit: "mg",
-        },
-      ],
-      ingredients: [
-        {
-          amount: 0.13,
-          id: 11216,
-          name: "fresh ginger",
-          unit: "teaspoon",
-        },
-        {
-          amount: 0.38,
-          id: 11297,
-          name: "fresh parsley",
-          unit: "tablespoons",
-        },
-        {
-          amount: 0.25,
-          id: 11215,
-          name: "garlic cloves",
-          unit: "",
-        },
-        {
-          amount: 0.13,
-          id: 19296,
-          name: "honey",
-          unit: "tablespoon",
-        },
-        {
-          amount: 0.25,
-          id: 11821,
-          name: "red bell peppers",
-          unit: "",
-        },
-        {
-          amount: 0.03,
-          id: 1022053,
-          name: "rice wine vinegar",
-          unit: "cup",
-        },
-        {
-          amount: 0.5,
-          id: 11291,
-          name: "scallions",
-          unit: "stalks",
-        },
-        {
-          amount: 0.75,
-          id: 4058,
-          name: "sesame oil",
-          unit: "tablespoons",
-        },
-        {
-          amount: 0.04,
-          id: 16150,
-          name: "smooth peanut butter",
-          unit: "cup",
-        },
-        {
-          amount: 0.13,
-          id: 11300,
-          name: "snow peas",
-          unit: "pound",
-        },
-        {
-          amount: 0.06,
-          id: 16124,
-          name: "soy sauce",
-          unit: "teaspoon",
-        },
-        {
-          amount: 0.06,
-          id: 4513,
-          name: "vegetable oil",
-          unit: "cup",
-        },
-        {
-          amount: 0.38,
-          id: 12023,
-          name: "white sesame seeds",
-          unit: "tablespoons",
-        },
-        {
-          amount: 0.13,
-          id: 10020124,
-          name: "whole wheat spaghetti",
-          unit: "pound",
-        },
-      ],
-      instructions: [
-        {
-          name: "",
-          steps: [
-            {
-              equipment: [
-                {
-                  id: 404752,
-                  image: "stock-pot.jpg",
-                  name: "pot",
-                },
-              ],
-              ingredients: [
-                {
-                  id: 14412,
-                  image: "water.png",
-                  name: "water",
-                },
-              ],
-              number: 1,
-              step: "Bring a large pot of salted water to a boil.",
-            },
-            {
-              equipment: [],
-              ingredients: [
-                {
-                  id: 11300,
-                  image: "snow-peas.jpg",
-                  name: "snow peas",
-                },
-              ],
-              number: 2,
-              step: "Add snow pea pods and cook 1-2 minutes, until crisp tender.",
-            },
-            {
-              equipment: [
-                {
-                  id: 404636,
-                  image: "slotted-spoon.jpg",
-                  name: "slotted spoon",
-                },
-                {
-                  id: 404752,
-                  image: "stock-pot.jpg",
-                  name: "pot",
-                },
-              ],
-              ingredients: [
-                {
-                  id: 11420420,
-                  image: "spaghetti.jpg",
-                  name: "spaghetti",
-                },
-                {
-                  id: 14412,
-                  image: "water.png",
-                  name: "water",
-                },
-                {
-                  id: 10014412,
-                  image: "ice-cubes.png",
-                  name: "ice",
-                },
-              ],
-              number: 3,
-              step: "Remove from pot with a slotted spoon and place in an ice bath to stop from cooking any further and to maintain a bright green color. Bring water to boil again and add spaghetti. Cook according to package directions.",
-            },
-            {
-              equipment: [],
-              ingredients: [],
-              number: 4,
-              step: "Drain and set aside.",
-            },
-            {
-              equipment: [
-                {
-                  id: 404661,
-                  image: "whisk.png",
-                  name: "whisk",
-                },
-                {
-                  id: 404783,
-                  image: "bowl.jpg",
-                  name: "bowl",
-                },
-              ],
-              ingredients: [
-                {
-                  id: 1022053,
-                  image: "rice-vinegar.png",
-                  name: "rice vinegar",
-                },
-                {
-                  id: 16098,
-                  image: "peanut-butter.png",
-                  name: "peanut butter",
-                },
-                {
-                  id: 4669,
-                  image: "vegetable-oil.jpg",
-                  name: "vegetable oil",
-                },
-                {
-                  id: 12023,
-                  image: "sesame-seeds.png",
-                  name: "sesame seeds",
-                },
-                {
-                  id: 4058,
-                  image: "sesame-oil.png",
-                  name: "sesame oil",
-                },
-                {
-                  id: 11291,
-                  image: "spring-onions.jpg",
-                  name: "green onions",
-                },
-                {
-                  id: 11300,
-                  image: "snow-peas.jpg",
-                  name: "snow peas",
-                },
-                {
-                  id: 16124,
-                  image: "soy-sauce.jpg",
-                  name: "soy sauce",
-                },
-                {
-                  id: 11420420,
-                  image: "spaghetti.jpg",
-                  name: "spaghetti",
-                },
-                {
-                  id: 10111333,
-                  image: "green-pepper.jpg",
-                  name: "peppers",
-                },
-                {
-                  id: 11215,
-                  image: "garlic.png",
-                  name: "garlic",
-                },
-                {
-                  id: 11216,
-                  image: "ginger.png",
-                  name: "ginger",
-                },
-                {
-                  id: 19296,
-                  image: "honey.png",
-                  name: "honey",
-                },
-              ],
-              number: 5,
-              step: "Whisk together the vegetable oil, rice wine vinegar, soy sauce, sesame oil, honey, garlic, ginger, 2 tablespoons sesame seeds and peanut butter in a medium bowl.In a large bowl, combine the spaghetti, snow peas, peppers and scallions in a large bowl. Bit by bit, toss in the dressing over to the spaghetti mixture until you are satisfied with the result. You probably will not need to add all of the dressing.",
-            },
-            {
-              equipment: [],
-              ingredients: [
-                {
-                  id: 12023,
-                  image: "sesame-seeds.png",
-                  name: "sesame seeds",
-                },
-                {
-                  id: 11297,
-                  image: "parsley.jpg",
-                  name: "parsley",
-                },
-              ],
-              number: 6,
-              step: "Add the remaining 1 tablespoon of sesame seeds and the parsley and toss together.",
-            },
-          ],
-        },
-      ],
-    };
     // Compare objects with deep equality
+    expect(recipeResponse).toStrictEqual(expectedRecipe);
+  });
+
+  test("creates the correct recipe object from a recipe response", () => {
+    // Given a recipe response
+    // When the client response method is called
+    const recipeResponse = createClientResponse(mockSearchResponse.results[0]);
+
+    // Then it produces an accurate Recipe object for clients
     expect(recipeResponse).toStrictEqual(expectedRecipe);
   });
 });
@@ -4015,4 +3734,328 @@ const mockSearchResponse: SearchResponse = {
   offset: 0,
   number: 1,
   totalResults: 4868,
+};
+
+const expectedRecipe: Recipe = {
+  id: 660475,
+  name: "Snow Pea Sesame Noodle Salad",
+  url: "https://spoonacular.com/snow-pea-sesame-noodle-salad-660475",
+  image: "https://spoonacular.com/recipeImages/660475-312x231.jpg",
+  credit: "Foodista.com – The Cooking Encyclopedia Everyone Can Edit",
+  sourceUrl:
+    "http://www.foodista.com/recipe/GVH4JXJ2/snow-pea-sesame-noodle-salad",
+  healthScore: 48,
+  time: 45,
+  servings: 8,
+  summary:
+    'Need a <b>dairy free and vegetarian main course</b>? Snow Pea Sesame Noodle Salad could be a super recipe to try. One serving contains <b>527 calories</b>, <b>14g of protein</b>, and <b>30g of fat</b>. For <b>$2.43 per serving</b>, this recipe <b>covers 26%</b> of your daily requirements of vitamins and minerals. A mixture of vegetable oil, scallions, rice wine vinegar, and a handful of other ingredients are all it takes to make this recipe so yummy. To use up the honey you could follow this main course with the <a href="https://spoonacular.com/recipes/honey-gingerbread-133051">Honey Gingerbread</a> as a dessert. 1 person has made this recipe and would make it again. All things considered, we decided this recipe <b>deserves a spoonacular score of 83%</b>. This score is tremendous. Try <a href="https://spoonacular.com/recipes/snow-pea-salad-with-sesame-dressing-17551">Snow Pea Salad with Sesame Dressing</a>, <a href="https://spoonacular.com/recipes/sesame-snow-pea-and-shiitake-pasta-salad-37175">Sesame, Snow Pea, And Shiitake Pasta Salad</a>, and <a href="https://spoonacular.com/recipes/snow-pea-and-red-onion-salad-with-sesame-vinaigrette-recipe-18570">Snow Pean And Red Onion Salad With Sesame Vinaigrette Recipe</a> for similar recipes.',
+  nutrients: [
+    {
+      amount: 408.19,
+      name: "Calories",
+      unit: "kcal",
+    },
+    {
+      amount: 16.67,
+      name: "Fat",
+      unit: "g",
+    },
+    {
+      amount: 2.51,
+      name: "Saturated Fat",
+      unit: "g",
+    },
+    {
+      amount: 56.16,
+      name: "Carbohydrates",
+      unit: "g",
+    },
+    {
+      amount: 3.25,
+      name: "Fiber",
+      unit: "g",
+    },
+    {
+      amount: 6.85,
+      name: "Sugar",
+      unit: "g",
+    },
+    {
+      amount: 13.75,
+      name: "Protein",
+      unit: "g",
+    },
+    {
+      amount: 0,
+      name: "Cholesterol",
+      unit: "mg",
+    },
+    {
+      amount: 89.55,
+      name: "Sodium",
+      unit: "mg",
+    },
+  ],
+  ingredients: [
+    {
+      amount: 0.13,
+      id: 11216,
+      name: "fresh ginger",
+      unit: "teaspoon",
+    },
+    {
+      amount: 0.38,
+      id: 11297,
+      name: "fresh parsley",
+      unit: "tablespoons",
+    },
+    {
+      amount: 0.25,
+      id: 11215,
+      name: "garlic cloves",
+      unit: "",
+    },
+    {
+      amount: 0.13,
+      id: 19296,
+      name: "honey",
+      unit: "tablespoon",
+    },
+    {
+      amount: 0.25,
+      id: 11821,
+      name: "red bell peppers",
+      unit: "",
+    },
+    {
+      amount: 0.03,
+      id: 1022053,
+      name: "rice wine vinegar",
+      unit: "cup",
+    },
+    {
+      amount: 0.5,
+      id: 11291,
+      name: "scallions",
+      unit: "stalks",
+    },
+    {
+      amount: 0.75,
+      id: 4058,
+      name: "sesame oil",
+      unit: "tablespoons",
+    },
+    {
+      amount: 0.04,
+      id: 16150,
+      name: "smooth peanut butter",
+      unit: "cup",
+    },
+    {
+      amount: 0.13,
+      id: 11300,
+      name: "snow peas",
+      unit: "pound",
+    },
+    {
+      amount: 0.06,
+      id: 16124,
+      name: "soy sauce",
+      unit: "teaspoon",
+    },
+    {
+      amount: 0.06,
+      id: 4513,
+      name: "vegetable oil",
+      unit: "cup",
+    },
+    {
+      amount: 0.38,
+      id: 12023,
+      name: "white sesame seeds",
+      unit: "tablespoons",
+    },
+    {
+      amount: 0.13,
+      id: 10020124,
+      name: "whole wheat spaghetti",
+      unit: "pound",
+    },
+  ],
+  instructions: [
+    {
+      name: "",
+      steps: [
+        {
+          equipment: [
+            {
+              id: 404752,
+              image: "stock-pot.jpg",
+              name: "pot",
+            },
+          ],
+          ingredients: [
+            {
+              id: 14412,
+              image: "water.png",
+              name: "water",
+            },
+          ],
+          number: 1,
+          step: "Bring a large pot of salted water to a boil.",
+        },
+        {
+          equipment: [],
+          ingredients: [
+            {
+              id: 11300,
+              image: "snow-peas.jpg",
+              name: "snow peas",
+            },
+          ],
+          number: 2,
+          step: "Add snow pea pods and cook 1-2 minutes, until crisp tender.",
+        },
+        {
+          equipment: [
+            {
+              id: 404636,
+              image: "slotted-spoon.jpg",
+              name: "slotted spoon",
+            },
+            {
+              id: 404752,
+              image: "stock-pot.jpg",
+              name: "pot",
+            },
+          ],
+          ingredients: [
+            {
+              id: 11420420,
+              image: "spaghetti.jpg",
+              name: "spaghetti",
+            },
+            {
+              id: 14412,
+              image: "water.png",
+              name: "water",
+            },
+            {
+              id: 10014412,
+              image: "ice-cubes.png",
+              name: "ice",
+            },
+          ],
+          number: 3,
+          step: "Remove from pot with a slotted spoon and place in an ice bath to stop from cooking any further and to maintain a bright green color. Bring water to boil again and add spaghetti. Cook according to package directions.",
+        },
+        {
+          equipment: [],
+          ingredients: [],
+          number: 4,
+          step: "Drain and set aside.",
+        },
+        {
+          equipment: [
+            {
+              id: 404661,
+              image: "whisk.png",
+              name: "whisk",
+            },
+            {
+              id: 404783,
+              image: "bowl.jpg",
+              name: "bowl",
+            },
+          ],
+          ingredients: [
+            {
+              id: 1022053,
+              image: "rice-vinegar.png",
+              name: "rice vinegar",
+            },
+            {
+              id: 16098,
+              image: "peanut-butter.png",
+              name: "peanut butter",
+            },
+            {
+              id: 4669,
+              image: "vegetable-oil.jpg",
+              name: "vegetable oil",
+            },
+            {
+              id: 12023,
+              image: "sesame-seeds.png",
+              name: "sesame seeds",
+            },
+            {
+              id: 4058,
+              image: "sesame-oil.png",
+              name: "sesame oil",
+            },
+            {
+              id: 11291,
+              image: "spring-onions.jpg",
+              name: "green onions",
+            },
+            {
+              id: 11300,
+              image: "snow-peas.jpg",
+              name: "snow peas",
+            },
+            {
+              id: 16124,
+              image: "soy-sauce.jpg",
+              name: "soy sauce",
+            },
+            {
+              id: 11420420,
+              image: "spaghetti.jpg",
+              name: "spaghetti",
+            },
+            {
+              id: 10111333,
+              image: "green-pepper.jpg",
+              name: "peppers",
+            },
+            {
+              id: 11215,
+              image: "garlic.png",
+              name: "garlic",
+            },
+            {
+              id: 11216,
+              image: "ginger.png",
+              name: "ginger",
+            },
+            {
+              id: 19296,
+              image: "honey.png",
+              name: "honey",
+            },
+          ],
+          number: 5,
+          step: "Whisk together the vegetable oil, rice wine vinegar, soy sauce, sesame oil, honey, garlic, ginger, 2 tablespoons sesame seeds and peanut butter in a medium bowl.In a large bowl, combine the spaghetti, snow peas, peppers and scallions in a large bowl. Bit by bit, toss in the dressing over to the spaghetti mixture until you are satisfied with the result. You probably will not need to add all of the dressing.",
+        },
+        {
+          equipment: [],
+          ingredients: [
+            {
+              id: 12023,
+              image: "sesame-seeds.png",
+              name: "sesame seeds",
+            },
+            {
+              id: 11297,
+              image: "parsley.jpg",
+              name: "parsley",
+            },
+          ],
+          number: 6,
+          step: "Add the remaining 1 tablespoon of sesame seeds and the parsley and toss together.",
+        },
+      ],
+    },
+  ],
 };
