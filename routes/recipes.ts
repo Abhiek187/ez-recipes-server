@@ -59,7 +59,7 @@ router.get("/:id", async (req, res) => {
     return res.status(400).json({ error: "The recipe ID must be numeric" });
   }
 
-  const url = recipeIdUrlBuilder(id);
+  const url = recipeIdUrlBuilder(Number(id));
 
   try {
     const recipeResponse = await axios.get<RecipeResponse>(url);

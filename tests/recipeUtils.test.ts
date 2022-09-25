@@ -44,7 +44,7 @@ describe("recipeIdUrlBuilder", () => {
     const recipeId = "8427";
 
     // When the URL builder method is called
-    const recipeUrl = recipeIdUrlBuilder(recipeId);
+    const recipeUrl = recipeIdUrlBuilder(Number(recipeId));
 
     // Then it should return the correct spoonacular URL to fetch the recipe from recipeId
     expect(recipeUrl).toBe(

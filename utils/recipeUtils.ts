@@ -24,10 +24,10 @@ export const randomRecipeUrlBuilder = (): string => {
 
 /**
  * Build the spoonacular URL to fetch a recipe by ID
- * @param {string} id the recipe ID
+ * @param {number} id the recipe ID
  * @returns {string} an encoded URI
  */
-export const recipeIdUrlBuilder = (id: string): string => {
+export const recipeIdUrlBuilder = (id: number): string => {
   const apiKey = process.env.API_KEY;
   const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${apiKey}&includeNutrition=true`;
   return encodeURI(url);
