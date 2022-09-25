@@ -37,12 +37,12 @@ export const recipeIdUrlBuilder = (id: string): string => {
  * Log the quota used and remaining for developer reference
  * @param {string} method the request method
  * @param {string} path the path of the API
- * @param {AxiosResponse<SearchResponse>} recipeResponse the response gotten from the recipe API
+ * @param {AxiosResponse<SearchResponse | RecipeResponse>} recipeResponse the response gotten from the recipe API
  */
 export const logSpoonacularQuota = (
   method: string,
   path: string,
-  recipeResponse: AxiosResponse<SearchResponse>
+  recipeResponse: AxiosResponse<SearchResponse | RecipeResponse>
 ) => {
   // Response headers are in lowercase
   const requestQuota = Number(recipeResponse.headers["x-api-quota-request"]);

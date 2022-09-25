@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import express from "express";
+import RecipeResponse from "../models/spoonacular/RecipeResponse";
 import SearchResponse from "../models/spoonacular/SearchResponse";
 import {
   createClientResponse,
@@ -38,7 +39,7 @@ router.get("/:id", async (req, res) => {
   const url = recipeIdUrlBuilder(id);
 
   try {
-    const recipeResponse = await axios.get<SearchResponse>(url);
+    const recipeResponse = await axios.get<RecipeResponse>(url);
     logSpoonacularQuota(req.method, req.originalUrl, recipeResponse);
 
     const recipes = recipeResponse.data;
