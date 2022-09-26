@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import express from "express";
+import RecipeError from "../models/client/RecipeError";
 import ErrorResponse from "../models/spoonacular/ErrorResponse";
 import RecipeResponse from "../models/spoonacular/RecipeResponse";
 import SearchResponse from "../models/spoonacular/SearchResponse";
@@ -46,7 +47,11 @@ router.get("/random", async (req, res) => {
       error.message
     }`;
     console.error(error);
-    return res.status(500).json({ error: errorMessage });
+
+    const errorBody: RecipeError = {
+      error: errorMessage,
+    };
+    return res.status(500).json(errorBody);
   }
 });
 
@@ -77,14 +82,22 @@ router.get("/:id", async (req, res) => {
 
     if (isErrorResponse(errorData)) {
       console.error(errorData);
-      return res.status(errorData.code).json({ error: errorData.message });
+
+      const errorBody: RecipeError = {
+        error: errorData.message,
+      };
+      return res.status(errorData.code).json(errorBody);
     }
 
     const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
       error.message
     }`;
     console.error(error);
-    return res.status(500).json({ error: errorMessage });
+
+    const errorBody: RecipeError = {
+      error: errorMessage,
+    };
+    return res.status(500).json(errorBody);
   }
 });
 
