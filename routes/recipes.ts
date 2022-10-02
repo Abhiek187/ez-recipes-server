@@ -16,7 +16,8 @@ const router = express.Router();
 
 // Type guard to check if a response contains all the error properties found in spoonacular
 const isErrorResponse = (resp: any): resp is ErrorResponse => {
-  if (resp === undefined) {
+  // Assert that resp is an object: https://stackoverflow.com/a/8511350
+  if (typeof resp !== "object" || Array.isArray(resp) || resp === null) {
     return false;
   }
 
@@ -27,6 +28,32 @@ const isErrorResponse = (resp: any): resp is ErrorResponse => {
   }
 
   return true;
+};
+
+// Helper function to handle API errors, returns a tuple of the status code and json response
+const handleAxiosError = (error: AxiosError): [number, RecipeError] => {
+  // Check if the error was due to spoonacular (invalid API key, invalid recipe ID, etc.)
+  const errorData = error.response?.data;
+
+  if (isErrorResponse(errorData)) {
+    console.error(errorData);
+
+    const errorBody: RecipeError = {
+      error: errorData.message,
+    };
+    return [errorData.code, errorBody];
+  }
+
+  // Return a generic Axios error
+  const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
+    error.message
+  }`;
+  console.error(error);
+
+  const errorBody: RecipeError = {
+    error: errorMessage,
+  };
+  return [500, errorBody];
 };
 
 // Get a random, low-effort recipe
@@ -43,15 +70,8 @@ router.get("/random", async (req, res) => {
     return res.json(resJson);
   } catch (err) {
     const error = err as AxiosError;
-    const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
-      error.message
-    }`;
-    console.error(error);
-
-    const errorBody: RecipeError = {
-      error: errorMessage,
-    };
-    return res.status(500).json(errorBody);
+    const [status, json] = handleAxiosError(error);
+    return res.status(status).json(json);
   }
 });
 
@@ -76,28 +96,8 @@ router.get("/:id", async (req, res) => {
     return res.json(resJson);
   } catch (err) {
     const error = err as AxiosError;
-
-    // Check if the error was due to an invalid recipe ID
-    const errorData = error.response?.data;
-
-    if (isErrorResponse(errorData)) {
-      console.error(errorData);
-
-      const errorBody: RecipeError = {
-        error: errorData.message,
-      };
-      return res.status(errorData.code).json(errorBody);
-    }
-
-    const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
-      error.message
-    }`;
-    console.error(error);
-
-    const errorBody: RecipeError = {
-      error: errorMessage,
-    };
-    return res.status(500).json(errorBody);
+    const [status, json] = handleAxiosError(error);
+    return res.status(status).json(json);
   }
 });
 
