@@ -44,16 +44,20 @@ const handleAxiosError = (error: AxiosError): [number, RecipeError] => {
     return [errorData.code, errorBody];
   }
 
-  // Return a generic Axios error
-  const errorMessage = `${error.name} (${error.code ?? "Error"}): ${
-    error.message
-  }`;
+  // Try returning the raw response, otherwise return a generic Axios error
   console.error(error);
+  let errorMessage: string;
+
+  if (typeof error.response?.data === "string") {
+    errorMessage = error.response?.data as string;
+  } else {
+    errorMessage = `${error.name} (${error.code ?? "Error"}): ${error.message}`;
+  }
 
   const errorBody: RecipeError = {
     error: errorMessage,
   };
-  return [500, errorBody];
+  return [error.response?.status ?? 500, errorBody];
 };
 
 // Get a random, low-effort recipe
