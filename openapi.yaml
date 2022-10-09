@@ -1,0 +1,239 @@
+openapi: 3.1.0
+
+info:
+  title: EZ Recipes
+  description: An API that fetches recipes from spoonacular
+  version: 1.0.0
+
+# servers:
+#   - url: # TODO: Add server URL
+#     description: Server deployed on render.com
+
+paths:
+  /random:
+    get:
+      summary: Get a random, low-effort recipe
+      responses:
+        "200":
+          description: Successfully returned a recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/recipe"
+
+        "401":
+          description: The API key is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                invalidApiKey:
+                  $ref: "#/components/examples/invalidApiKey"
+
+  /{id}:
+    get:
+      summary: Get a recipe by its ID
+      parameters:
+        - $ref: "#/components/parameters/recipeId"
+
+      responses:
+        "200":
+          description: Successfully returned a recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/recipe"
+        "400":
+          description: The recipe ID isn't numeric
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                invalidRecipeId:
+                  $ref: "#/components/examples/invalidRecipeId"
+        "401":
+          description: The API key is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                invalidApiKey:
+                  $ref: "#/components/examples/invalidApiKey"
+        "404":
+          description: A recipe with the ID couldn't be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                nonExistentRecipeId:
+                  $ref: "#/components/examples/nonExistentRecipeId"
+
+components:
+  parameters:
+    recipeId:
+      name: id
+      in: path
+      required: true
+      description: The recipe ID
+      schema:
+        type: integer
+        minimum: 0
+
+  schemas:
+    recipe:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 0
+          description: The recipe's unique ID
+        name:
+          type: string
+          description: The name of the recipe
+        url:
+          type: string
+          description: The recipe page on spoonacular
+        image:
+          type: string
+          description: A URL pointing to the recipe's image
+        credit:
+          type: string
+          description: The source name where the recipe originates
+        sourceUrl:
+          type: string
+          description: The source URL where the recipe originates
+        healthScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: >
+            A spoonacular measurement for how healthy a recipe is, between 0% and 100%
+        time:
+          type: integer
+          minimum: 0
+          maximum: 60 # low-effort recipes shouldn't take more than an hour to make
+          description: The estimated cooking time for the recipe
+        servings:
+          type: integer
+          minimum: 1
+          description: The number of servings the recipe produces
+        summary:
+          type: string
+          description: A brief description of the recipe
+        nutrients:
+          type: array
+          description: >
+            Nutritional information about the recipe, such as fat, carbs, and protein
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: The nutrient name
+              amount:
+                type: number
+                minimum: 0
+                description: The numerical amount of the nutrient
+              unit:
+                type: string
+                description: The unit of measurement corresponding to the amount
+        ingredients:
+          type: array
+          description: All the ingredients needed to make the recipe
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                minimum: 0
+                description: The ingredient's unique ID
+              name:
+                type: string
+                description: The ingredient name
+              amount:
+                type: number
+                minimum: 0
+                description: The numerical amount of the ingredient
+              unit:
+                type: string
+                description: The unit of measurement corresponding to the amount
+        instructions:
+          type: array
+          description: >
+            All the instructions for making the recipe,
+            which could be split into multiple sections
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: >
+                  The name of this section of steps, or "" if there's only one section
+              steps:
+                type: array
+                description: Ordered steps for making the recipe in each section
+                items:
+                  type: object
+                  properties:
+                    number:
+                      type: integer
+                      minimum: 1
+                      description: The step number
+                    step:
+                      type: string
+                      description: Directions for each step
+                    ingredients:
+                      type: array
+                      description: The ingredients used in each step
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            minimum: 0
+                            description: The ingredient's unique ID
+                          name:
+                            type: string
+                            description: The ingredient name
+                          image:
+                            type: string
+                            description: >
+                              The name of the ingredient's image. The image's URL would be
+                              https://spoonacular.com/cdn/ingredients_100x100/IMAGE
+                    equipment:
+                      type: array
+                      description: The kitchen equipment used in each step
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            minimum: 0
+                            description: The equipment's unique ID
+                          name:
+                            type: string
+                            description: The equipment name
+                          image:
+                            type: string
+                            description: >
+                              The name of the equipment's image. The image's URL would be
+                              https://spoonacular.com/cdn/equipment_100x100/IMAGE
+    error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: The error message
+
+  examples:
+    invalidRecipeId:
+      value: "The recipe ID must be numeric"
+    invalidApiKey:
+      value: >
+        "You are not authorized. Please read https://spoonacular.com/food-api/docs#Authentication"
+    nonExistentRecipeId:
+      value: "A recipe with the id 0 does not exist."
