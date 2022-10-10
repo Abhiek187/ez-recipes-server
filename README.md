@@ -38,3 +38,7 @@ API_KEY=YOUR_API_KEY
 2. Run `docker-compose up -d` to start up both the web and server containers.
 
 To stop the containers, run `docker-compose down`.
+
+## Testing
+
+Run `npm test` to run the unit tests using Jest.
