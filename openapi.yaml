@@ -10,7 +10,7 @@ servers:
     description: Server deployed on render.com
 
 paths:
-  /random:
+  /api/recipes/random:
     get:
       summary: Get a random, low-effort recipe
       responses:
@@ -31,7 +31,7 @@ paths:
                 invalidApiKey:
                   $ref: "#/components/examples/invalidApiKey"
 
-  /{id}:
+  /api/recipes/{id}:
     get:
       summary: Get a recipe by its ID
       parameters:
