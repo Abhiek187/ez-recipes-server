@@ -5,8 +5,6 @@ services:
     # Docker Compose defaults to the master branch
     build: https://github.com/Abhiek187/ez-recipes-web.git#main
     image: ez-recipes-web
-    ports:
-      - 4200:4200
 
   server:
     build: .

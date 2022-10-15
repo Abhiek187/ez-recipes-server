@@ -30,12 +30,16 @@ Visit [SwaggerHub](https://app.swaggerhub.com/apis-docs/Abhiek187/ez-recipes/1.0
 API_KEY=YOUR_API_KEY
 ```
 
-3. Run `npm start`. The server will be listening on `http://localhost:5000`.
+**Dev:** Run `npm start`.
+
+**Prod:** Run `npm run build` to generate a build in the `dist` directory. Then run `npm run server` to start the server using [pm2](https://pm2.io/).
+
+The server will be listening on `http://localhost:5000`. To stop the server, press `CTRL-C`.
 
 ## Installing with Docker
 
 1. Follow steps 1-2 above.
-2. Run `docker-compose up -d` to start up both the web and server containers.
+2. Run `docker-compose -f docker-compose.yml -f docker-compose-[dev|prod].yml up -d` to start up both the web and server containers in dev or prod.
 
 To stop the containers, run `docker-compose down`.
 

@@ -8,13 +8,15 @@ WORKDIR /usr/src/server
 # where available (npm@5+)
 COPY package*.json ./
 
-RUN npm install
-# If you are building your code for production
-# RUN npm ci --production
+# Typescript is the only dev dependency needed in production
+RUN npm ci --production && npm ci typescript
 
 # Bundle app source
 COPY . .
 
+# Compile the build in the dist directory
+RUN npm run build
+
 # Run the node server on port 5000 and open the connection
 EXPOSE $PORT
-CMD [ "npm", "start" ]
+CMD [ "npm", "run", "server" ]
