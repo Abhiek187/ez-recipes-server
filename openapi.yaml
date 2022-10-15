@@ -5,9 +5,9 @@ info:
   description: An API that fetches recipes from spoonacular
   version: 1.0.0
 
-# servers:
-#   - url: # TODO: Add server URL
-#     description: Server deployed on render.com
+servers:
+  - url: https://ez-recipes-server.onrender.com
+    description: Server deployed on render.com
 
 paths:
   /random:
