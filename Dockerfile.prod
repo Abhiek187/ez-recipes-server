@@ -9,7 +9,7 @@ WORKDIR /usr/src/server
 COPY package*.json ./
 
 # Typescript is the only dev dependency needed in production
-RUN npm ci --production && npm ci typescript
+RUN npm ci --omit=dev && npm ci typescript
 
 # Bundle app source
 COPY . .
