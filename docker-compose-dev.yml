@@ -1,0 +1,4 @@
+services:
+  web:
+    ports:
+      - 4200:4200 # ports are concatenated instead of overriden with multiple compose files

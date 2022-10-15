@@ -2,10 +2,12 @@
   "name": "ez-recipes-server",
   "version": "1.0.0",
   "description": "Server to fetch easy-to-make recipes for the EZ Recipes app",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "ts-node-dev index",
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc",
+    "server": "pm2-runtime start dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -26,7 +28,8 @@
     "axios": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "pm2": "^5.2.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",

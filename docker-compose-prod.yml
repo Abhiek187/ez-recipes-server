@@ -1,0 +1,15 @@
+# Only specify the prod-specific properties to be overriden
+services:
+  web:
+    build:
+      context: https://github.com/Abhiek187/ez-recipes-web.git#main
+      dockerfile: Dockerfile.prod
+    image: ez-recipes-web-prod
+    ports:
+      - 4200:80
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: ez-recipes-server-prod
