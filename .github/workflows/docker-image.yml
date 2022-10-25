@@ -13,6 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ez-recipes-server-ci:$(date +%s)
+        run: docker build . --file Dockerfile --tag ez-recipes-server-ci
       - name: Run tests inside the container
-        run: docker run ez-recipes-server-ci npm test
+        run: docker run -it --rm ez-recipes-server-ci npm test
