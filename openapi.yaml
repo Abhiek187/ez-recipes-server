@@ -31,6 +31,16 @@ paths:
                 invalidApiKey:
                   $ref: "#/components/examples/invalidApiKey"
 
+        "402":
+          description: Exceeded daily quota
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                limitReached:
+                  $ref: "#/components/examples/limitReached"
+
   /api/recipes/{id}:
     get:
       summary: Get a recipe by its ID
@@ -44,6 +54,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/recipe"
+
         "400":
           description: The recipe ID isn't numeric
           content:
@@ -53,6 +64,7 @@ paths:
               examples:
                 invalidRecipeId:
                   $ref: "#/components/examples/invalidRecipeId"
+
         "401":
           description: The API key is invalid
           content:
@@ -62,6 +74,17 @@ paths:
               examples:
                 invalidApiKey:
                   $ref: "#/components/examples/invalidApiKey"
+
+        "402":
+          description: Exceeded daily quota
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                limitReached:
+                  $ref: "#/components/examples/limitReached"
+
         "404":
           description: A recipe with the ID couldn't be found
           content:
@@ -235,5 +258,9 @@ components:
     invalidApiKey:
       value: >
         "You are not authorized. Please read https://spoonacular.com/food-api/docs#Authentication"
+    limitReached:
+      value: >
+        "Your daily points limit of 150 has been reached. Please upgrade your plan to continue
+        using the API."
     nonExistentRecipeId:
       value: "A recipe with the id 0 does not exist."
