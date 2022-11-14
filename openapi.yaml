@@ -254,13 +254,16 @@ components:
 
   examples:
     invalidRecipeId:
-      value: "The recipe ID must be numeric"
+      value: { "error": "The recipe ID must be numeric" }
     invalidApiKey:
-      value: >
-        "You are not authorized. Please read https://spoonacular.com/food-api/docs#Authentication"
+      value: { "error": "You are not authorized. Please read
+            https://spoonacular.com/food-api/docs#Authentication" }
     limitReached:
-      value: >
-        "Your daily points limit of 150 has been reached. Please upgrade your plan to continue
-        using the API."
+      value:
+        {
+          "error":
+            "Your daily points limit of 150 has been reached. Please upgrade your plan to
+            continue using the API.",
+        }
     nonExistentRecipeId:
-      value: "A recipe with the id 0 does not exist."
+      value: { "error": "A recipe with the id 0 does not exist." }
