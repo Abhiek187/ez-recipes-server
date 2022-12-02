@@ -22,34 +22,40 @@ afterEach(() => {
 });
 
 describe("randomRecipeUrlBuilder", () => {
-  test("returns the correct random recipe URL", () => {
+  test("returns the correct random recipe URL & headers", () => {
     // Given query params like the API key
     // Mock the API key to prevent the real one from being leaked when tests fail
     process.env.API_KEY = "384ba039c39e90f";
 
     // When the URL builder method is called
-    const recipeUrl = randomRecipeUrlBuilder();
+    const [recipeUrl, headers] = randomRecipeUrlBuilder();
 
-    // Then it should return the correct spoonacular URL to fetch a random recipe
+    // Then it should return the correct spoonacular URL & headers to fetch a random recipe
     expect(recipeUrl).toBe(
-      `https://api.spoonacular.com/recipes/complexSearch?apiKey=${process.env.API_KEY}&instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`
+      `https://api.spoonacular.com/recipes/complexSearch?instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`
     );
+    expect(headers).toStrictEqual({
+      "x-api-key": process.env.API_KEY,
+    });
   });
 });
 
 describe("recipeIdUrlBuilder", () => {
-  test("returns the correct URL with the recipe ID", () => {
+  test("returns the correct URL & headers with the recipe ID", () => {
     // Given an API key and a recipe ID
     process.env.API_KEY = "384ba039c39e90f";
     const recipeId = "8427";
 
     // When the URL builder method is called
-    const recipeUrl = recipeIdUrlBuilder(Number(recipeId));
+    const [recipeUrl, headers] = recipeIdUrlBuilder(Number(recipeId));
 
-    // Then it should return the correct spoonacular URL to fetch the recipe from recipeId
+    // Then it should return the correct spoonacular URL & headers to fetch the recipe from recipeId
     expect(recipeUrl).toBe(
-      `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${process.env.API_KEY}&includeNutrition=true`
+      `https://api.spoonacular.com/recipes/${recipeId}/information?includeNutrition=true`
     );
+    expect(headers).toStrictEqual({
+      "x-api-key": process.env.API_KEY,
+    });
   });
 });
 
