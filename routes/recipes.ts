@@ -62,10 +62,10 @@ const handleAxiosError = (error: AxiosError): [number, RecipeError] => {
 
 // Get a random, low-effort recipe
 router.get("/random", async (req, res) => {
-  const url = randomRecipeUrlBuilder();
+  const [url, headers] = randomRecipeUrlBuilder();
 
   try {
-    const recipeResponse = await axios.get<SearchResponse>(url);
+    const recipeResponse = await axios.get<SearchResponse>(url, { headers });
     logSpoonacularQuota(req.method, req.originalUrl, recipeResponse);
 
     const recipes = recipeResponse.data;
@@ -88,10 +88,10 @@ router.get("/:id", async (req, res) => {
     return res.status(400).json({ error: "The recipe ID must be numeric" });
   }
 
-  const url = recipeIdUrlBuilder(Number(id));
+  const [url, headers] = recipeIdUrlBuilder(Number(id));
 
   try {
-    const recipeResponse = await axios.get<RecipeResponse>(url);
+    const recipeResponse = await axios.get<RecipeResponse>(url, { headers });
     logSpoonacularQuota(req.method, req.originalUrl, recipeResponse);
 
     const recipes = recipeResponse.data;

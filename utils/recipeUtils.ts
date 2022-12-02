@@ -3,6 +3,7 @@ import { AxiosResponse } from "axios";
 import Recipe from "../models/client/Recipe";
 import RecipeResponse from "../models/spoonacular/RecipeResponse";
 import SearchResponse from "../models/spoonacular/SearchResponse";
+import RecipeHeaders from "../types/RecipeHeaders";
 
 /**
  * Build the spoonacular URL to fetch a random, low-effort recipe
@@ -14,23 +15,32 @@ import SearchResponse from "../models/spoonacular/SearchResponse";
  * - 1 hour or less of cook time
  * - Can make 3 or more servings
 
- * @returns {string} an encoded URI
+ * @returns {[string, RecipeHeaders]} an encoded URI and headers
  */
-export const randomRecipeUrlBuilder = (): string => {
+export const randomRecipeUrlBuilder = (): [string, RecipeHeaders] => {
   const apiKey = process.env.API_KEY;
-  let url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=${apiKey}&instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`;
-  return encodeURI(url);
+  let url = `https://api.spoonacular.com/recipes/complexSearch?instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`;
+  // It's more secure to pass the API key as a header than as a query parameter
+  const headers: RecipeHeaders = {
+    "x-api-key": apiKey ?? "",
+  };
+
+  return [encodeURI(url), headers];
 };
 
 /**
  * Build the spoonacular URL to fetch a recipe by ID
  * @param {number} id the recipe ID
- * @returns {string} an encoded URI
+ * @returns {[string, RecipeHeaders]} an encoded URI and headers
  */
-export const recipeIdUrlBuilder = (id: number): string => {
+export const recipeIdUrlBuilder = (id: number): [string, RecipeHeaders] => {
   const apiKey = process.env.API_KEY;
-  const url = `https://api.spoonacular.com/recipes/${id}/information?apiKey=${apiKey}&includeNutrition=true`;
-  return encodeURI(url);
+  const url = `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=true`;
+  const headers: RecipeHeaders = {
+    "x-api-key": apiKey ?? "",
+  };
+
+  return [encodeURI(url), headers];
 };
 
 /**
