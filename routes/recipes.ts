@@ -1,9 +1,9 @@
 import axios, { AxiosError } from "axios";
 import express from "express";
-import RecipeError from "../models/client/RecipeError";
-import ErrorResponse from "../models/spoonacular/ErrorResponse";
-import RecipeResponse from "../models/spoonacular/RecipeResponse";
-import SearchResponse from "../models/spoonacular/SearchResponse";
+import RecipeError from "../types/client/RecipeError";
+import ErrorResponse from "../types/spoonacular/ErrorResponse";
+import RecipeResponse from "../types/spoonacular/RecipeResponse";
+import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
   createClientResponse,
   logSpoonacularQuota,

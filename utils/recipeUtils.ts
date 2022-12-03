@@ -1,9 +1,9 @@
 // Helper methods for the recipes route
 import { AxiosResponse } from "axios";
-import Recipe from "../models/client/Recipe";
-import RecipeResponse from "../models/spoonacular/RecipeResponse";
-import SearchResponse from "../models/spoonacular/SearchResponse";
-import RecipeHeaders from "../types/RecipeHeaders";
+import Recipe from "../types/client/Recipe";
+import RecipeResponse from "../types/spoonacular/RecipeResponse";
+import SearchResponse from "../types/spoonacular/SearchResponse";
+import RecipeHeaders from "../types2/RecipeHeaders";
 
 /**
  * Build the spoonacular URL to fetch a random, low-effort recipe

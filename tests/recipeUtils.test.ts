@@ -1,6 +1,6 @@
 import { AxiosResponse } from "axios";
-import Recipe from "../models/client/Recipe";
-import SearchResponse from "../models/spoonacular/SearchResponse";
+import Recipe from "../types/client/Recipe";
+import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
   createClientResponse,
   logSpoonacularQuota,
