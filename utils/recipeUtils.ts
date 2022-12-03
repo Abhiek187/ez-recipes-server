@@ -3,7 +3,7 @@ import { AxiosResponse } from "axios";
 import Recipe from "../types/client/Recipe";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
-import RecipeHeaders from "../types2/RecipeHeaders";
+import RecipeHeaders from "../types/spoonacular/RecipeHeaders";
 
 /**
  * Build the spoonacular URL to fetch a random, low-effort recipe
