@@ -118,7 +118,7 @@ describe("createClientResponse", () => {
 });
 
 // Keep collapsed unless it's an emergency
-const mockSearchResponse: SearchResponse = {
+export const mockSearchResponse: SearchResponse = {
   results: [
     {
       vegetarian: true,
@@ -3742,7 +3742,7 @@ const mockSearchResponse: SearchResponse = {
   totalResults: 4868,
 };
 
-const expectedRecipe: Recipe = {
+export const expectedRecipe: Recipe = {
   id: 660475,
   name: "Snow Pea Sesame Noodle Salad",
   url: "https://spoonacular.com/snow-pea-sesame-noodle-salad-660475",

@@ -4,6 +4,7 @@ import RecipeError from "../types/client/RecipeError";
 import ErrorResponse from "../types/spoonacular/ErrorResponse";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
+import { isObject } from "../utils/object";
 import {
   createClientResponse,
   logSpoonacularQuota,
@@ -16,8 +17,8 @@ const router = express.Router();
 
 // Type guard to check if a response contains all the error properties found in spoonacular
 const isErrorResponse = (resp: any): resp is ErrorResponse => {
-  // Assert that resp is an object: https://stackoverflow.com/a/8511350
-  if (typeof resp !== "object" || Array.isArray(resp) || resp === null) {
+  // Assert that resp is an object
+  if (!isObject(resp)) {
     return false;
   }
 
