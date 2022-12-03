@@ -1,7 +1,7 @@
 import { isNumeric } from "../utils/string";
 
 describe("isNumeric", () => {
-  test("passes all positive cases", () => {
+  it("passes all positive cases", () => {
     // Given a set of inputs that resemble numbers
     const numbers: any[] = [
       0,
@@ -26,7 +26,7 @@ describe("isNumeric", () => {
     }
   });
 
-  test("passes all negative cases", () => {
+  it("passes all negative cases", () => {
     // Given a set of inputs that don't resemble numbers
     const numbers: any[] = [
       true,

@@ -1,7 +1,7 @@
 import { getRandomElement } from "../utils/array";
 
 describe("getRandomElement", () => {
-  test("returns an element in the array", () => {
+  it("returns an element in the array", () => {
     // Given an array with N elements
     const array = [1, 2, 3];
     // When getRandomElement() is called
@@ -12,7 +12,7 @@ describe("getRandomElement", () => {
     expect(array).toEqual(expect.arrayContaining([randomNum]));
   });
 
-  test("returns the same element if the array's length is 1", () => {
+  it("returns the same element if the array's length is 1", () => {
     // Given an array with one element
     const array = ["chrysno"];
     // When getRandomElement() is called
@@ -21,7 +21,7 @@ describe("getRandomElement", () => {
     expect(randomString).toBe(array[0]);
   });
 
-  test("throws an error if the array is empty", () => {
+  it("throws an error if the array is empty", () => {
     // Given an empty array
     const emptyArray: object[] = [];
     // When getRandomElement() is called
