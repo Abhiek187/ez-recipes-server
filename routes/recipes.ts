@@ -1,12 +1,11 @@
 import axios, { AxiosError } from "axios";
 import express from "express";
 import RecipeError from "../types/client/RecipeError";
-import ErrorResponse from "../types/spoonacular/ErrorResponse";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
-import { isObject } from "../utils/object";
 import {
   createClientResponse,
+  isErrorResponse,
   logSpoonacularQuota,
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
@@ -14,22 +13,6 @@ import {
 import { isNumeric } from "../utils/string";
 
 const router = express.Router();
-
-// Type guard to check if a response contains all the error properties found in spoonacular
-export const isErrorResponse = (resp: any): resp is ErrorResponse => {
-  // Assert that resp is an object
-  if (!isObject(resp)) {
-    return false;
-  }
-
-  for (const prop of ["code", "message", "status"]) {
-    if (!resp.hasOwnProperty(prop)) {
-      return false;
-    }
-  }
-
-  return true;
-};
 
 // Helper function to handle API errors, returns a tuple of the status code and json response
 const handleAxiosError = (error: AxiosError): [number, RecipeError] => {

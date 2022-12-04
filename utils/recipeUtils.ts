@@ -4,6 +4,8 @@ import Recipe from "../types/client/Recipe";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import RecipeHeaders from "../types/spoonacular/RecipeHeaders";
+import { isObject } from "./object";
+import ErrorResponse from "../types/spoonacular/ErrorResponse";
 
 /**
  * Build the spoonacular URL to fetch a random, low-effort recipe
@@ -156,4 +158,70 @@ export const createClientResponse = (
   };
 
   return resJson;
+};
+
+// Private function to check for all the properties of an object
+const typeCheck = (data: any, props: string[]): boolean => {
+  // Assert that data is an object
+  if (!isObject(data)) {
+    return false;
+  }
+
+  for (const prop of props) {
+    if (!data.hasOwnProperty(prop)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+// Type guard to check if a response contains all the error properties found in spoonacular
+export const isErrorResponse = (data: any): data is ErrorResponse => {
+  return typeCheck(data, ["code", "message", "status"]);
+};
+
+export const isSearchResponse = (data: any): data is SearchResponse => {
+  // Check that the data contains all the properties defined for SearchResponse
+  return typeCheck(data, ["results", "offset", "number", "totalResults"]);
+};
+
+export const isRecipeResponse = (data: any): data is RecipeResponse => {
+  // Check that the data contains all the properties defined for RecipeResponse
+  return typeCheck(data, [
+    "vegetarian",
+    "vegan",
+    "glutenFree",
+    "dairyFree",
+    "veryHealthy",
+    "cheap",
+    "veryPopular",
+    "sustainable",
+    "lowFodmap",
+    "weightWatcherSmartPoints",
+    "gaps",
+    "preparationMinutes",
+    "cookingMinutes",
+    "aggregateLikes",
+    "healthScore",
+    "creditsText",
+    "license",
+    "sourceName",
+    "pricePerServing",
+    "id",
+    "title",
+    "readyInMinutes",
+    "servings",
+    "sourceUrl",
+    "image",
+    "imageType",
+    "nutrition",
+    "summary",
+    "cuisines",
+    "dishTypes",
+    "diets",
+    "occasions",
+    "analyzedInstructions",
+    "spoonacularSourceUrl",
+  ]);
 };

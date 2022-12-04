@@ -1,81 +1,15 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
-import { isErrorResponse } from "../routes/recipes";
 import ErrorResponse from "../types/spoonacular/ErrorResponse";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
-import { isObject } from "../utils/object";
 import {
+  isErrorResponse,
+  isRecipeResponse,
+  isSearchResponse,
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
-
-const isSearchResponse = (data: any): data is SearchResponse => {
-  // Check that the data contains all the properties defined for SearchResponse
-  if (!isObject(data)) {
-    return false;
-  }
-
-  for (const prop of ["results", "offset", "number", "totalResults"]) {
-    if (!data.hasOwnProperty(prop)) {
-      console.log(`SearchResponse error: Prop ${prop} not found`);
-      return false;
-    }
-  }
-
-  return true;
-};
-
-const isRecipeResponse = (data: any): data is RecipeResponse => {
-  // Check that the data contains all the properties defined for RecipeResponse
-  if (!isObject(data)) {
-    return false;
-  }
-
-  for (const prop of [
-    "vegetarian",
-    "vegan",
-    "glutenFree",
-    "dairyFree",
-    "veryHealthy",
-    "cheap",
-    "veryPopular",
-    "sustainable",
-    "lowFodmap",
-    "weightWatcherSmartPoints",
-    "gaps",
-    "preparationMinutes",
-    "cookingMinutes",
-    "aggregateLikes",
-    "healthScore",
-    "creditsText",
-    "license",
-    "sourceName",
-    "pricePerServing",
-    "id",
-    "title",
-    "readyInMinutes",
-    "servings",
-    "sourceUrl",
-    "image",
-    "imageType",
-    "nutrition",
-    "summary",
-    "cuisines",
-    "dishTypes",
-    "diets",
-    "occasions",
-    "analyzedInstructions",
-    "spoonacularSourceUrl",
-  ]) {
-    if (!data.hasOwnProperty(prop)) {
-      console.log(`RecipeResponse error: Prop ${prop} not found`);
-      return false;
-    }
-  }
-
-  return true;
-};
 
 // Write tests based on the possible responses from openapi.yaml
 const basePath = "/api/recipes";
