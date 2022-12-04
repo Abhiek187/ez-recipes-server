@@ -1,6 +1,6 @@
 import { AxiosResponse } from "axios";
-import Recipe from "../models/client/Recipe";
-import SearchResponse from "../models/spoonacular/SearchResponse";
+import Recipe from "../types/client/Recipe";
+import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
   createClientResponse,
   logSpoonacularQuota,
@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe("randomRecipeUrlBuilder", () => {
-  test("returns the correct random recipe URL & headers", () => {
+  it("returns the correct random recipe URL & headers", () => {
     // Given query params like the API key
     // Mock the API key to prevent the real one from being leaked when tests fail
     process.env.API_KEY = "384ba039c39e90f";
@@ -41,7 +41,7 @@ describe("randomRecipeUrlBuilder", () => {
 });
 
 describe("recipeIdUrlBuilder", () => {
-  test("returns the correct URL & headers with the recipe ID", () => {
+  it("returns the correct URL & headers with the recipe ID", () => {
     // Given an API key and a recipe ID
     process.env.API_KEY = "384ba039c39e90f";
     const recipeId = "8427";
@@ -60,7 +60,7 @@ describe("recipeIdUrlBuilder", () => {
 });
 
 describe("logSpoonacularQuota", () => {
-  test("logs the points used and the points remaining", () => {
+  it("logs the points used and the points remaining", () => {
     // Given a request & response with quota headers
     const mockRequest = {
       method: "GET",
@@ -97,7 +97,7 @@ describe("logSpoonacularQuota", () => {
 });
 
 describe("createClientResponse", () => {
-  test("creates the correct recipe object from a search response", () => {
+  it("creates the correct recipe object from a search response", () => {
     // Given a search response
     // When the client response method is called
     const recipeResponse = createClientResponse(mockSearchResponse);
@@ -107,7 +107,7 @@ describe("createClientResponse", () => {
     expect(recipeResponse).toStrictEqual(expectedRecipe);
   });
 
-  test("creates the correct recipe object from a recipe response", () => {
+  it("creates the correct recipe object from a recipe response", () => {
     // Given a recipe response
     // When the client response method is called
     const recipeResponse = createClientResponse(mockSearchResponse.results[0]);
@@ -118,7 +118,7 @@ describe("createClientResponse", () => {
 });
 
 // Keep collapsed unless it's an emergency
-const mockSearchResponse: SearchResponse = {
+export const mockSearchResponse: SearchResponse = {
   results: [
     {
       vegetarian: true,
@@ -3742,7 +3742,7 @@ const mockSearchResponse: SearchResponse = {
   totalResults: 4868,
 };
 
-const expectedRecipe: Recipe = {
+export const expectedRecipe: Recipe = {
   id: 660475,
   name: "Snow Pea Sesame Noodle Salad",
   url: "https://spoonacular.com/snow-pea-sesame-noodle-salad-660475",

@@ -12,7 +12,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Create an env file
+        run: |
+          touch .env
+          echo API_KEY=${{ secrets.API_KEY }} >> .env
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ez-recipes-server-ci
+        run: docker-compose -f docker-compose.yml up -d --build server
       - name: Run tests inside the container
-        run: docker run --rm ez-recipes-server-ci npm test
+        run: docker run --rm ez-recipes-server npm test

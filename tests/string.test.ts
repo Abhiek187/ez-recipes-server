@@ -1,9 +1,9 @@
 import { isNumeric } from "../utils/string";
 
 describe("isNumeric", () => {
-  test("passes all positive cases", () => {
+  it("passes all positive cases", () => {
     // Given a set of inputs that resemble numbers
-    const numbers: any[] = [
+    const goodNumbers: any[] = [
       0,
       1,
       1234567890,
@@ -21,14 +21,14 @@ describe("isNumeric", () => {
 
     // When passed to isNumeric
     // Then they should all return true
-    for (const num of numbers) {
+    for (const num of goodNumbers) {
       expect(isNumeric(num)).toBe(true);
     }
   });
 
-  test("passes all negative cases", () => {
+  it("passes all negative cases", () => {
     // Given a set of inputs that don't resemble numbers
-    const numbers: any[] = [
+    const badNumbers: any[] = [
       true,
       false,
       "1..1",
@@ -44,7 +44,7 @@ describe("isNumeric", () => {
 
     // When passed to isNumeric
     // Then they should all return false
-    for (const num of numbers) {
+    for (const num of badNumbers) {
       expect(isNumeric(num)).toBe(false);
     }
   });
