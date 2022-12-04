@@ -46,6 +46,7 @@ describe(`${basePath}/random`, () => {
     expect(searchResponse.status).toBe(200);
 
     const recipes = searchResponse.data;
+    console.log("(random 200) recipes = ", recipes);
     expect(isSearchResponse(recipes)).toBe(true);
   });
 
@@ -66,6 +67,7 @@ describe(`${basePath}/random`, () => {
       const error = err as AxiosError;
       const errorData = error.response?.data;
 
+      console.log("(random 401) errorData = ", errorData);
       expect(isErrorResponse(errorData)).toBe(true);
       expect((errorData as ErrorResponse).code).toBe(401);
     }
@@ -94,6 +96,7 @@ describe(`${basePath}/:id`, () => {
     expect(recipeResponse.status).toBe(200);
 
     const recipes = recipeResponse.data;
+    console.log("(ID 200) recipes = ", recipes);
     expect(isRecipeResponse(recipes)).toBe(true);
   });
 
@@ -117,6 +120,7 @@ describe(`${basePath}/:id`, () => {
       const error = err as AxiosError;
       const errorData = error.response?.data;
 
+      console.log("(ID 401) errorData = ", errorData);
       expect(isErrorResponse(errorData)).toBe(true);
       expect((errorData as ErrorResponse).code).toBe(401);
     }
@@ -141,6 +145,7 @@ describe(`${basePath}/:id`, () => {
       const error = err as AxiosError;
       const errorData = error.response?.data;
 
+      console.log("(ID 404) errorData = ", errorData);
       expect(isErrorResponse(errorData)).toBe(true);
       expect((errorData as ErrorResponse).code).toBe(404);
     }
