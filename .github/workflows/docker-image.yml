@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build the Docker image
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
         run: docker build . --file Dockerfile --tag ez-recipes-server-ci
       - name: Run tests inside the container
         run: docker run --rm ez-recipes-server-ci npm test
