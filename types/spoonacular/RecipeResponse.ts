@@ -26,7 +26,7 @@ type RecipeResponse = {
   readyInMinutes: number;
   servings: number;
   sourceUrl: string;
-  openLicense: number;
+  openLicense?: number; // not present in the recipe ID endpoint
   image: string;
   imageType: string;
   nutrition: Nutrition;

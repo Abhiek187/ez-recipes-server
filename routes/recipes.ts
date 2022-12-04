@@ -16,7 +16,7 @@ import { isNumeric } from "../utils/string";
 const router = express.Router();
 
 // Type guard to check if a response contains all the error properties found in spoonacular
-const isErrorResponse = (resp: any): resp is ErrorResponse => {
+export const isErrorResponse = (resp: any): resp is ErrorResponse => {
   // Assert that resp is an object
   if (!isObject(resp)) {
     return false;
