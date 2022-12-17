@@ -11,7 +11,7 @@ This is an API built using Express to fetch low-effort recipes from [spoonacular
 
 ### Architecture Diagram
 
-![Architecture diagram for EZ Recipes](architecture-diagram.png)
+<img src="architecture-diagram.png" alt="Architecture diagram for EZ Recipes" width="300">
 
 ### Sequence Diagram
 
