@@ -16,6 +16,47 @@ This is an API built using Express to fetch low-effort recipes from [spoonacular
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
+- Mermaid to write diagrams as code
+
+## Pipeline Diagrams
+
+### NPM CI
+
+```mermaid
+flowchart LR
+
+A(Checkout repository) -->|14.x, 16.x, 18.x| B(Install Node.js)
+B --> C(Install dependencies:\nnpm ci)
+C --> D(Run Jest unit tests:\nnpm test)
+```
+
+### Docker CI
+
+```mermaid
+flowchart LR
+
+A(Checkout repository) --> B(Add environment variables)
+B --> C(Build Docker server image)
+C --> D(Run tests inside the container)
+```
+
+### CodeQL
+
+```mermaid
+flowchart LR
+
+A(Checkout repository) -->|JavaScript| B(Initialize CodeQL)
+B --> C(Build code)
+C --> D(Perform CodeQL analysis)
+```
+
+### Deployment
+
+```mermaid
+flowchart LR
+
+A(Merge PR to main) --> B(Auto-Deploy to Render)
+```
 
 ## Documentation
 
