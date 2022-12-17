@@ -9,6 +9,24 @@
 
 This is an API built using Express to fetch low-effort recipes from [spoonacular](https://spoonacular.com/food-api). These are recipes that can be made within an hour, use common kitchen ingredients, and can produce multiple servings. It's ideal for new chefs learning how to cook, or people with little free time who want to cook something tasty. This API is connected to the [web](https://github.com/Abhiek187/ez-recipes-web), [iOS](https://github.com/Abhiek187/ez-recipes-ios), and [Android](https://github.com/Abhiek187/ez-recipes-android) apps so anyone can view the recipes on any device.
 
+### Architecture Diagram
+
+<img src="architecture-diagram.png" alt="Architecture diagram for EZ Recipes" width="400">
+
+### Sequence Diagram
+
+Below is a sequence diagram when the client asks the server to fetch a random recipe:
+
+```mermaid
+sequenceDiagram
+
+Client->>Server: Get random recipe
+Server->>spoonacular: Recipe search
+spoonacular-->>Server: Server recipe
+Server->>Server: Transform recipe
+Server-->>Client: Client recipe
+```
+
 ## Features
 
 - TypeScript for added type safety
@@ -16,6 +34,47 @@ This is an API built using Express to fetch low-effort recipes from [spoonacular
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
+- Mermaid to write diagrams as code
+
+## Pipeline Diagrams
+
+### NPM CI
+
+```mermaid
+flowchart LR
+
+A(Checkout repository) -->|14.x, 16.x, 18.x| B(Install Node.js)
+B --> C(Install dependencies:\nnpm ci)
+C --> D(Run Jest unit tests:\nnpm test)
+```
+
+### Docker CI
+
+```mermaid
+flowchart LR
+
+A(Checkout repository) --> B(Add environment variables)
+B --> C(Build Docker server image)
+C --> D(Run tests inside the container)
+```
+
+### CodeQL
+
+```mermaid
+flowchart LR
+
+A(Checkout repository) -->|JavaScript| B(Initialize CodeQL)
+B --> C(Build code)
+C --> D(Perform CodeQL analysis)
+```
+
+### Deployment
+
+```mermaid
+flowchart LR
+
+A(Merge PR to main) --> B(Auto-Deploy to Render)
+```
 
 ## Documentation
 
