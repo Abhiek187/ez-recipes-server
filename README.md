@@ -73,7 +73,14 @@ C --> D(Perform CodeQL analysis)
 ```mermaid
 flowchart LR
 
-A(Merge PR to main) --> B(Auto-Deploy to Render)
+A(Merge PR to main) -->|Dockerfile.prod| B(Auto-Deploy to Render)
+
+subgraph B [Auto-Deploy to Render]
+direction TB
+C(Use Node 18 Alpine image) --> D(Install dependencies)
+D --> E(Compile TypeScript)
+E --> F(Start PM2 server)
+end
 ```
 
 ## Documentation
