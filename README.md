@@ -89,6 +89,8 @@ Visit [SwaggerHub](https://app.swaggerhub.com/apis-docs/Abhiek187/ez-recipes/1.0
 API_KEY=YOUR_API_KEY
 ```
 
+3. Run `npm install` to install all the dependencies.
+
 **Dev:** Run `npm start`.
 
 **Prod:** Run `npm run build` to generate a build in the `dist` directory. Then run `npm run server` to start the server using [pm2](https://pm2.io/).
