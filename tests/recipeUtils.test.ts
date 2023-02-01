@@ -1,4 +1,4 @@
-import { AxiosResponse } from "axios";
+import { AxiosHeaders, AxiosResponse } from "axios";
 import Recipe from "../types/client/Recipe";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
@@ -75,7 +75,9 @@ describe("logSpoonacularQuota", () => {
       data: mockSearchResponse,
       status: 200,
       statusText: "",
-      config: {},
+      config: {
+        headers: new AxiosHeaders(),
+      },
     };
 
     // When the log method is called
