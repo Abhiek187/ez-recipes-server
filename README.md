@@ -114,3 +114,9 @@ To stop the containers, run `docker-compose down`.
 ## Testing
 
 Run `npm test` to run the unit tests using Jest.
+
+## Related Repos
+
+- [Web app](https://github.com/Abhiek187/ez-recipes-web)
+- [iOS app](https://github.com/Abhiek187/ez-recipes-ios)
+- [Android app](https://github.com/Abhiek187/ez-recipes-android)
