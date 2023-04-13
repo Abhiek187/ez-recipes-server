@@ -18,7 +18,7 @@ type RecipeResponse = {
   aggregateLikes: number;
   healthScore: number;
   creditsText: string;
-  license: string;
+  license?: string;
   sourceName: string;
   pricePerServing: number;
   id: number;

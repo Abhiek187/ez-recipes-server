@@ -169,6 +169,7 @@ const typeCheck = (data: any, props: string[]): boolean => {
 
   for (const prop of props) {
     if (!data.hasOwnProperty(prop)) {
+      console.log(`This object doesn't have a ${prop} property.`);
       return false;
     }
   }
@@ -205,7 +206,6 @@ export const isRecipeResponse = (data: any): data is RecipeResponse => {
     "aggregateLikes",
     "healthScore",
     "creditsText",
-    "license",
     "sourceName",
     "pricePerServing",
     "id",
