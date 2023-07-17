@@ -13,6 +13,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "tuesday"
+    groups:
+      types:
+        patterns:
+          - "@types/*"
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"
