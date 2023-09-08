@@ -43,7 +43,7 @@ Server-->>Client: Client recipe
 ```mermaid
 flowchart LR
 
-A(Checkout repository) -->|14.x, 16.x, 18.x| B(Install Node.js)
+A(Checkout repository) -->|18.x, 20.x| B(Install Node.js)
 B --> C(Install dependencies:\nnpm ci)
 C --> D(Run Jest unit tests:\nnpm test)
 ```
