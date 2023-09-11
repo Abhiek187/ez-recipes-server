@@ -85,7 +85,7 @@ end
 
 ## Documentation
 
-Visit [SwaggerHub](https://app.swaggerhub.com/apis-docs/Abhiek187/ez-recipes/1.0.0) to view the OpenAPI docs for this API.
+Visit [Swagger UI](https://ez-recipes-server.onrender.com/) to view the OpenAPI docs for this API.
 
 ## Installing Locally
 
