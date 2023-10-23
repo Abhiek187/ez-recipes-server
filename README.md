@@ -108,9 +108,9 @@ The server will be listening on `http://localhost:5000`. To stop the server, pre
 ## Installing with Docker
 
 1. Follow steps 1-2 above.
-2. Run `docker-compose -f docker-compose.yml -f docker-compose-[dev|prod].yml up -d` to start up both the web and server containers in dev or prod.
+2. Run `docker compose -f docker-compose.yml -f docker-compose-[dev|prod].yml up -d` to start up both the web and server containers in dev or prod.
 
-To stop the containers, run `docker-compose down`.
+To stop the containers, run `docker compose down`.
 
 ## Testing
 
