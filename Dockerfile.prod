@@ -1,5 +1,5 @@
 # Fetch the latest LTS version of node
-FROM node:20-alpine
+FROM node:21-alpine
 
 # Create server directory
 WORKDIR /usr/src/server
