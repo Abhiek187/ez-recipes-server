@@ -97,7 +97,13 @@ Visit [Swagger UI](https://ez-recipes-server.onrender.com/) to view the OpenAPI 
 API_KEY=YOUR_API_KEY
 ```
 
-3. Run `npm install` to install all the dependencies.
+3. Create a database in [MongoDB Atlas](https://www.mongodb.com/atlas) and copy the URI in `.env`:
+
+```
+MONGO_URI=YOUR_MONGODB_URI
+```
+
+4. Run `npm install` to install all the dependencies.
 
 **Dev:** Run `npm start`.
 
@@ -107,7 +113,7 @@ The server will be listening on `http://localhost:5000`. To stop the server, pre
 
 ## Installing with Docker
 
-1. Follow steps 1-2 above.
+1. Follow steps 1-3 above.
 2. Run `docker compose -f docker-compose.yml -f docker-compose-[dev|prod].yml up -d` to start up both the web and server containers in dev or prod.
 
 To stop the containers, run `docker compose down`.

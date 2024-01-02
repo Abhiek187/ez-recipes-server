@@ -5,6 +5,7 @@ import helmet from "helmet";
 
 import docs from "./routes/docs";
 import recipes from "./routes/recipes";
+import connectToMongoDB from "./utils/db";
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use(
 // Define routes
 app.use("/", docs);
 app.use("/api/recipes", recipes);
+
+connectToMongoDB();
 
 // parseInt() requires a string, not undefined
 const port = parseInt(`${process.env.PORT}`) || 5000;
