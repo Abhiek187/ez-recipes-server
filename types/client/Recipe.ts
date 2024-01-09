@@ -10,6 +10,16 @@ type Recipe = {
   time: number;
   servings: number;
   summary: string;
+  types: string[];
+  spiceLevel: "none" | "mild" | "spicy" | "unknown";
+  isVegetarian: boolean;
+  isVegan: boolean;
+  isGlutenFree: boolean;
+  isHealthy: boolean;
+  isCheap: boolean;
+  isSustainable: boolean;
+  culture: string[];
+  //allergies: string[];
   nutrients: {
     name: string;
     amount: number;
