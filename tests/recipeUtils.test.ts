@@ -7,6 +7,7 @@ import {
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
 } from "../utils/recipeUtils";
+import * as recipeUtils from "../utils/recipeUtils";
 
 const OLD_ENV = process.env;
 
@@ -14,6 +15,10 @@ beforeEach(() => {
   // Clear the cache before making a copy of the environment
   jest.resetModules();
   process.env = { ...OLD_ENV };
+
+  jest
+    .spyOn(recipeUtils, "getSpiceLevel")
+    .mockImplementation(() => Promise.resolve(expectedRecipe.spiceLevel));
 });
 
 afterEach(() => {
@@ -28,15 +33,12 @@ describe("randomRecipeUrlBuilder", () => {
     process.env.API_KEY = "384ba039c39e90f";
 
     // When the URL builder method is called
-    const [recipeUrl, headers] = randomRecipeUrlBuilder();
+    const recipeUrl = randomRecipeUrlBuilder();
 
-    // Then it should return the correct spoonacular URL & headers to fetch a random recipe
+    // Then it should return the correct spoonacular URL to fetch a random recipe
     expect(recipeUrl).toBe(
-      `https://api.spoonacular.com/recipes/complexSearch?instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`
+      "/complexSearch?instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1"
     );
-    expect(headers).toStrictEqual({
-      "x-api-key": process.env.API_KEY,
-    });
   });
 });
 
@@ -47,15 +49,10 @@ describe("recipeIdUrlBuilder", () => {
     const recipeId = "8427";
 
     // When the URL builder method is called
-    const [recipeUrl, headers] = recipeIdUrlBuilder(Number(recipeId));
+    const recipeUrl = recipeIdUrlBuilder(recipeId);
 
-    // Then it should return the correct spoonacular URL & headers to fetch the recipe from recipeId
-    expect(recipeUrl).toBe(
-      `https://api.spoonacular.com/recipes/${recipeId}/information?includeNutrition=true`
-    );
-    expect(headers).toStrictEqual({
-      "x-api-key": process.env.API_KEY,
-    });
+    // Then it should return the correct spoonacular URL to fetch the recipe from recipeId
+    expect(recipeUrl).toBe(`/${recipeId}/information?includeNutrition=true`);
   });
 });
 
@@ -99,20 +96,22 @@ describe("logSpoonacularQuota", () => {
 });
 
 describe("createClientResponse", () => {
-  it("creates the correct recipe object from a search response", () => {
+  it("creates the correct recipe object from a search response", async () => {
     // Given a search response
     // When the client response method is called
-    const recipeResponse = createClientResponse(mockSearchResponse);
+    const recipeResponse = await createClientResponse(mockSearchResponse);
 
     // Then it produces an accurate Recipe object for clients
     // Compare objects with deep equality
     expect(recipeResponse).toStrictEqual(expectedRecipe);
   });
 
-  it("creates the correct recipe object from a recipe response", () => {
+  it("creates the correct recipe object from a recipe response", async () => {
     // Given a recipe response
     // When the client response method is called
-    const recipeResponse = createClientResponse(mockSearchResponse.results[0]);
+    const recipeResponse = await createClientResponse(
+      mockSearchResponse.results[0]
+    );
 
     // Then it produces an accurate Recipe object for clients
     expect(recipeResponse).toStrictEqual(expectedRecipe);
@@ -3527,7 +3526,14 @@ export const mockSearchResponse: SearchResponse = {
       summary:
         'Need a <b>dairy free and vegetarian main course</b>? Snow Pea Sesame Noodle Salad could be a super recipe to try. One serving contains <b>527 calories</b>, <b>14g of protein</b>, and <b>30g of fat</b>. For <b>$2.43 per serving</b>, this recipe <b>covers 26%</b> of your daily requirements of vitamins and minerals. A mixture of vegetable oil, scallions, rice wine vinegar, and a handful of other ingredients are all it takes to make this recipe so yummy. To use up the honey you could follow this main course with the <a href="https://spoonacular.com/recipes/honey-gingerbread-133051">Honey Gingerbread</a> as a dessert. 1 person has made this recipe and would make it again. All things considered, we decided this recipe <b>deserves a spoonacular score of 83%</b>. This score is tremendous. Try <a href="https://spoonacular.com/recipes/snow-pea-salad-with-sesame-dressing-17551">Snow Pea Salad with Sesame Dressing</a>, <a href="https://spoonacular.com/recipes/sesame-snow-pea-and-shiitake-pasta-salad-37175">Sesame, Snow Pea, And Shiitake Pasta Salad</a>, and <a href="https://spoonacular.com/recipes/snow-pea-and-red-onion-salad-with-sesame-vinaigrette-recipe-18570">Snow Pean And Red Onion Salad With Sesame Vinaigrette Recipe</a> for similar recipes.',
       cuisines: [],
-      dishTypes: ["salad"],
+      dishTypes: [
+        "side dish",
+        "lunch",
+        "main course",
+        "salad",
+        "main dish",
+        "dinner",
+      ],
       diets: ["dairy free", "lacto ovo vegetarian"],
       occasions: [],
       analyzedInstructions: [
@@ -3757,6 +3763,15 @@ export const expectedRecipe: Recipe = {
   servings: 8,
   summary:
     'Need a <b>dairy free and vegetarian main course</b>? Snow Pea Sesame Noodle Salad could be a super recipe to try. One serving contains <b>527 calories</b>, <b>14g of protein</b>, and <b>30g of fat</b>. For <b>$2.43 per serving</b>, this recipe <b>covers 26%</b> of your daily requirements of vitamins and minerals. A mixture of vegetable oil, scallions, rice wine vinegar, and a handful of other ingredients are all it takes to make this recipe so yummy. To use up the honey you could follow this main course with the <a href="https://spoonacular.com/recipes/honey-gingerbread-133051">Honey Gingerbread</a> as a dessert. 1 person has made this recipe and would make it again. All things considered, we decided this recipe <b>deserves a spoonacular score of 83%</b>. This score is tremendous. Try <a href="https://spoonacular.com/recipes/snow-pea-salad-with-sesame-dressing-17551">Snow Pea Salad with Sesame Dressing</a>, <a href="https://spoonacular.com/recipes/sesame-snow-pea-and-shiitake-pasta-salad-37175">Sesame, Snow Pea, And Shiitake Pasta Salad</a>, and <a href="https://spoonacular.com/recipes/snow-pea-and-red-onion-salad-with-sesame-vinaigrette-recipe-18570">Snow Pean And Red Onion Salad With Sesame Vinaigrette Recipe</a> for similar recipes.',
+  types: ["side dish", "lunch", "main course", "salad", "main dish", "dinner"],
+  spiceLevel: "mild",
+  isVegetarian: true,
+  isVegan: false,
+  isGlutenFree: false,
+  isHealthy: false,
+  isCheap: false,
+  isSustainable: false,
+  culture: [],
   nutrients: [
     {
       amount: 408.19,

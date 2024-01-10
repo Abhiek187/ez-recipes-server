@@ -1,4 +1,5 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
+
 import ErrorResponse from "../types/spoonacular/ErrorResponse";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
@@ -10,6 +11,7 @@ import {
   recipeIdUrlBuilder,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
+import api from "../utils/api";
 
 // Write tests based on the possible responses from openapi.yaml
 const basePath = "/api/recipes";
@@ -30,13 +32,11 @@ describe(`${basePath}/random`, () => {
   it("returns a SearchResponse on success", async () => {
     // Given the random recipe endpoint
     // When the API key is valid
-    const [recipeUrl, headers] = randomRecipeUrlBuilder();
+    const recipeUrl = randomRecipeUrlBuilder();
     let searchResponse: AxiosResponse<SearchResponse, any>;
 
     try {
-      searchResponse = await axios.get<SearchResponse>(recipeUrl, {
-        headers,
-      });
+      searchResponse = await api.get<SearchResponse>(recipeUrl);
     } catch (err) {
       throw new Error("The random recipe endpoint failed instead of succeeded");
     }
@@ -53,12 +53,13 @@ describe(`${basePath}/random`, () => {
   it("returns a 401 error with an invalid API key", async () => {
     // Given the random recipe endpoint
     // When the API key is invalid
-    process.env.API_KEY = "384ba039c39e90f";
-    const [recipeUrl, headers] = randomRecipeUrlBuilder();
+    const recipeUrl = randomRecipeUrlBuilder();
 
     try {
-      await axios.get<SearchResponse>(recipeUrl, {
-        headers,
+      await api.get<SearchResponse>(recipeUrl, {
+        headers: {
+          "x-api-key": "384ba039c39e90f",
+        },
       });
 
       throw new Error("The random recipe endpoint succeeded instead of failed");
@@ -78,16 +79,14 @@ describe(`${basePath}/:id`, () => {
   it("returns a RecipeResponse on success", async () => {
     // Given the recipe ID endpoint
     // When the API key and recipe ID are valid
-    const recipeId = 660475;
+    const recipeId = "660475";
     expect(isNumeric(recipeId)).toBe(true);
 
-    const [recipeUrl, headers] = recipeIdUrlBuilder(recipeId);
+    const recipeUrl = recipeIdUrlBuilder(recipeId);
     let recipeResponse: AxiosResponse<RecipeResponse, any>;
 
     try {
-      recipeResponse = await axios.get<RecipeResponse>(recipeUrl, {
-        headers,
-      });
+      recipeResponse = await api.get<RecipeResponse>(recipeUrl);
     } catch (err) {
       throw new Error("The recipe ID endpoint failed instead of succeeded");
     }
@@ -103,15 +102,16 @@ describe(`${basePath}/:id`, () => {
   it("returns a 401 error with an invalid API key", async () => {
     // Given the recipe ID endpoint
     // When the API key is invalid
-    const recipeId = 660475;
-    process.env.API_KEY = "384ba039c39e90f";
+    const recipeId = "660475";
     expect(isNumeric(recipeId)).toBe(true);
 
-    const [recipeUrl, headers] = recipeIdUrlBuilder(recipeId);
+    const recipeUrl = recipeIdUrlBuilder(recipeId);
 
     try {
-      await axios.get<RecipeResponse>(recipeUrl, {
-        headers,
+      await api.get<RecipeResponse>(recipeUrl, {
+        headers: {
+          "x-api-key": "384ba039c39e90f",
+        },
       });
 
       throw new Error("The recipe ID endpoint succeeded instead of failed");
@@ -129,15 +129,13 @@ describe(`${basePath}/:id`, () => {
   it("returns a 404 error with a nonexistent recipe ID", async () => {
     // Given the recipe ID endpoint
     // When the recipe ID doesn't exist
-    const recipeId = -1;
+    const recipeId = "-1";
     expect(isNumeric(recipeId)).toBe(true);
 
-    const [recipeUrl, headers] = recipeIdUrlBuilder(recipeId);
+    const recipeUrl = recipeIdUrlBuilder(recipeId);
 
     try {
-      await axios.get<RecipeResponse>(recipeUrl, {
-        headers,
-      });
+      await api.get<RecipeResponse>(recipeUrl);
 
       throw new Error("The recipe ID endpoint succeeded instead of failed");
     } catch (err) {

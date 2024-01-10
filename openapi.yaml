@@ -2,8 +2,8 @@ openapi: 3.1.0
 
 info:
   title: EZ Recipes
-  description: An API that fetches recipes from spoonacular
-  version: 1.0.0
+  description: An API that fetches recipes from spoonacular and MongoDB
+  version: 2.0.0
 
 servers:
   - url: https://ez-recipes-server.onrender.com
@@ -95,6 +95,17 @@ paths:
                 nonExistentRecipeId:
                   $ref: "#/components/examples/nonExistentRecipeId"
 
+  /api/terms:
+    get:
+      summary: Get all cooking terms
+      responses:
+        "200":
+          description: Successfully returned all terms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/terms"
+
 components:
   parameters:
     recipeId:
@@ -147,6 +158,46 @@ components:
         summary:
           type: string
           description: A brief description of the recipe
+        types:
+          type: array
+          description: >
+            All the meal types that correspond to the recipe.
+            See https://spoonacular.com/food-api/docs#Meal-Types for all the supported dish types.
+          items:
+            type: string
+        spiceLevel:
+          type: string
+          enum: ["none", "mild", "spicy", "unknown"]
+          description: >
+            The spice level of a recipe, based on the ingredients' Scoville heat units.
+            If the spice level couldn't be determined, the value is set to "unknown".
+        isVegetarian:
+          type: boolean
+          description: >
+            true if the recipe doesn't contain any meat or meat by-products, such as bones or gelatin
+        isVegan:
+          type: boolean
+          description: true if the recipe is vegetarian and doesn't contain eggs, dairy, or honey
+        isGlutenFree:
+          type: boolean
+          description: >
+            true if the recipe doesn't contain wheat, barley, rye, or other gluten-containing grains
+        isHealthy:
+          type: boolean
+          description: true if the recipe has a high health score
+        isCheap:
+          type: boolean
+          description: true if all the ingredients are affordable
+        isSustainable:
+          type: boolean
+          description: true if making the recipe is good for the environment
+        culture:
+          type: array
+          description: >
+            All the cuisines that correspond to the recipe.
+            See https://spoonacular.com/food-api/docs#Cuisines for all the supported cuisines.
+          items:
+            type: string
         nutrients:
           type: array
           description: >
@@ -251,6 +302,20 @@ components:
         error:
           type: string
           description: The error message
+    terms:
+      type: array
+      items:
+        type: object
+        properties:
+          _id:
+            type: string
+            description: A unique object ID
+          word:
+            type: string
+            description: The word
+          definition:
+            type: string
+            description: The word's definition
 
   examples:
     invalidRecipeId:

@@ -64,7 +64,12 @@ export const logSpoonacularQuota = (
   );
 };
 
-const getSpiceLevel = async (
+/**
+ * Get the spice level of a recipe
+ * @param {number} recipeId the recipe ID
+ * @returns {string} a spice level
+ */
+export const getSpiceLevel = async (
   recipeId: number
 ): Promise<Recipe["spiceLevel"]> => {
   const url = tasteUrlBuilder(recipeId);
@@ -75,7 +80,7 @@ const getSpiceLevel = async (
 
     const spiceValue = tasteResponse.data.spiciness;
 
-    // Spices are weighted by their scoville amount
+    // Spices are weighted by their Scoville amount
     if (spiceValue < 100_000) {
       return "none";
     } else if (spiceValue < 1_000_000) {
