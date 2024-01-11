@@ -6,8 +6,10 @@ import {
   logSpoonacularQuota,
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
+  tasteUrlBuilder,
 } from "../utils/recipeUtils";
 import * as recipeUtils from "../utils/recipeUtils";
+import api from "../utils/api";
 
 const OLD_ENV = process.env;
 
@@ -15,10 +17,6 @@ beforeEach(() => {
   // Clear the cache before making a copy of the environment
   jest.resetModules();
   process.env = { ...OLD_ENV };
-
-  jest
-    .spyOn(recipeUtils, "getSpiceLevel")
-    .mockImplementation(() => Promise.resolve(expectedRecipe.spiceLevel));
 });
 
 afterEach(() => {
@@ -43,7 +41,7 @@ describe("randomRecipeUrlBuilder", () => {
 });
 
 describe("recipeIdUrlBuilder", () => {
-  it("returns the correct URL & headers with the recipe ID", () => {
+  it("returns the correct URL with the recipe ID", () => {
     // Given an API key and a recipe ID
     process.env.API_KEY = "384ba039c39e90f";
     const recipeId = "8427";
@@ -53,6 +51,20 @@ describe("recipeIdUrlBuilder", () => {
 
     // Then it should return the correct spoonacular URL to fetch the recipe from recipeId
     expect(recipeUrl).toBe(`/${recipeId}/information?includeNutrition=true`);
+  });
+});
+
+describe("tasteUrlBuilder", () => {
+  it("returns the correct URL with the recipe ID", () => {
+    // Given an API key and a recipe ID
+    process.env.API_KEY = "384ba039c39e90f";
+    const recipeId = 8427;
+
+    // When the URL builder method is called
+    const recipeUrl = tasteUrlBuilder(recipeId);
+
+    // Then it should return the correct spoonacular URL to fetch the recipe from recipeId
+    expect(recipeUrl).toBe(`/${recipeId}/tasteWidget.json`);
   });
 });
 
@@ -95,7 +107,56 @@ describe("logSpoonacularQuota", () => {
   });
 });
 
+describe("getSpiceLevel", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(recipeUtils, "logSpoonacularQuota")
+      .mockImplementation(jest.fn());
+  });
+
+  it.each([
+    [0, "none"],
+    [100_000, "mild"],
+    [1_000_000, "spicy"],
+  ])(
+    "associates a spice level of %d with %s",
+    async (spiceValue: number, expectedSpiceLevel: string) => {
+      jest.spyOn(api, "get").mockImplementation(() =>
+        Promise.resolve({
+          data: {
+            sweetness: 48.35,
+            saltiness: 45.48,
+            sourness: 15.66,
+            bitterness: 19.25,
+            savoriness: 26.56,
+            fattiness: 100,
+            spiciness: spiceValue,
+          },
+        })
+      );
+
+      const actualSpiceLevel = await recipeUtils.getSpiceLevel(0);
+      expect(actualSpiceLevel).toBe(expectedSpiceLevel);
+    }
+  );
+
+  it("returns unknown if the API fails", async () => {
+    jest
+      .spyOn(api, "get")
+      .mockImplementation(() => Promise.reject("GET taste mocked to fail"));
+
+    const spiceLevel = await recipeUtils.getSpiceLevel(0);
+    expect(spiceLevel).toBe("unknown");
+  });
+});
+
 describe("createClientResponse", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(recipeUtils, "getSpiceLevel")
+      .mockImplementation(() => Promise.resolve(expectedRecipe.spiceLevel));
+  });
+
   it("creates the correct recipe object from a search response", async () => {
     // Given a search response
     // When the client response method is called

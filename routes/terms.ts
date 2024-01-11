@@ -3,7 +3,7 @@ import Term from "../models/Term";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", async (_req, res) => {
   // Get all words and their definitions
   try {
     // exec() returns a promise for better stack traces

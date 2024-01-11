@@ -1,5 +1,5 @@
 // Helper methods for the recipes route
-import { AxiosError, AxiosResponse, isAxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 
 import Recipe from "../types/client/Recipe";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
@@ -37,7 +37,12 @@ export const recipeIdUrlBuilder = (id: string): string => {
   return encodeURI(url);
 };
 
-const tasteUrlBuilder = (id: number): string => {
+/**
+ * Build the spoonacular URL to fetch a recipe's taste
+ * @param {string} id the recipe ID
+ * @returns {string} the encoded URI
+ */
+export const tasteUrlBuilder = (id: number): string => {
   const url = `/${id}/tasteWidget.json`;
   return encodeURI(url);
 };
