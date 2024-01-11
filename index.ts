@@ -1,6 +1,7 @@
 import cors from "cors";
 import "dotenv/config"; // fetch secrets from .env
 import express from "express";
+import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
 import docs from "./routes/docs";
@@ -16,6 +17,7 @@ const app = express();
  * - Serve Swagger UI files
  * - Enable CORS
  * - Add security headers
+ * - Add rate limiting
  */
 app.use(express.json());
 app.use(cors());
@@ -27,6 +29,14 @@ app.use(
         "connect-src": ["'self'", "ez-recipes-server.onrender.com"],
       },
     },
+  })
+);
+app.use(
+  rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    limit: 60, // Limit each IP to 60 requests per `window` (here, per hour).
+    standardHeaders: "draft-7", // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   })
 );
 
