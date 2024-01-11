@@ -34,9 +34,10 @@ app.use(
 app.use(
   rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    limit: 60, // Limit each IP to 60 requests per `window` (here, per hour).
+    limit: 60, // limit each IP to 60 requests per `window` (here, per hour).
     standardHeaders: "draft-7", // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+    legacyHeaders: false, // disable the `X-RateLimit-*` headers.
+    validate: { xForwardedForHeader: false }, // apply the limit globally
   })
 );
 
