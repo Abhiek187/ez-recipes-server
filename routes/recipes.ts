@@ -1,65 +1,35 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import express from "express";
-import RecipeError from "../types/client/RecipeError";
+
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
   createClientResponse,
-  isErrorResponse,
   logSpoonacularQuota,
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
+import api, { handleAxiosError } from "../utils/api";
 
 const router = express.Router();
 
-// Helper function to handle API errors, returns a tuple of the status code and json response
-const handleAxiosError = (error: AxiosError): [number, RecipeError] => {
-  // Check if the error was due to spoonacular (invalid API key, invalid recipe ID, etc.)
-  const errorData = error.response?.data;
-
-  if (isErrorResponse(errorData)) {
-    console.error(errorData);
-
-    const errorBody: RecipeError = {
-      error: errorData.message,
-    };
-    return [errorData.code, errorBody];
-  }
-
-  // Try returning the raw response, otherwise return a generic Axios error
-  console.error(error);
-  let errorMessage: string;
-
-  if (typeof error.response?.data === "string") {
-    errorMessage = error.response?.data as string;
-  } else {
-    errorMessage = `${error.name} (${error.code ?? "Error"}): ${error.message}`;
-  }
-
-  const errorBody: RecipeError = {
-    error: errorMessage,
-  };
-  return [error.response?.status ?? 500, errorBody];
-};
-
 // Get a random, low-effort recipe
 router.get("/random", async (req, res) => {
-  const [url, headers] = randomRecipeUrlBuilder();
+  const url = randomRecipeUrlBuilder();
 
   try {
-    const recipeResponse = await axios.get<SearchResponse>(url, { headers });
+    const recipeResponse = await api.get<SearchResponse>(url);
     logSpoonacularQuota(req.method, req.originalUrl, recipeResponse);
 
     const recipes = recipeResponse.data;
-    const resJson = createClientResponse(recipes);
+    const resJson = await createClientResponse(recipes);
 
-    return res.json(resJson);
+    res.json(resJson);
   } catch (err) {
     const error = err as AxiosError;
     const [status, json] = handleAxiosError(error);
-    return res.status(status).json(json);
+    res.status(status).json(json);
   }
 });
 
@@ -72,20 +42,20 @@ router.get("/:id", async (req, res) => {
     return res.status(400).json({ error: "The recipe ID must be numeric" });
   }
 
-  const [url, headers] = recipeIdUrlBuilder(Number(id));
+  const url = recipeIdUrlBuilder(id);
 
   try {
-    const recipeResponse = await axios.get<RecipeResponse>(url, { headers });
+    const recipeResponse = await api.get<RecipeResponse>(url);
     logSpoonacularQuota(req.method, req.originalUrl, recipeResponse);
 
     const recipes = recipeResponse.data;
-    const resJson = createClientResponse(recipes);
+    const resJson = await createClientResponse(recipes);
 
-    return res.json(resJson);
+    res.json(resJson);
   } catch (err) {
     const error = err as AxiosError;
     const [status, json] = handleAxiosError(error);
-    return res.status(status).json(json);
+    res.status(status).json(json);
   }
 });
 

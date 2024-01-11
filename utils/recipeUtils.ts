@@ -1,11 +1,13 @@
 // Helper methods for the recipes route
-import { AxiosResponse } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
+
 import Recipe from "../types/client/Recipe";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
-import RecipeHeaders from "../types/spoonacular/RecipeHeaders";
 import { isObject } from "./object";
 import ErrorResponse from "../types/spoonacular/ErrorResponse";
+import api, { handleAxiosError } from "./api";
+import TasteResponse from "../types/spoonacular/TasteResponse";
 
 /**
  * Build the spoonacular URL to fetch a random, low-effort recipe
@@ -17,44 +19,44 @@ import ErrorResponse from "../types/spoonacular/ErrorResponse";
  * - 1 hour or less of cook time
  * - Can make 3 or more servings
 
- * @returns {[string, RecipeHeaders]} an encoded URI and headers
+ * @returns {string} the encoded URI
  */
-export const randomRecipeUrlBuilder = (): [string, RecipeHeaders] => {
-  const apiKey = process.env.API_KEY;
-  let url = `https://api.spoonacular.com/recipes/complexSearch?instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1`;
-  // It's more secure to pass the API key as a header than as a query parameter
-  const headers: RecipeHeaders = {
-    "x-api-key": apiKey ?? "",
-  };
-
-  return [encodeURI(url), headers];
+export const randomRecipeUrlBuilder = (): string => {
+  const url =
+    "/complexSearch?instructionsRequired=true&addRecipeNutrition=true&maxReadyTime=60&sort=random&number=1";
+  return encodeURI(url);
 };
 
 /**
  * Build the spoonacular URL to fetch a recipe by ID
- * @param {number} id the recipe ID
- * @returns {[string, RecipeHeaders]} an encoded URI and headers
+ * @param {string} id the recipe ID
+ * @returns {string} the encoded URI
  */
-export const recipeIdUrlBuilder = (id: number): [string, RecipeHeaders] => {
-  const apiKey = process.env.API_KEY;
-  const url = `https://api.spoonacular.com/recipes/${id}/information?includeNutrition=true`;
-  const headers: RecipeHeaders = {
-    "x-api-key": apiKey ?? "",
-  };
+export const recipeIdUrlBuilder = (id: string): string => {
+  const url = `/${id}/information?includeNutrition=true`;
+  return encodeURI(url);
+};
 
-  return [encodeURI(url), headers];
+/**
+ * Build the spoonacular URL to fetch a recipe's taste
+ * @param {string} id the recipe ID
+ * @returns {string} the encoded URI
+ */
+export const tasteUrlBuilder = (id: number): string => {
+  const url = `/${id}/tasteWidget.json`;
+  return encodeURI(url);
 };
 
 /**
  * Log the quota used and remaining for developer reference
  * @param {string} method the request method
  * @param {string} path the path of the API
- * @param {AxiosResponse<SearchResponse | RecipeResponse>} recipeResponse the response gotten from the recipe API
+ * @param {AxiosResponse<any>} recipeResponse the response gotten from the recipe API
  */
 export const logSpoonacularQuota = (
   method: string,
   path: string,
-  recipeResponse: AxiosResponse<SearchResponse | RecipeResponse>
+  recipeResponse: AxiosResponse<any>
 ) => {
   // Response headers are in lowercase
   const requestQuota = Number(recipeResponse.headers["x-api-quota-request"]);
@@ -68,14 +70,44 @@ export const logSpoonacularQuota = (
 };
 
 /**
+ * Get the spice level of a recipe
+ * @param {number} recipeId the recipe ID
+ * @returns {string} a spice level
+ */
+export const getSpiceLevel = async (
+  recipeId: number
+): Promise<Recipe["spiceLevel"]> => {
+  const url = tasteUrlBuilder(recipeId);
+
+  try {
+    const tasteResponse = await api.get<TasteResponse>(url);
+    logSpoonacularQuota("GET", url, tasteResponse);
+
+    const spiceValue = tasteResponse.data.spiciness;
+
+    // Spices are weighted by their Scoville amount
+    if (spiceValue < 100_000) {
+      return "none";
+    } else if (spiceValue < 1_000_000) {
+      return "mild";
+    } else {
+      return "spicy";
+    }
+  } catch (error) {
+    handleAxiosError(error as AxiosError);
+    return "unknown";
+  }
+};
+
+/**
  * Map the server-side response to the client-side schema
  * @param {SearchResponse | RecipeResponse} recipes the response data from either the random recipe
  * API or the recipe ID API
- * @returns {Recipe} a recipe object to be consumed by clients
+ * @returns {Promise<Recipe>} a recipe object to be consumed by clients
  */
-export const createClientResponse = (
+export const createClientResponse = async (
   recipes: SearchResponse | RecipeResponse
-): Recipe => {
+): Promise<Recipe> => {
   let recipe: RecipeResponse;
 
   if (recipes.hasOwnProperty("results")) {
@@ -130,6 +162,15 @@ export const createClientResponse = (
     time: recipe.readyInMinutes,
     servings: recipe.servings,
     summary: recipe.summary,
+    types: recipe.dishTypes,
+    spiceLevel: await getSpiceLevel(recipe.id),
+    isVegetarian: recipe.vegetarian,
+    isVegan: recipe.vegan,
+    isGlutenFree: recipe.glutenFree,
+    isHealthy: recipe.veryHealthy,
+    isCheap: recipe.cheap,
+    isSustainable: recipe.sustainable,
+    culture: recipe.cuisines,
     nutrients: filteredNutrients,
     // Ignore the nutrients information for each ingredient
     ingredients: ingredients.map((ingredient) => ({
