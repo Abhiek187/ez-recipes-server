@@ -11,6 +11,7 @@ import {
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
 import api, { handleAxiosError } from "../utils/api";
+import { fetchRecipe, saveRecipe } from "../utils/db";
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.get("/random", async (req, res) => {
 
     const recipes = recipeResponse.data;
     const resJson = await createClientResponse(recipes);
+    await saveRecipe(resJson); // cache in MongoDB
 
     res.json(resJson);
   } catch (err) {
@@ -42,6 +44,14 @@ router.get("/:id", async (req, res) => {
     return res.status(400).json({ error: "The recipe ID must be numeric" });
   }
 
+  // If the recipe exists in MongoDB, return that to save an API call to spoonacular
+  const existingRecipe = await fetchRecipe(Number(id));
+
+  if (existingRecipe !== null) {
+    res.json(existingRecipe);
+    return;
+  }
+
   const url = recipeIdUrlBuilder(id);
 
   try {
@@ -50,6 +60,7 @@ router.get("/:id", async (req, res) => {
 
     const recipes = recipeResponse.data;
     const resJson = await createClientResponse(recipes);
+    saveRecipe(resJson);
 
     res.json(resJson);
   } catch (err) {
