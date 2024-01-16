@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 import Recipe from "../types/client/Recipe";
 import RecipeModel from "../models/RecipeModel";
 
+/**
+ * Connect to MongoDB using mongoose
+ */
 export const connectToMongoDB = async () => {
   try {
     await mongoose.connect(`${process.env.MONGO_URI}`);
@@ -12,6 +15,10 @@ export const connectToMongoDB = async () => {
   }
 };
 
+/**
+ * Write a recipe to MongoDB
+ * @param {Recipe} recipe the recipe to save
+ */
 export const saveRecipe = async (recipe: Recipe) => {
   try {
     const query = { id: recipe.id };
