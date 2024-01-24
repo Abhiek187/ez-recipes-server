@@ -10,6 +10,145 @@ servers:
     description: Server deployed on render.com
 
 paths:
+  /api/recipes:
+    get:
+      summary: Get recipes by filters
+      parameters:
+        - in: query
+          name: min-cals
+          schema:
+            type: number
+            minimum: 0
+          description: Minimum calories
+        - in: query
+          name: max-cals
+          schema:
+            type: number
+            minimum: 0
+          description: Maximum calories
+        - in: query
+          name: vegetarian
+          schema:
+            type: boolean
+          allowEmptyValue: true
+          description: Vegetarian recipes
+        - in: query
+          name: vegan
+          schema:
+            type: boolean
+          allowEmptyValue: true
+          description: Vegan recipes
+        - in: query
+          name: gluten-free
+          schema:
+            type: boolean
+          allowEmptyValue: true
+          description: Gluten-free recipes
+        - in: query
+          name: healthy
+          schema:
+            type: boolean
+          allowEmptyValue: true
+          description: Healthy recipes
+        - in: query
+          name: cheap
+          schema:
+            type: boolean
+          allowEmptyValue: true
+          description: Cheap recipes
+        - in: query
+          name: sustainable
+          schema:
+            type: boolean
+          allowEmptyValue: true
+          description: Sustainable recipes
+        - in: query
+          name: spice-level
+          schema:
+            # Form style & explode (multiple of the same parameter)
+            # &spice-level=&spice-level=
+            type: array
+            items:
+              type: string
+              enum: ["none", "mild", "spicy"]
+          description: Spice levels
+        - in: query
+          name: type
+          schema:
+            type: array
+            items:
+              type: string
+              # https://spoonacular.com/food-api/docs#Meal-Types
+              enum:
+                - "main course"
+                - "side dish"
+                - dessert
+                - appetizer
+                - salad
+                - bread
+                - breakfast
+                - soup
+                - beverage
+                - sauce
+                - marinade
+                - fingerfood
+                - snack
+                - drink
+          description: Meal types
+        - in: query
+          name: culture
+          schema:
+            type: array
+            items:
+              type: string
+              # https://spoonacular.com/food-api/docs#Cuisines
+              enum:
+                - African
+                - Asian
+                - American
+                - British
+                - Cajun
+                - Caribbean
+                - Chinese
+                - "Eastern European"
+                - European
+                - French
+                - German
+                - Greek
+                - Indian
+                - Irish
+                - Italian
+                - Japanese
+                - Jewish
+                - Korean
+                - "Latin American"
+                - Mediterranean
+                - Mexican
+                - "Middle Eastern"
+                - Nordic
+                - Southern
+                - Spanish
+                - Thai
+                - Vietnamese
+          description: Cuisines
+      responses:
+        "200":
+          description: Successfully filtered recipes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/recipes"
+
+        "400":
+          description: Passed an invalid filter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+              examples:
+                limitReached:
+                  $ref: "#/components/examples/invalidFilter"
+
   /api/recipes/random:
     get:
       summary: Get a random, low-effort recipe
@@ -118,6 +257,10 @@ components:
         minimum: 0
 
   schemas:
+    recipes:
+      type: array
+      items:
+        $ref: "#/components/schemas/recipe"
     recipe:
       type: object
       properties:
@@ -318,6 +461,8 @@ components:
             description: The word's definition
 
   examples:
+    invalidFilter:
+      value: { "error": "Unknown spice-level received: unknown" }
     invalidRecipeId:
       value: { "error": "The recipe ID must be numeric" }
     invalidApiKey:
