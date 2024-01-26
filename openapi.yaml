@@ -96,6 +96,19 @@ paths:
                 - fingerfood
                 - snack
                 - drink
+                # Missing from spoonacular's docs
+                - antipasti
+                - starter
+                - antipasto
+                - "hor d'oeuvre"
+                - lunch
+                - "main dish"
+                - dinner
+                - "morning meal"
+                - brunch
+                - condiment
+                - dip
+                - spread
           description: Meal types
         - in: query
           name: culture

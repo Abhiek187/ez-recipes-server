@@ -17,7 +17,6 @@ export const MEAL_TYPES = [
   "fingerfood",
   "snack",
   "drink",
-  // Missing from spoonacular's docs
   "antipasti",
   "starter",
   "antipasto",
