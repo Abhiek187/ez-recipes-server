@@ -55,6 +55,8 @@ router.get("/", async (req, res) => {
 
     if (minCalsNum < 0) {
       return badRequestError(res, "min-cals must be >= 0");
+    } else if (minCalsNum > 2000) {
+      return badRequestError(res, "min-cals must be <= 2000");
     }
 
     filter.minCals = minCalsNum;
@@ -68,6 +70,8 @@ router.get("/", async (req, res) => {
 
     if (maxCalsNum < 0) {
       return badRequestError(res, "max-cals must be >= 0");
+    } else if (maxCalsNum > 2000) {
+      return badRequestError(res, "max-cals must be <= 2000");
     }
 
     filter.maxCals = maxCalsNum;
@@ -159,7 +163,9 @@ router.get("/", async (req, res) => {
   const recipes = await filterRecipes(filter);
 
   if (recipes === null) {
-    return res.status(500).json({ error: "Failed to filter recipes" });
+    return res
+      .status(500)
+      .json({ error: "Failed to filter recipes. Please try again later." });
   }
 
   res.json(recipes);

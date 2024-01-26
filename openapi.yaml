@@ -19,12 +19,14 @@ paths:
           schema:
             type: number
             minimum: 0
+            maximum: 2000
           description: Minimum calories
         - in: query
           name: max-cals
           schema:
             type: number
             minimum: 0
+            maximum: 2000
           description: Maximum calories
         - in: query
           name: vegetarian
