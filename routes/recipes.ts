@@ -1,19 +1,163 @@
 import { AxiosError } from "axios";
-import express from "express";
+import express, { Response } from "express";
 
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
   createClientResponse,
+  isValidSpiceLevel,
   logSpoonacularQuota,
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
 import api, { handleAxiosError } from "../utils/api";
-import { fetchRecipe, saveRecipe } from "../utils/db";
+import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
+import RecipeFilter from "../types/client/RecipeFilter";
+import {
+  CUISINES,
+  Cuisine,
+  MEAL_TYPES,
+  MealType,
+} from "../types/client/Recipe";
+
+const badRequestError = (res: Response, error: string) => {
+  res.status(400).json({ error });
+};
 
 const router = express.Router();
+
+// Query recipes in MongoDB
+router.get("/", async (req, res) => {
+  const {
+    "min-cals": minCals,
+    "max-cals": maxCals,
+    vegetarian,
+    vegan,
+    "gluten-free": glutenFree,
+    healthy,
+    cheap,
+    sustainable,
+    "spice-level": spiceLevel,
+    type,
+    culture,
+  } = req.query;
+  const filter: Partial<RecipeFilter> = {};
+
+  // Sanitize all the query parameters
+  if (minCals !== undefined) {
+    if (typeof minCals !== "string" || !isNumeric(minCals)) {
+      return badRequestError(res, "min-cals is not numeric");
+    }
+
+    const minCalsNum = Number(minCals);
+
+    if (minCalsNum < 0) {
+      return badRequestError(res, "min-cals must be >= 0");
+    }
+
+    filter.minCals = minCalsNum;
+  }
+  if (maxCals !== undefined) {
+    if (typeof maxCals !== "string" || !isNumeric(maxCals)) {
+      return badRequestError(res, "max-cals is not numeric");
+    }
+
+    const maxCalsNum = Number(maxCals);
+
+    if (maxCalsNum < 0) {
+      return badRequestError(res, "max-cals must be >= 0");
+    }
+
+    filter.maxCals = maxCalsNum;
+  }
+  if (vegetarian !== undefined) {
+    filter.vegetarian = true;
+  }
+  if (vegan !== undefined) {
+    filter.vegan = true;
+  }
+  if (glutenFree !== undefined) {
+    filter.glutenFree = true;
+  }
+  if (healthy !== undefined) {
+    filter.healthy = true;
+  }
+  if (cheap !== undefined) {
+    filter.cheap = true;
+  }
+  if (sustainable !== undefined) {
+    filter.sustainable = true;
+  }
+  if (spiceLevel !== undefined) {
+    // If the query parameter appears once, it's a string
+    // Otherwise, it's an array of strings
+    if (typeof spiceLevel === "string") {
+      if (isValidSpiceLevel(spiceLevel)) {
+        filter.spiceLevels = [spiceLevel];
+      } else {
+        return badRequestError(
+          res,
+          `Unknown spice level received: ${spiceLevel}`
+        );
+      }
+    } else if (Array.isArray(spiceLevel)) {
+      filter.spiceLevels = [];
+
+      for (const spice of spiceLevel) {
+        if (typeof spice === "string" && isValidSpiceLevel(spice)) {
+          filter.spiceLevels.push(spice);
+        } else {
+          return badRequestError(res, `Unknown spice level received: ${spice}`);
+        }
+      }
+    }
+  }
+  if (type !== undefined) {
+    if (typeof type === "string") {
+      if (MEAL_TYPES.includes(type as MealType)) {
+        filter.types = [type as MealType];
+      } else {
+        return badRequestError(res, `Unknown meal type received: ${type}`);
+      }
+    } else if (Array.isArray(type)) {
+      filter.types = [];
+
+      for (const mealType of type) {
+        if (MEAL_TYPES.includes(mealType as MealType)) {
+          filter.types.push(mealType as MealType);
+        } else {
+          return badRequestError(
+            res,
+            `Unknown meal type received: ${mealType}`
+          );
+        }
+      }
+    }
+  }
+  if (culture !== undefined) {
+    if (typeof culture === "string") {
+      if (CUISINES.includes(culture as Cuisine)) {
+        filter.cultures = [culture as Cuisine];
+      } else {
+        return badRequestError(res, `Unknown cuisine received: ${culture}`);
+      }
+    } else if (Array.isArray(culture)) {
+      filter.cultures = [];
+
+      for (const cuisine of culture) {
+        if (CUISINES.includes(cuisine as Cuisine)) {
+          filter.cultures.push(cuisine as Cuisine);
+        } else {
+          return badRequestError(res, `Unknown cuisine received: ${cuisine}`);
+        }
+      }
+    }
+  }
+
+  const recipes = await filterRecipes(filter);
+  res.json(recipes);
+});
 
 // Get a random, low-effort recipe
 router.get("/random", async (req, res) => {

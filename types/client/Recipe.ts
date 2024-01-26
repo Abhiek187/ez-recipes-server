@@ -1,4 +1,69 @@
 // Properties for the client to consume (literally)
+export const SPICE_LEVELS = ["none", "mild", "spicy", "unknown"] as const;
+export type SpiceLevel = (typeof SPICE_LEVELS)[number];
+
+export const MEAL_TYPES = [
+  "main course",
+  "side dish",
+  "dessert",
+  "appetizer",
+  "salad",
+  "bread",
+  "breakfast",
+  "soup",
+  "beverage",
+  "sauce",
+  "marinade",
+  "fingerfood",
+  "snack",
+  "drink",
+  // Missing from spoonacular's docs
+  "antipasti",
+  "starter",
+  "antipasto",
+  "hor d'oeuvre",
+  "lunch",
+  "main dish",
+  "dinner",
+  "morning meal",
+  "brunch",
+  "condiment",
+  "dip",
+  "spread",
+] as const;
+export type MealType = (typeof MEAL_TYPES)[number];
+
+export const CUISINES = [
+  "African",
+  "Asian",
+  "American",
+  "British",
+  "Cajun",
+  "Caribbean",
+  "Chinese",
+  "Eastern European",
+  "European",
+  "French",
+  "German",
+  "Greek",
+  "Indian",
+  "Irish",
+  "Italian",
+  "Japanese",
+  "Jewish",
+  "Korean",
+  "Latin American",
+  "Mediterranean",
+  "Mexican",
+  "Middle Eastern",
+  "Nordic",
+  "Southern",
+  "Spanish",
+  "Thai",
+  "Vietnamese",
+] as const;
+export type Cuisine = (typeof CUISINES)[number];
+
 type Recipe = {
   id: number;
   name: string;
@@ -10,15 +75,15 @@ type Recipe = {
   time: number;
   servings: number;
   summary: string;
-  types: string[];
-  spiceLevel: "none" | "mild" | "spicy" | "unknown";
+  types: MealType[];
+  spiceLevel: SpiceLevel;
   isVegetarian: boolean;
   isVegan: boolean;
   isGlutenFree: boolean;
   isHealthy: boolean;
   isCheap: boolean;
   isSustainable: boolean;
-  culture: string[];
+  culture: Cuisine[];
   //allergies: string[];
   nutrients: {
     name: string;

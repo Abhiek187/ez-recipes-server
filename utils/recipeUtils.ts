@@ -1,7 +1,7 @@
 // Helper methods for the recipes route
 import { AxiosError, AxiosResponse } from "axios";
 
-import Recipe from "../types/client/Recipe";
+import Recipe, { SPICE_LEVELS, SpiceLevel } from "../types/client/Recipe";
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import { isObject } from "./object";
@@ -265,4 +265,10 @@ export const isRecipeResponse = (data: any): data is RecipeResponse => {
     "analyzedInstructions",
     "spoonacularSourceUrl",
   ]);
+};
+
+export const isValidSpiceLevel = (
+  str: string
+): str is Exclude<SpiceLevel, "unknown"> => {
+  return SPICE_LEVELS.includes(str as SpiceLevel) && str !== "unknown";
 };

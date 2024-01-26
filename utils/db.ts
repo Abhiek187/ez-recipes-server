@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
+
 import Recipe from "../types/client/Recipe";
 import RecipeModel from "../models/RecipeModel";
+import RecipeFilter from "../types/client/RecipeFilter";
 
 /**
  * Connect to MongoDB using mongoose
@@ -43,6 +45,76 @@ export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
     return await RecipeModel.findOne({ id }).exec();
   } catch (error) {
     console.error(`Failed to fetch recipe with ID ${id}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Query recipes by the provided filters
+ * @param {RecipeFilter} filter an object describing how to filter the recipes
+ * @returns {Recipe[] | null} a list of recipes, or `null` if an error occurred
+ */
+export const filterRecipes = async ({
+  minCals,
+  maxCals,
+  vegetarian,
+  vegan,
+  glutenFree,
+  healthy,
+  cheap,
+  sustainable,
+  spiceLevels,
+  types,
+  cultures,
+}: Partial<RecipeFilter>): Promise<Recipe[] | null> => {
+  let query: mongoose.FilterQuery<Recipe> = {};
+
+  if (minCals !== undefined) {
+    query["nutrients.name"] = "Calories";
+    query["nutrients.amount"] = { $gte: minCals };
+  }
+  if (maxCals !== undefined) {
+    query["nutrients.name"] = "Calories";
+
+    // Append the condition if minCals is defined as well
+    if (Object.hasOwn(query, "nutrients.amount")) {
+      query["nutrients.amount"].$lte = maxCals;
+    } else {
+      query["nutrients.amount"] = { $lte: maxCals };
+    }
+  }
+  if (vegetarian !== undefined) {
+    query.isVegetarian = vegetarian;
+  }
+  if (vegan !== undefined) {
+    query.isVegan = vegan;
+  }
+  if (glutenFree !== undefined) {
+    query.isGlutenFree = glutenFree;
+  }
+  if (healthy !== undefined) {
+    query.isHealthy = healthy;
+  }
+  if (cheap !== undefined) {
+    query.isCheap = cheap;
+  }
+  if (sustainable !== undefined) {
+    query.isSustainable = sustainable;
+  }
+  if (spiceLevels !== undefined) {
+    query.spiceLevel = { $in: spiceLevels };
+  }
+  if (types !== undefined) {
+    query.types = { $in: types };
+  }
+  if (cultures !== undefined) {
+    query.culture = { $in: cultures };
+  }
+
+  try {
+    return await RecipeModel.find(query).exec();
+  } catch (error) {
+    console.error("Failed to filter recipes:", error);
     return null;
   }
 };
