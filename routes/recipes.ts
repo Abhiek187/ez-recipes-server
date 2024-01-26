@@ -29,6 +29,7 @@ const router = express.Router();
 
 // Query recipes in MongoDB
 router.get("/", async (req, res) => {
+  console.log(`${req.method} ${req.originalUrl}`);
   const {
     "min-cals": minCals,
     "max-cals": maxCals,
@@ -156,6 +157,11 @@ router.get("/", async (req, res) => {
   }
 
   const recipes = await filterRecipes(filter);
+
+  if (recipes === null) {
+    return res.status(500).json({ error: "Failed to filter recipes" });
+  }
+
   res.json(recipes);
 });
 

@@ -70,17 +70,28 @@ export const filterRecipes = async ({
   let query: mongoose.FilterQuery<Recipe> = {};
 
   if (minCals !== undefined) {
-    query["nutrients.name"] = "Calories";
-    query["nutrients.amount"] = { $gte: minCals };
+    query.nutrients = {
+      $elemMatch: {
+        name: "Calories",
+        amount: {
+          $gte: minCals,
+        },
+      },
+    };
   }
   if (maxCals !== undefined) {
-    query["nutrients.name"] = "Calories";
-
     // Append the condition if minCals is defined as well
-    if (Object.hasOwn(query, "nutrients.amount")) {
-      query["nutrients.amount"].$lte = maxCals;
+    if (Object.hasOwn(query, "nutrients")) {
+      query.nutrients.$elemMatch.amount.$lte = maxCals;
     } else {
-      query["nutrients.amount"] = { $lte: maxCals };
+      query.nutrients = {
+        $elemMatch: {
+          name: "Calories",
+          amount: {
+            $lte: maxCals,
+          },
+        },
+      };
     }
   }
   if (vegetarian !== undefined) {
@@ -112,6 +123,7 @@ export const filterRecipes = async ({
   }
 
   try {
+    console.log("MongoDB query:", JSON.stringify(query));
     return await RecipeModel.find(query).exec();
   } catch (error) {
     console.error("Failed to filter recipes:", error);

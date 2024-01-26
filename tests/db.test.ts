@@ -9,6 +9,14 @@ describe("filterRecipes", () => {
   const mockFind = jest.fn().mockReturnValue({ exec: jest.fn() });
   jest.spyOn(RecipeModel, "find").mockImplementation(mockFind);
 
+  it("accepts no filter", async () => {
+    // Given no filter
+    // When filterRecipes is called
+    await filterRecipes({});
+    // Then the query is also empty
+    expect(mockFind).toHaveBeenCalledWith({});
+  });
+
   it("filters by a number", async () => {
     // Given a number filter
     const filter: Partial<RecipeFilter> = {
@@ -20,8 +28,14 @@ describe("filterRecipes", () => {
 
     // Then the query uses a number operator
     const expectedQuery: FilterQuery<Recipe> = {
-      "nutrients.name": "Calories",
-      "nutrients.amount": { $gte: filter.minCals },
+      nutrients: {
+        $elemMatch: {
+          name: "Calories",
+          amount: {
+            $gte: filter.minCals,
+          },
+        },
+      },
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
   });
@@ -72,8 +86,14 @@ describe("filterRecipes", () => {
 
     // Then the query includes all those filters
     const expectedQuery: FilterQuery<Recipe> = {
-      "nutrients.name": "Calories",
-      "nutrients.amount": { $lte: filter.maxCals },
+      nutrients: {
+        $elemMatch: {
+          name: "Calories",
+          amount: {
+            $lte: filter.maxCals,
+          },
+        },
+      },
       isHealthy: filter.healthy,
       isCheap: filter.cheap,
       spiceLevel: { $in: filter.spiceLevels },
@@ -102,8 +122,15 @@ describe("filterRecipes", () => {
 
     // Then the query combines all the filters
     const expectedQuery: FilterQuery<Recipe> = {
-      "nutrients.name": "Calories",
-      "nutrients.amount": { $gte: filter.minCals, $lte: filter.maxCals },
+      nutrients: {
+        $elemMatch: {
+          name: "Calories",
+          amount: {
+            $gte: filter.minCals,
+            $lte: filter.maxCals,
+          },
+        },
+      },
       isVegetarian: filter.vegetarian,
       isVegan: filter.vegan,
       isGlutenFree: filter.glutenFree,
