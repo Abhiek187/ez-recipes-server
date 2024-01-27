@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import Recipe from "../types/client/Recipe";
+import Recipe, { CUISINES, MEAL_TYPES } from "../types/client/Recipe";
 
 const NutritionSchema = new Schema<Recipe["nutrients"][number]>({
   name: { type: String, required: true },
@@ -53,7 +53,7 @@ const RecipeSchema = new Schema<Recipe>({
   time: { type: Number, required: true },
   servings: { type: Number, required: true },
   summary: { type: String, required: true },
-  types: { type: [String], required: true },
+  types: { type: [String], enum: MEAL_TYPES, required: true },
   spiceLevel: { type: String, enum: ["none", "mild", "spicy"], required: true },
   isVegetarian: { type: Boolean, required: true },
   isVegan: { type: Boolean, required: true },
@@ -61,7 +61,7 @@ const RecipeSchema = new Schema<Recipe>({
   isHealthy: { type: Boolean, required: true },
   isCheap: { type: Boolean, required: true },
   isSustainable: { type: Boolean, required: true },
-  culture: { type: [String], required: true },
+  culture: { type: [String], enum: CUISINES, required: true },
   //allergies: any[];
   nutrients: { type: [NutritionSchema], required: true },
   ingredients: { type: [IngredientSchema], required: true },

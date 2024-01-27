@@ -4,8 +4,8 @@
  * Check if the input is a number or a string that can be parsed as a number
  *
  * Source: https://stackoverflow.com/a/58550111
- * @param {number | string} num the number or string to check
- * @returns {boolean} true if `num` can be parsed as a number, false otherwise
+ * @param num the number or string to check
+ * @returns true if `num` can be parsed as a number, false otherwise
  */
 export const isNumeric = (num: number | string): boolean =>
   (typeof num === "number" || (typeof num === "string" && num.trim() !== "")) &&

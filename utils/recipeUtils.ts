@@ -8,6 +8,82 @@ import { isObject } from "./object";
 import ErrorResponse from "../types/spoonacular/ErrorResponse";
 import api, { handleAxiosError } from "./api";
 import TasteResponse from "../types/spoonacular/TasteResponse";
+import { isNumeric } from "./string";
+
+/**
+ * Check if a query parameter is a valid number
+ * @param param the query parameter value
+ * @param name the query parameter name
+ * @param min the minimum valid value for `param`
+ * @param max the maximum valid value for `param`
+ * @throws if the query parameter is invalid
+ * @returns the query parameter converted to a number
+ */
+export const sanitizeNumber = (
+  param: any,
+  name: string,
+  min: number,
+  max: number
+): number => {
+  if (typeof param !== "string" || !isNumeric(param)) {
+    throw `${name} is not numeric`;
+  }
+
+  const paramNum = Number(param);
+
+  if (paramNum < min) {
+    throw `${name} must be >= ${min}`;
+  } else if (paramNum > max) {
+    throw `${name} must be <= ${max}`;
+  }
+
+  return paramNum;
+};
+
+/**
+ * Check if a query parameter is a valid enum `T`
+ * @param param the query parameter value
+ * @param name the query parameter name
+ * @param validator a type guard that checks if the query parameter is of type `T`
+ * @throws if the query parameter is invalid
+ * @returns the query parameter as type `T`
+ */
+export const sanitizeEnum = <T extends string>(
+  param: string,
+  name: string,
+  validator: (str: string) => str is T
+): T => {
+  if (validator(param)) {
+    return param;
+  } else {
+    throw `Unknown ${name} received: ${param}`;
+  }
+};
+
+/**
+ * Check if all the query parameters in the array are valid enums of type `T`
+ * @param params the array of query parameters
+ * @param name the name of each query parameter
+ * @param validator a type guard that checks if each query parameter is of type `T`
+ * @throws if one of the query parameters is invalid
+ * @returns the query parameters as type `T[]`
+ */
+export const sanitizeEnumArray = <T extends string>(
+  params: any[],
+  name: string,
+  validator: (str: string) => str is T
+): T[] => {
+  const enums: T[] = [];
+
+  for (const param of params) {
+    if (typeof param === "string") {
+      // If sanitizeEnum throws, pass it to the caller
+      enums.push(sanitizeEnum(param, name, validator));
+    }
+  }
+
+  return enums;
+};
 
 /**
  * Build the spoonacular URL to fetch a random, low-effort recipe
@@ -19,7 +95,7 @@ import TasteResponse from "../types/spoonacular/TasteResponse";
  * - 1 hour or less of cook time
  * - Can make 3 or more servings
 
- * @returns {string} the encoded URI
+ * @returns the encoded URI
  */
 export const randomRecipeUrlBuilder = (): string => {
   const url =
@@ -29,8 +105,8 @@ export const randomRecipeUrlBuilder = (): string => {
 
 /**
  * Build the spoonacular URL to fetch a recipe by ID
- * @param {string} id the recipe ID
- * @returns {string} the encoded URI
+ * @param id the recipe ID
+ * @returns the encoded URI
  */
 export const recipeIdUrlBuilder = (id: string): string => {
   const url = `/${id}/information?includeNutrition=true`;
@@ -39,8 +115,8 @@ export const recipeIdUrlBuilder = (id: string): string => {
 
 /**
  * Build the spoonacular URL to fetch a recipe's taste
- * @param {string} id the recipe ID
- * @returns {string} the encoded URI
+ * @param id the recipe ID
+ * @returns the encoded URI
  */
 export const tasteUrlBuilder = (id: number): string => {
   const url = `/${id}/tasteWidget.json`;
@@ -49,9 +125,9 @@ export const tasteUrlBuilder = (id: number): string => {
 
 /**
  * Log the quota used and remaining for developer reference
- * @param {string} method the request method
- * @param {string} path the path of the API
- * @param {AxiosResponse<any>} recipeResponse the response gotten from the recipe API
+ * @param method the request method
+ * @param path the path of the API
+ * @param recipeResponse the response gotten from the recipe API
  */
 export const logSpoonacularQuota = (
   method: string,
@@ -71,8 +147,8 @@ export const logSpoonacularQuota = (
 
 /**
  * Get the spice level of a recipe
- * @param {number} recipeId the recipe ID
- * @returns {string} a spice level
+ * @param recipeId the recipe ID
+ * @returns a spice level
  */
 export const getSpiceLevel = async (
   recipeId: number
@@ -101,9 +177,9 @@ export const getSpiceLevel = async (
 
 /**
  * Map the server-side response to the client-side schema
- * @param {SearchResponse | RecipeResponse} recipes the response data from either the random recipe
+ * @param recipes the response data from either the random recipe
  * API or the recipe ID API
- * @returns {Promise<Recipe>} a recipe object to be consumed by clients
+ * @returns a recipe object to be consumed by clients
  */
 export const createClientResponse = async (
   recipes: SearchResponse | RecipeResponse

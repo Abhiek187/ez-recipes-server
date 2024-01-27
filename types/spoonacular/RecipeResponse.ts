@@ -1,3 +1,4 @@
+import { Cuisine, MealType } from "../client/Recipe";
 import Instruction from "./Instruction";
 import Nutrition from "./Nutrition";
 
@@ -31,8 +32,8 @@ type RecipeResponse = {
   imageType: string;
   nutrition: Nutrition;
   summary: string;
-  cuisines: string[]; // [string] is a tuple with a string, while string[] is an array of strings
-  dishTypes: string[];
+  cuisines: Cuisine[]; // [string] is a tuple with a string, while string[] is an array of strings
+  dishTypes: MealType[];
   diets: string[];
   occasions: string[];
   analyzedInstructions: Instruction[];

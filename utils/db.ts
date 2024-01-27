@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
+
 import Recipe from "../types/client/Recipe";
 import RecipeModel from "../models/RecipeModel";
+import RecipeFilter from "../types/client/RecipeFilter";
 
 /**
  * Connect to MongoDB using mongoose
@@ -17,7 +19,7 @@ export const connectToMongoDB = async () => {
 
 /**
  * Write a recipe to MongoDB
- * @param {Recipe} recipe the recipe to save
+ * @param recipe the recipe to save
  */
 export const saveRecipe = async (recipe: Recipe) => {
   try {
@@ -34,8 +36,8 @@ export const saveRecipe = async (recipe: Recipe) => {
 
 /**
  * Check if a recipe with an ID exists in MongoDB
- * @param {number} id the recipe ID
- * @returns {Recipe | null} the recipe, or `null` if it couldn't be found
+ * @param id the recipe ID
+ * @returns the recipe, or `null` if it couldn't be found
  */
 export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
   try {
@@ -43,6 +45,88 @@ export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
     return await RecipeModel.findOne({ id }).exec();
   } catch (error) {
     console.error(`Failed to fetch recipe with ID ${id}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Query recipes by the provided filters
+ * @param filter an object describing how to filter the recipes
+ * @returns a list of recipes, or `null` if an error occurred
+ */
+export const filterRecipes = async ({
+  minCals,
+  maxCals,
+  vegetarian,
+  vegan,
+  glutenFree,
+  healthy,
+  cheap,
+  sustainable,
+  spiceLevels,
+  types,
+  cultures,
+}: Partial<RecipeFilter>): Promise<Recipe[] | null> => {
+  let query: mongoose.FilterQuery<Recipe> = {};
+
+  if (minCals !== undefined) {
+    query.nutrients = {
+      $elemMatch: {
+        name: "Calories",
+        amount: {
+          $gte: minCals,
+        },
+      },
+    };
+  }
+  if (maxCals !== undefined) {
+    // Append the condition if minCals is defined as well
+    if (Object.hasOwn(query, "nutrients")) {
+      query.nutrients.$elemMatch.amount.$lte = maxCals;
+    } else {
+      query.nutrients = {
+        $elemMatch: {
+          name: "Calories",
+          amount: {
+            $lte: maxCals,
+          },
+        },
+      };
+    }
+  }
+  if (vegetarian !== undefined) {
+    query.isVegetarian = vegetarian;
+  }
+  if (vegan !== undefined) {
+    query.isVegan = vegan;
+  }
+  if (glutenFree !== undefined) {
+    query.isGlutenFree = glutenFree;
+  }
+  if (healthy !== undefined) {
+    query.isHealthy = healthy;
+  }
+  if (cheap !== undefined) {
+    query.isCheap = cheap;
+  }
+  if (sustainable !== undefined) {
+    query.isSustainable = sustainable;
+  }
+  if (spiceLevels !== undefined) {
+    query.spiceLevel = { $in: spiceLevels };
+  }
+  if (types !== undefined) {
+    query.types = { $in: types };
+  }
+  if (cultures !== undefined) {
+    query.culture = { $in: cultures };
+  }
+
+  try {
+    console.log("MongoDB query:", JSON.stringify(query));
+    return await RecipeModel.find(query).exec();
+  } catch (error) {
+    console.error("Failed to filter recipes:", error);
     return null;
   }
 };

@@ -2,8 +2,8 @@
 
 /**
  * Get a random element from the provided array
- * @param {Array<T>} array - the array
- * @returns {T} a random element from `array`
+ * @param array - the array
+ * @returns a random element from `array`
  * @throws if `array` is empty
  */
 export const getRandomElement = <T>(array: Array<T>): T => {

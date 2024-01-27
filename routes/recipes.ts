@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import express from "express";
+import express, { Response } from "express";
 
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
@@ -8,12 +8,113 @@ import {
   logSpoonacularQuota,
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
+  sanitizeEnum,
+  sanitizeEnumArray,
+  sanitizeNumber,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
 import api, { handleAxiosError } from "../utils/api";
-import { fetchRecipe, saveRecipe } from "../utils/db";
+import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
+import RecipeFilter from "../types/client/RecipeFilter";
+import {
+  isValidSpiceLevel,
+  isValidMealType,
+  isValidCuisine,
+} from "../types/client/Recipe";
+
+const badRequestError = (res: Response, error: string) => {
+  res.status(400).json({ error });
+};
 
 const router = express.Router();
+
+// Query recipes in MongoDB
+router.get("/", async (req, res) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+  const {
+    "min-cals": minCals,
+    "max-cals": maxCals,
+    vegetarian,
+    vegan,
+    "gluten-free": glutenFree,
+    healthy,
+    cheap,
+    sustainable,
+    "spice-level": spiceLevel,
+    type,
+    culture,
+  } = req.query;
+  const filter: Partial<RecipeFilter> = {};
+
+  // Sanitize all the query parameters
+  try {
+    if (minCals !== undefined) {
+      filter.minCals = sanitizeNumber(minCals, "min-cals", 0, 2000);
+    }
+    if (maxCals !== undefined) {
+      filter.maxCals = sanitizeNumber(maxCals, "max-cals", 0, 2000);
+    }
+  } catch (error) {
+    return badRequestError(res, error as string);
+  }
+
+  if (vegetarian !== undefined) {
+    filter.vegetarian = true;
+  }
+  if (vegan !== undefined) {
+    filter.vegan = true;
+  }
+  if (glutenFree !== undefined) {
+    filter.glutenFree = true;
+  }
+  if (healthy !== undefined) {
+    filter.healthy = true;
+  }
+  if (cheap !== undefined) {
+    filter.cheap = true;
+  }
+  if (sustainable !== undefined) {
+    filter.sustainable = true;
+  }
+
+  try {
+    // If the query parameter appears once, it's a string
+    // Otherwise, it's an array of strings
+    if (typeof spiceLevel === "string") {
+      filter.spiceLevels = [
+        sanitizeEnum(spiceLevel, "spice level", isValidSpiceLevel),
+      ];
+    } else if (Array.isArray(spiceLevel)) {
+      filter.spiceLevels = sanitizeEnumArray(
+        spiceLevel,
+        "spice level",
+        isValidSpiceLevel
+      );
+    }
+    if (typeof type === "string") {
+      filter.types = [sanitizeEnum(type, "meal type", isValidMealType)];
+    } else if (Array.isArray(type)) {
+      filter.types = sanitizeEnumArray(type, "meal type", isValidMealType);
+    }
+    if (typeof culture === "string") {
+      filter.cultures = [sanitizeEnum(culture, "cuisine", isValidCuisine)];
+    } else if (Array.isArray(culture)) {
+      filter.cultures = sanitizeEnumArray(culture, "cuisine", isValidCuisine);
+    }
+  } catch (error) {
+    return badRequestError(res, error as string);
+  }
+
+  const recipes = await filterRecipes(filter);
+
+  if (recipes === null) {
+    return res
+      .status(500)
+      .json({ error: "Failed to filter recipes. Please try again later." });
+  }
+
+  res.json(recipes);
+});
 
 // Get a random, low-effort recipe
 router.get("/random", async (req, res) => {
