@@ -1,5 +1,10 @@
 import { AxiosHeaders, AxiosResponse } from "axios";
-import Recipe from "../types/client/Recipe";
+
+import Recipe, {
+  isValidCuisine,
+  isValidMealType,
+  isValidSpiceLevel,
+} from "../types/client/Recipe";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
   createClientResponse,
@@ -7,6 +12,9 @@ import {
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
   tasteUrlBuilder,
+  sanitizeEnum,
+  sanitizeEnumArray,
+  sanitizeNumber,
 } from "../utils/recipeUtils";
 import * as recipeUtils from "../utils/recipeUtils";
 import api from "../utils/api";
@@ -22,6 +30,153 @@ beforeEach(() => {
 afterEach(() => {
   jest.restoreAllMocks();
   process.env = OLD_ENV; // restore the old environment
+});
+
+describe("sanitizeNumber", () => {
+  it.each([
+    [undefined, "undefined"],
+    [null, "null"],
+    [25, "25"],
+    [true, "true"],
+    [false, "false"],
+    [[], "array"],
+    [{}, "object"],
+  ])(
+    "should throw an error if param isn't a string or number",
+    (param, name) => {
+      expect(() => sanitizeNumber(param, name, 0, 0)).toThrowError(
+        `${name} is not numeric`
+      );
+    }
+  );
+
+  it.each(["number", "a100", "-3d", "NaN"])(
+    "should throw an error if param isn't numeric",
+    (param) => {
+      expect(() => sanitizeNumber(param, param, 0, 0)).toThrowError(
+        `${param} is not numeric`
+      );
+    }
+  );
+
+  it.each([
+    ["0", 1],
+    ["-Infinity", 0],
+  ])("should throw an error if param is under min", (param, min) => {
+    expect(() => sanitizeNumber(param, param, min, Infinity)).toThrowError(
+      `${param} must be >= ${min}`
+    );
+  });
+
+  it.each([
+    ["0", -1],
+    ["Infinity", 0],
+  ])("should throw an error if param is over max", (param, max) => {
+    expect(() => sanitizeNumber(param, param, -Infinity, max)).toThrowError(
+      `${param} must be <= ${max}`
+    );
+  });
+
+  it.each([
+    ["0", 0, 0, 0],
+    ["-324", -324, -Infinity, Infinity],
+    ["3.14", 3.14, 3, 4],
+    ["6.2e9", 6.2e9, 0, Number.MAX_VALUE],
+  ])("should return a number on success", (param, num, min, max) => {
+    expect(sanitizeNumber(param, param.toString(), min, max)).toBe(num);
+  });
+});
+
+describe("sanitizeEnum", () => {
+  it("should validate letters in an array", () => {
+    const validator = (str: string): str is string =>
+      ["a", "b", "c"].includes(str);
+    expect(sanitizeEnum("a", "letter", validator)).toBe("a");
+    expect(() => sanitizeEnum("d", "letter", validator)).toThrowError(
+      "Unknown letter received: d"
+    );
+  });
+
+  it("should validate spice levels", () => {
+    expect(sanitizeEnum("none", "spice level", isValidSpiceLevel)).toBe("none");
+    expect(() =>
+      sanitizeEnum("unknown", "spice level", isValidSpiceLevel)
+    ).toThrowError("Unknown spice level received: unknown");
+    expect(() =>
+      sanitizeEnum("hot", "spice level", isValidSpiceLevel)
+    ).toThrowError("Unknown spice level received: hot");
+  });
+
+  it("should validate meal types", () => {
+    expect(sanitizeEnum("hor d'oeuvre", "meal type", isValidMealType)).toBe(
+      "hor d'oeuvre"
+    );
+    expect(() =>
+      sanitizeEnum("desert", "meal type", isValidMealType)
+    ).toThrowError("Unknown meal type received: desert");
+  });
+
+  it("should validate cuisines", () => {
+    expect(sanitizeEnum("Middle Eastern", "cuisine", isValidCuisine)).toBe(
+      "Middle Eastern"
+    );
+    expect(() =>
+      sanitizeEnum("Canadian", "cuisine", isValidCuisine)
+    ).toThrowError("Unknown cuisine received: Canadian");
+  });
+});
+
+describe("sanitizeEnumArray", () => {
+  it("should validate letters in an array", () => {
+    const validator = (str: string): str is string =>
+      ["a", "b", "c"].includes(str);
+    expect(sanitizeEnumArray([], "letter", validator)).toStrictEqual([]);
+    expect(
+      sanitizeEnumArray(["a", "b", "c"], "letter", validator)
+    ).toStrictEqual(["a", "b", "c"]);
+    expect(() =>
+      sanitizeEnumArray(["a", "d", "e"], "letter", validator)
+    ).toThrowError("Unknown letter received: d");
+  });
+
+  it("should validate spice levels", () => {
+    expect(
+      sanitizeEnumArray(["mild", "spicy"], "spice level", isValidSpiceLevel)
+    ).toStrictEqual(["mild", "spicy"]);
+    expect(() =>
+      sanitizeEnumArray(["unknown", "none"], "spice level", isValidSpiceLevel)
+    ).toThrowError("Unknown spice level received: unknown");
+  });
+
+  it("should validate meal types", () => {
+    expect(
+      sanitizeEnumArray(
+        ["main dish", "main course"],
+        "meal type",
+        isValidMealType
+      )
+    ).toStrictEqual(["main dish", "main course"]);
+    expect(() =>
+      sanitizeEnumArray(
+        ["side dish", "side course"],
+        "meal type",
+        isValidMealType
+      )
+    ).toThrowError("Unknown meal type received: side course");
+  });
+
+  it("should validate cuisines", () => {
+    expect(
+      sanitizeEnumArray(
+        ["Spanish", "French", "German", "Italian"],
+        "cuisine",
+        isValidCuisine
+      )
+    ).toStrictEqual(["Spanish", "French", "German", "Italian"]);
+    expect(() =>
+      sanitizeEnumArray(["Nordic", "thai", "Jewish"], "cuisine", isValidCuisine)
+    ).toThrowError("Unknown cuisine received: thai");
+  });
 });
 
 describe("randomRecipeUrlBuilder", () => {
