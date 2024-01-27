@@ -14,7 +14,12 @@ import {
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
 import api, { handleAxiosError } from "../utils/api";
-import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
+import {
+  fetchRecipe,
+  filterRecipes,
+  saveRecipe,
+  searchRecipes,
+} from "../utils/db";
 import RecipeFilter from "../types/client/RecipeFilter";
 import {
   isValidSpiceLevel,
@@ -32,6 +37,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   console.log(`${req.method} ${req.originalUrl}`);
   const {
+    query,
     "min-cals": minCals,
     "max-cals": maxCals,
     vegetarian,
@@ -44,6 +50,23 @@ router.get("/", async (req, res) => {
     type,
     culture,
   } = req.query;
+
+  if (typeof query === "string") {
+    if (query.length === 0) {
+      return badRequestError(res, "Search query cannot be empty");
+    }
+
+    const recipes = await searchRecipes(query);
+
+    if (recipes === null) {
+      return res
+        .status(500)
+        .json({ error: "Failed to search recipes. Please try again later." });
+    }
+
+    return res.json(recipes);
+  }
+
   const filter: Partial<RecipeFilter> = {};
 
   // Sanitize all the query parameters

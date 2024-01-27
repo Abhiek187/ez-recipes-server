@@ -130,3 +130,24 @@ export const filterRecipes = async ({
     return null;
   }
 };
+
+export const searchRecipes = async (
+  query: string
+): Promise<Recipe[] | null> => {
+  try {
+    return await RecipeModel.aggregate()
+      .search({
+        index: "recipe-name",
+        text: {
+          query,
+          path: {
+            wildcard: "*",
+          },
+        },
+      })
+      .exec();
+  } catch (error) {
+    console.error("Failed to search recipes:", error);
+    return null;
+  }
+};
