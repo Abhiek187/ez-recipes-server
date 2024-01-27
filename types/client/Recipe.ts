@@ -1,6 +1,11 @@
 // Properties for the client to consume (literally)
 export const SPICE_LEVELS = ["none", "mild", "spicy", "unknown"] as const;
 export type SpiceLevel = (typeof SPICE_LEVELS)[number];
+export const isValidSpiceLevel = (
+  str: string
+): str is Exclude<SpiceLevel, "unknown"> => {
+  return SPICE_LEVELS.includes(str as SpiceLevel) && str !== "unknown";
+};
 
 export const MEAL_TYPES = [
   "main course",
@@ -31,6 +36,9 @@ export const MEAL_TYPES = [
   "spread",
 ] as const;
 export type MealType = (typeof MEAL_TYPES)[number];
+export const isValidMealType = (str: string): str is MealType => {
+  return MEAL_TYPES.includes(str as MealType);
+};
 
 export const CUISINES = [
   "African",
@@ -62,6 +70,9 @@ export const CUISINES = [
   "Vietnamese",
 ] as const;
 export type Cuisine = (typeof CUISINES)[number];
+export const isValidCuisine = (str: string): str is Cuisine => {
+  return CUISINES.includes(str as Cuisine);
+};
 
 type Recipe = {
   id: number;

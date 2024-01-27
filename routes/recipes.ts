@@ -5,20 +5,21 @@ import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import {
   createClientResponse,
-  isValidSpiceLevel,
   logSpoonacularQuota,
   randomRecipeUrlBuilder,
   recipeIdUrlBuilder,
+  sanitizeEnum,
+  sanitizeEnumArray,
+  sanitizeNumber,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
 import api, { handleAxiosError } from "../utils/api";
 import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
 import RecipeFilter from "../types/client/RecipeFilter";
 import {
-  CUISINES,
-  Cuisine,
-  MEAL_TYPES,
-  MealType,
+  isValidSpiceLevel,
+  isValidMealType,
+  isValidCuisine,
 } from "../types/client/Recipe";
 
 const badRequestError = (res: Response, error: string) => {
@@ -46,36 +47,17 @@ router.get("/", async (req, res) => {
   const filter: Partial<RecipeFilter> = {};
 
   // Sanitize all the query parameters
-  if (minCals !== undefined) {
-    if (typeof minCals !== "string" || !isNumeric(minCals)) {
-      return badRequestError(res, "min-cals is not numeric");
+  try {
+    if (minCals !== undefined) {
+      filter.minCals = sanitizeNumber(minCals, "min-cals", 0, 2000);
     }
-
-    const minCalsNum = Number(minCals);
-
-    if (minCalsNum < 0) {
-      return badRequestError(res, "min-cals must be >= 0");
-    } else if (minCalsNum > 2000) {
-      return badRequestError(res, "min-cals must be <= 2000");
+    if (maxCals !== undefined) {
+      filter.maxCals = sanitizeNumber(maxCals, "max-cals", 0, 2000);
     }
-
-    filter.minCals = minCalsNum;
+  } catch (error) {
+    return badRequestError(res, error as string);
   }
-  if (maxCals !== undefined) {
-    if (typeof maxCals !== "string" || !isNumeric(maxCals)) {
-      return badRequestError(res, "max-cals is not numeric");
-    }
 
-    const maxCalsNum = Number(maxCals);
-
-    if (maxCalsNum < 0) {
-      return badRequestError(res, "max-cals must be >= 0");
-    } else if (maxCalsNum > 2000) {
-      return badRequestError(res, "max-cals must be <= 2000");
-    }
-
-    filter.maxCals = maxCalsNum;
-  }
   if (vegetarian !== undefined) {
     filter.vegetarian = true;
   }
@@ -94,70 +76,33 @@ router.get("/", async (req, res) => {
   if (sustainable !== undefined) {
     filter.sustainable = true;
   }
-  if (spiceLevel !== undefined) {
+
+  try {
     // If the query parameter appears once, it's a string
     // Otherwise, it's an array of strings
     if (typeof spiceLevel === "string") {
-      if (isValidSpiceLevel(spiceLevel)) {
-        filter.spiceLevels = [spiceLevel];
-      } else {
-        return badRequestError(
-          res,
-          `Unknown spice level received: ${spiceLevel}`
-        );
-      }
+      filter.spiceLevels = [
+        sanitizeEnum(spiceLevel, "spice level", isValidSpiceLevel),
+      ];
     } else if (Array.isArray(spiceLevel)) {
-      filter.spiceLevels = [];
-
-      for (const spice of spiceLevel) {
-        if (typeof spice === "string" && isValidSpiceLevel(spice)) {
-          filter.spiceLevels.push(spice);
-        } else {
-          return badRequestError(res, `Unknown spice level received: ${spice}`);
-        }
-      }
+      filter.spiceLevels = sanitizeEnumArray(
+        spiceLevel,
+        "spice level",
+        isValidSpiceLevel
+      );
     }
-  }
-  if (type !== undefined) {
     if (typeof type === "string") {
-      if (MEAL_TYPES.includes(type as MealType)) {
-        filter.types = [type as MealType];
-      } else {
-        return badRequestError(res, `Unknown meal type received: ${type}`);
-      }
+      filter.types = [sanitizeEnum(type, "meal type", isValidMealType)];
     } else if (Array.isArray(type)) {
-      filter.types = [];
-
-      for (const mealType of type) {
-        if (MEAL_TYPES.includes(mealType as MealType)) {
-          filter.types.push(mealType as MealType);
-        } else {
-          return badRequestError(
-            res,
-            `Unknown meal type received: ${mealType}`
-          );
-        }
-      }
+      filter.types = sanitizeEnumArray(type, "meal type", isValidMealType);
     }
-  }
-  if (culture !== undefined) {
     if (typeof culture === "string") {
-      if (CUISINES.includes(culture as Cuisine)) {
-        filter.cultures = [culture as Cuisine];
-      } else {
-        return badRequestError(res, `Unknown cuisine received: ${culture}`);
-      }
+      filter.cultures = [sanitizeEnum(culture, "cuisine", isValidCuisine)];
     } else if (Array.isArray(culture)) {
-      filter.cultures = [];
-
-      for (const cuisine of culture) {
-        if (CUISINES.includes(cuisine as Cuisine)) {
-          filter.cultures.push(cuisine as Cuisine);
-        } else {
-          return badRequestError(res, `Unknown cuisine received: ${cuisine}`);
-        }
-      }
+      filter.cultures = sanitizeEnumArray(culture, "cuisine", isValidCuisine);
     }
+  } catch (error) {
+    return badRequestError(res, error as string);
   }
 
   const recipes = await filterRecipes(filter);

@@ -19,7 +19,7 @@ export const connectToMongoDB = async () => {
 
 /**
  * Write a recipe to MongoDB
- * @param {Recipe} recipe the recipe to save
+ * @param recipe the recipe to save
  */
 export const saveRecipe = async (recipe: Recipe) => {
   try {
@@ -36,8 +36,8 @@ export const saveRecipe = async (recipe: Recipe) => {
 
 /**
  * Check if a recipe with an ID exists in MongoDB
- * @param {number} id the recipe ID
- * @returns {Recipe | null} the recipe, or `null` if it couldn't be found
+ * @param id the recipe ID
+ * @returns the recipe, or `null` if it couldn't be found
  */
 export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
   try {
@@ -51,8 +51,8 @@ export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
 
 /**
  * Query recipes by the provided filters
- * @param {RecipeFilter} filter an object describing how to filter the recipes
- * @returns {Recipe[] | null} a list of recipes, or `null` if an error occurred
+ * @param filter an object describing how to filter the recipes
+ * @returns a list of recipes, or `null` if an error occurred
  */
 export const filterRecipes = async ({
   minCals,
