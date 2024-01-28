@@ -3,6 +3,12 @@ import mongoose from "mongoose";
 import Recipe from "../types/client/Recipe";
 import RecipeModel from "../models/RecipeModel";
 import RecipeFilter from "../types/client/RecipeFilter";
+import { isEmptyObject } from "./object";
+
+// MongoDB indexes
+export const Indexes = {
+  RecipeName: "recipe-name",
+} as const;
 
 /**
  * Connect to MongoDB using mongoose
@@ -49,12 +55,7 @@ export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
   }
 };
 
-/**
- * Query recipes by the provided filters
- * @param filter an object describing how to filter the recipes
- * @returns a list of recipes, or `null` if an error occurred
- */
-export const filterRecipes = async ({
+const createQuery = ({
   minCals,
   maxCals,
   vegetarian,
@@ -66,7 +67,8 @@ export const filterRecipes = async ({
   spiceLevels,
   types,
   cultures,
-}: Partial<RecipeFilter>): Promise<Recipe[] | null> => {
+}: Partial<RecipeFilter>): mongoose.FilterQuery<Recipe> => {
+  // Create a find/match query for MongoDB
   let query: mongoose.FilterQuery<Recipe> = {};
 
   if (minCals !== undefined) {
@@ -122,11 +124,70 @@ export const filterRecipes = async ({
     query.culture = { $in: cultures };
   }
 
+  return query;
+};
+
+const recipeFindQuery = async (
+  filter: Partial<RecipeFilter>
+): Promise<Recipe[] | null> => {
+  const findQuery = createQuery(filter);
+  console.log("MongoDB find query:", JSON.stringify(findQuery));
+
   try {
-    console.log("MongoDB query:", JSON.stringify(query));
-    return await RecipeModel.find(query).exec();
+    return await RecipeModel.find(findQuery).exec();
   } catch (error) {
     console.error("Failed to filter recipes:", error);
     return null;
+  }
+};
+
+const recipeAggregateQuery = async (
+  // Query key is required, everything else is optional
+  filter: Partial<RecipeFilter>
+): Promise<Recipe[] | null> => {
+  const matchQuery = createQuery(filter);
+  console.log("MongoDB match query:", JSON.stringify(matchQuery));
+
+  /*
+   * Search must be the first stage in the pipeline before $match.
+   * If performance becomes an issue, try following this guide:
+   * https://www.mongodb.com/docs/atlas/atlas-search/performance/query-performance/#-match-aggregation-stage-usage
+   */
+  let pipeline = RecipeModel.aggregate().search({
+    index: Indexes.RecipeName,
+    text: {
+      query: filter.query,
+      path: {
+        wildcard: "*",
+      },
+    },
+  });
+
+  if (!isEmptyObject(matchQuery)) {
+    pipeline = pipeline.match(matchQuery);
+  }
+
+  try {
+    return await pipeline.exec();
+  } catch (error) {
+    console.error("Failed to search recipes:", error);
+    return null;
+  }
+};
+
+/**
+ * Query recipes by the provided filters
+ * @param filter an object describing how to filter the recipes
+ * @returns a list of recipes, or `null` if an error occurred
+ */
+export const filterRecipes = async (
+  filter: Partial<RecipeFilter>
+): Promise<Recipe[] | null> => {
+  if (filter.query !== undefined) {
+    // If a full-text search is required, use an aggregation pipeline
+    return await recipeAggregateQuery(filter);
+  } else {
+    // Otherwise, use a simple find query
+    return await recipeFindQuery(filter);
   }
 };

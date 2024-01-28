@@ -2,10 +2,10 @@ import { FilterQuery } from "mongoose";
 
 import RecipeModel from "../models/RecipeModel";
 import RecipeFilter from "../types/client/RecipeFilter";
-import { filterRecipes } from "../utils/db";
+import { Indexes, filterRecipes } from "../utils/db";
 import Recipe from "../types/client/Recipe";
 
-describe("filterRecipes", () => {
+describe("recipeFindQuery", () => {
   const mockFind = jest.fn().mockReturnValue({ exec: jest.fn() });
   jest.spyOn(RecipeModel, "find").mockImplementation(mockFind);
 
@@ -103,7 +103,7 @@ describe("filterRecipes", () => {
 
   it("filters by everything", async () => {
     // Given all supported filters
-    const filter: RecipeFilter = {
+    const filter: Omit<RecipeFilter, "query"> = {
       minCals: 0,
       maxCals: 500,
       vegetarian: true,
@@ -142,5 +142,102 @@ describe("filterRecipes", () => {
       culture: { $in: filter.cultures },
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+  });
+});
+
+describe("recipeAggregateQuery", () => {
+  const mockExec = jest.fn();
+  const mockMatch = jest.fn().mockReturnValue({ exec: mockExec });
+  const mockSearch = jest
+    .fn()
+    .mockReturnValue({ match: mockMatch, exec: mockExec });
+  const mockAggregate = jest.fn().mockReturnValue({ search: mockSearch });
+  jest.spyOn(RecipeModel, "aggregate").mockImplementation(mockAggregate);
+
+  it("excludes $match with only a query filter", async () => {
+    // Given a recipe filter with a query
+    const filter: Partial<RecipeFilter> = {
+      query: "chicken",
+    };
+
+    // When filterRecipes is called
+    await filterRecipes(filter);
+
+    // Then an aggregation pipeline is used with only a $search stage
+    expect(mockSearch).toHaveBeenCalledWith({
+      index: Indexes.RecipeName,
+      text: {
+        query: filter.query,
+        path: {
+          wildcard: "*",
+        },
+      },
+    });
+    expect(mockMatch).not.toHaveBeenCalled();
+  });
+
+  it("adds $match with one additional filter", async () => {
+    // Given a recipe filter with a query and another filter
+    const filter: Partial<RecipeFilter> = {
+      query: "pasta",
+      vegetarian: true,
+    };
+
+    // When filterRecipes is called
+    await filterRecipes(filter);
+
+    // Then the $search and $match stages are used
+    expect(mockSearch).toHaveBeenCalledWith({
+      index: Indexes.RecipeName,
+      text: {
+        query: filter.query,
+        path: {
+          wildcard: "*",
+        },
+      },
+    });
+    expect(mockMatch).toHaveBeenCalledWith({
+      isVegetarian: filter.vegetarian,
+    });
+  });
+
+  it("adds $match with multiple additional filters", async () => {
+    // Given a recipe filter with a query and multiple filters
+    const filter: Partial<RecipeFilter> = {
+      query: "tacos",
+      minCals: 300,
+      cheap: true,
+      sustainable: true,
+      spiceLevels: ["mild", "spicy"],
+      cultures: ["Mexican", "Spanish"],
+    };
+
+    // When filterRecipes is called
+    await filterRecipes(filter);
+
+    // Then the $search and $match stages are used
+    expect(mockSearch).toHaveBeenCalledWith({
+      index: Indexes.RecipeName,
+      text: {
+        query: filter.query,
+        path: {
+          wildcard: "*",
+        },
+      },
+    });
+    expect(mockMatch).toHaveBeenCalledWith({
+      nutrients: {
+        $elemMatch: {
+          name: "Calories",
+          amount: {
+            $gte: filter.minCals,
+          },
+        },
+      },
+      isCheap: filter.cheap,
+      isSustainable: filter.sustainable,
+      spiceLevel: { $in: filter.spiceLevels },
+      culture: { $in: filter.cultures },
+    });
   });
 });

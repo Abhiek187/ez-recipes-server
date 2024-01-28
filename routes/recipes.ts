@@ -32,6 +32,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   console.log(`${req.method} ${req.originalUrl}`);
   const {
+    query,
     "min-cals": minCals,
     "max-cals": maxCals,
     vegetarian,
@@ -47,6 +48,14 @@ router.get("/", async (req, res) => {
   const filter: Partial<RecipeFilter> = {};
 
   // Sanitize all the query parameters
+  if (typeof query === "string") {
+    if (query.length === 0) {
+      return badRequestError(res, "Search query cannot be empty");
+    }
+
+    filter.query = query;
+  }
+
   try {
     if (minCals !== undefined) {
       filter.minCals = sanitizeNumber(minCals, "min-cals", 0, 2000);

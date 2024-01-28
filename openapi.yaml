@@ -15,6 +15,12 @@ paths:
       summary: Get recipes by filters
       parameters:
         - in: query
+          name: query
+          schema:
+            type: string
+            minLength: 1
+          description: Search query
+        - in: query
           name: min-cals
           schema:
             type: number

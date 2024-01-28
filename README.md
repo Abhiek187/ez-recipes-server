@@ -9,7 +9,7 @@
 
 This is an API built using Express to fetch low-effort recipes from [spoonacular](https://spoonacular.com/food-api). These are recipes that can be made within an hour, use common kitchen ingredients, and can produce multiple servings. It's ideal for new chefs learning how to cook, or people with little free time who want to cook something tasty. This API is connected to the [web](https://github.com/Abhiek187/ez-recipes-web), [iOS](https://github.com/Abhiek187/ez-recipes-ios), and [Android](https://github.com/Abhiek187/ez-recipes-android) apps so anyone can view the recipes on any device.
 
-In addition to spoonacular, MongoDB is used to cache the recipes for improved query performance.
+In addition to spoonacular, MongoDB is used to cache the recipes for improved query performance. It is also used to perform full-text search on recipes based on various criteria like recipe name, description, or ingredients.
 
 ### Architecture Diagram
 
@@ -36,7 +36,7 @@ Server-->>Client: Client recipe
 
 - TypeScript for added type safety
 - RESTful APIs
-- MongoDB to store and query recipe data
+- MongoDB to store data, query data, and do full-text search
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
