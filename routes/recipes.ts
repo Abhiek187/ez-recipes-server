@@ -14,12 +14,7 @@ import {
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
 import api, { handleAxiosError } from "../utils/api";
-import {
-  fetchRecipe,
-  filterRecipes,
-  saveRecipe,
-  searchRecipes,
-} from "../utils/db";
+import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
 import RecipeFilter from "../types/client/RecipeFilter";
 import {
   isValidSpiceLevel,
@@ -50,26 +45,17 @@ router.get("/", async (req, res) => {
     type,
     culture,
   } = req.query;
+  const filter: Partial<RecipeFilter> = {};
 
+  // Sanitize all the query parameters
   if (typeof query === "string") {
     if (query.length === 0) {
       return badRequestError(res, "Search query cannot be empty");
     }
 
-    const recipes = await searchRecipes(query);
-
-    if (recipes === null) {
-      return res
-        .status(500)
-        .json({ error: "Failed to search recipes. Please try again later." });
-    }
-
-    return res.json(recipes);
+    filter.query = query;
   }
 
-  const filter: Partial<RecipeFilter> = {};
-
-  // Sanitize all the query parameters
   try {
     if (minCals !== undefined) {
       filter.minCals = sanitizeNumber(minCals, "min-cals", 0, 2000);

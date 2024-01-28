@@ -1,6 +1,7 @@
 import { Cuisine, MealType, SpiceLevel } from "./Recipe";
 
 type RecipeFilter = {
+  query: string;
   minCals: number;
   maxCals: number;
   vegetarian: boolean;
