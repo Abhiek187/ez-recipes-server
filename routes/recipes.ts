@@ -49,11 +49,7 @@ router.get("/", async (req, res) => {
 
   // Sanitize all the query parameters
   if (typeof query === "string") {
-    if (query.length === 0) {
-      return badRequestError(res, "Search query cannot be empty");
-    }
-
-    filter.query = query;
+    filter.query = query || undefined; // ignore empty queries
   }
 
   try {
