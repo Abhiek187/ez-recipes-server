@@ -151,6 +151,9 @@ paths:
                 - Spanish
                 - Thai
                 - Vietnamese
+                # Missing from spoonacular's docs
+                - English
+                - Scottish
           description: Cuisines
       responses:
         "200":
