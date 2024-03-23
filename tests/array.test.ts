@@ -28,7 +28,7 @@ describe("getRandomElement", () => {
     // Then the function should throw an error stating that the array
     // must contain at least one element
     expect(() => getRandomElement(emptyArray)).toThrowError(
-      "array must contain at least one element"
+      "The array must contain at least one element to be randomly selected."
     );
   });
 });
