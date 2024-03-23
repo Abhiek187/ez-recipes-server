@@ -154,6 +154,7 @@ paths:
                 # Missing from spoonacular's docs
                 - English
                 - Scottish
+                - "South American"
           description: Cuisines
       responses:
         "200":
