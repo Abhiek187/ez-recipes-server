@@ -155,6 +155,7 @@ paths:
                 - English
                 - Scottish
                 - "South American"
+                - Creole
           description: Cuisines
       responses:
         "200":

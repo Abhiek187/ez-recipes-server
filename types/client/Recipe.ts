@@ -71,6 +71,7 @@ export const CUISINES = [
   "English",
   "Scottish",
   "South American",
+  "Creole",
 ] as const;
 export type Cuisine = (typeof CUISINES)[number];
 export const isValidCuisine = (str: string): str is Cuisine => {
