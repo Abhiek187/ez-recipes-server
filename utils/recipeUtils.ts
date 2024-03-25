@@ -109,7 +109,9 @@ export const randomRecipeUrlBuilder = (): string => {
  * @returns the encoded URI
  */
 export const recipeIdUrlBuilder = (id: string): string => {
-  const url = `/${id}/information?includeNutrition=true`;
+  // Need to explicitly set query params to save on points
+  // addTasteData will save 0.5 points and an additional API call
+  const url = `/${id}/information?includeNutrition=true&addWinePairing=false&addTasteData=true`;
   return encodeURI(url);
 };
 
@@ -160,18 +162,21 @@ export const getSpiceLevel = async (
     logSpoonacularQuota("GET", url, tasteResponse);
 
     const spiceValue = tasteResponse.data.spiciness;
-
-    // Spices are weighted by their Scoville amount
-    if (spiceValue < 100_000) {
-      return "none";
-    } else if (spiceValue < 1_000_000) {
-      return "mild";
-    } else {
-      return "spicy";
-    }
+    return spiceToString(spiceValue);
   } catch (error) {
     handleAxiosError(error as AxiosError);
     return "unknown";
+  }
+};
+
+const spiceToString = (spiceValue: number): Recipe["spiceLevel"] => {
+  // Spices are weighted by their Scoville amount
+  if (spiceValue < 100_000) {
+    return "none";
+  } else if (spiceValue < 1_000_000) {
+    return "mild";
+  } else {
+    return "spicy";
   }
 };
 
@@ -239,7 +244,10 @@ export const createClientResponse = async (
     servings: recipe.servings,
     summary: recipe.summary,
     types: recipe.dishTypes,
-    spiceLevel: await getSpiceLevel(recipe.id),
+    spiceLevel:
+      recipe.taste !== undefined
+        ? spiceToString(recipe.taste.spiciness)
+        : await getSpiceLevel(recipe.id),
     isVegetarian: recipe.vegetarian,
     isVegan: recipe.vegan,
     isGlutenFree: recipe.glutenFree,

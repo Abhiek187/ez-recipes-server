@@ -1,6 +1,7 @@
 import { Cuisine, MealType } from "../client/Recipe";
 import Instruction from "./Instruction";
 import Nutrition from "./Nutrition";
+import TasteResponse from "./TasteResponse";
 
 type RecipeResponse = {
   vegetarian: boolean;
@@ -22,6 +23,7 @@ type RecipeResponse = {
   license?: string;
   sourceName: string;
   pricePerServing: number;
+  // extendedIngredients: any[];
   id: number;
   title: string;
   readyInMinutes: number;
@@ -31,12 +33,16 @@ type RecipeResponse = {
   image: string;
   imageType: string;
   nutrition: Nutrition;
+  taste?: TasteResponse;
   summary: string;
   cuisines: Cuisine[]; // [string] is a tuple with a string, while string[] is an array of strings
   dishTypes: MealType[];
   diets: string[];
   occasions: string[];
+  instructions?: string; // some nullable props are only in the recipe ID endpoint
   analyzedInstructions: Instruction[];
+  originalId?: number | null;
+  spoonacularScore: number;
   spoonacularSourceUrl: string;
 };
 
