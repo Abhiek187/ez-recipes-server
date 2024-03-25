@@ -280,9 +280,11 @@ export const createClientResponse = async (
 // Remove the full spoonacular URL from image URLs for backwards compatibility
 // See: https://github.com/Abhiek187/ez-recipes-server/issues/189
 const stripURL = (image: string): string => {
-  if (image.includes("spoonacular.com")) {
-    return image.split("/").at(-1) ?? image;
-  } else {
+  try {
+    const imageUrl = new URL(image);
+    return imageUrl.pathname.split("/").at(-1) ?? image;
+  } catch (error) {
+    // Invalid URL
     return image;
   }
 };
