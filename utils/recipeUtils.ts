@@ -263,18 +263,30 @@ export const createClientResponse = async (
         ingredients: step.ingredients.map((ingredient) => ({
           id: ingredient.id,
           name: ingredient.name,
-          image: ingredient.image,
+          image: stripURL(ingredient.image),
         })),
         equipment: step.equipment.map((equip) => ({
           id: equip.id,
           name: equip.name,
-          image: equip.image,
+          image: stripURL(equip.image),
         })),
       })),
     })),
   };
 
   return resJson;
+};
+
+// Remove the full spoonacular URL from image URLs for backwards compatibility
+// See: https://github.com/Abhiek187/ez-recipes-server/issues/189
+const stripURL = (image: string): string => {
+  try {
+    const imageUrl = new URL(image);
+    return imageUrl.pathname.split("/").at(-1) ?? image;
+  } catch (error) {
+    // Invalid URL
+    return image;
+  }
 };
 
 // Private function to check for all the properties of an object
