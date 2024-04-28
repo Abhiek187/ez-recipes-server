@@ -127,6 +127,7 @@ type Recipe = {
       }[];
     }[];
   }[];
+  token?: string; // searchSequenceToken for pagination
 };
 
 export default Recipe;

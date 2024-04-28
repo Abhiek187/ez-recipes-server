@@ -1,12 +1,14 @@
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 
 import RecipeModel from "../models/RecipeModel";
 import RecipeFilter from "../types/client/RecipeFilter";
-import { Indexes, filterRecipes } from "../utils/db";
+import { Indexes, MAX_DOCS, filterRecipes } from "../utils/db";
 import Recipe from "../types/client/Recipe";
 
 describe("recipeFindQuery", () => {
-  const mockFind = jest.fn().mockReturnValue({ exec: jest.fn() });
+  const mockExec = jest.fn();
+  const mockLimit = jest.fn().mockReturnValue({ exec: mockExec });
+  const mockFind = jest.fn().mockReturnValue({ limit: mockLimit });
   jest.spyOn(RecipeModel, "find").mockImplementation(mockFind);
 
   it("accepts no filter", async () => {
@@ -15,6 +17,7 @@ describe("recipeFindQuery", () => {
     await filterRecipes({});
     // Then the query is also empty
     expect(mockFind).toHaveBeenCalledWith({});
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
   });
 
   it("filters by a number", async () => {
@@ -38,6 +41,7 @@ describe("recipeFindQuery", () => {
       },
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
   });
 
   it("filters by a boolean", async () => {
@@ -54,6 +58,7 @@ describe("recipeFindQuery", () => {
       isSustainable: filter.sustainable,
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
   });
 
   it("filters by an array", async () => {
@@ -70,6 +75,7 @@ describe("recipeFindQuery", () => {
       culture: { $in: filter.cultures },
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
   });
 
   it("filters by multiple values", async () => {
@@ -99,6 +105,7 @@ describe("recipeFindQuery", () => {
       spiceLevel: { $in: filter.spiceLevels },
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
   });
 
   it("filters by everything", async () => {
@@ -142,15 +149,37 @@ describe("recipeFindQuery", () => {
       culture: { $in: filter.cultures },
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
+  });
+
+  it("filters with an ObjectId token", async () => {
+    // Given a filter with a token
+    const filter: Partial<RecipeFilter> = {
+      token: "660f1af0b5ba9017ad8e5079",
+    };
+
+    // When filterRecipes is called
+    await filterRecipes(filter);
+
+    // Then the query checks the _id field
+    const expectedQuery: FilterQuery<Recipe> = {
+      _id: {
+        $gt: new Types.ObjectId(filter.token),
+      },
+    };
+    expect(mockFind).toHaveBeenCalledWith(expectedQuery);
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
   });
 });
 
 describe("recipeAggregateQuery", () => {
   const mockExec = jest.fn();
-  const mockMatch = jest.fn().mockReturnValue({ exec: mockExec });
+  const mockAddFields = jest.fn().mockReturnValue({ exec: mockExec });
+  const mockLimit = jest.fn().mockReturnValue({ addFields: mockAddFields });
+  const mockMatch = jest.fn().mockReturnValue({ limit: mockLimit });
   const mockSearch = jest
     .fn()
-    .mockReturnValue({ match: mockMatch, exec: mockExec });
+    .mockReturnValue({ match: mockMatch, limit: mockLimit });
   const mockAggregate = jest.fn().mockReturnValue({ search: mockSearch });
   jest.spyOn(RecipeModel, "aggregate").mockImplementation(mockAggregate);
 
@@ -174,6 +203,42 @@ describe("recipeAggregateQuery", () => {
       },
     });
     expect(mockMatch).not.toHaveBeenCalled();
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
+    expect(mockAddFields).toHaveBeenCalledWith({
+      token: {
+        $meta: "searchSequenceToken",
+      },
+    });
+  });
+
+  it("includes searchAfter if a token is passed", async () => {
+    // Given a recipe filter with a token
+    const filter: Partial<RecipeFilter> = {
+      query: "chicken",
+      token: "CPUCFaxgNUA=",
+    };
+
+    // When filterRecipes is called
+    await filterRecipes(filter);
+
+    // Then searchAfter is included in the $search stage
+    expect(mockSearch).toHaveBeenCalledWith({
+      index: Indexes.RecipeName,
+      text: {
+        query: filter.query,
+        path: {
+          wildcard: "*",
+        },
+      },
+      searchAfter: filter.token,
+    });
+    expect(mockMatch).not.toHaveBeenCalled();
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
+    expect(mockAddFields).toHaveBeenCalledWith({
+      token: {
+        $meta: "searchSequenceToken",
+      },
+    });
   });
 
   it("adds $match with one additional filter", async () => {
@@ -198,6 +263,12 @@ describe("recipeAggregateQuery", () => {
     });
     expect(mockMatch).toHaveBeenCalledWith({
       isVegetarian: filter.vegetarian,
+    });
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
+    expect(mockAddFields).toHaveBeenCalledWith({
+      token: {
+        $meta: "searchSequenceToken",
+      },
     });
   });
 
@@ -238,6 +309,12 @@ describe("recipeAggregateQuery", () => {
       isSustainable: filter.sustainable,
       spiceLevel: { $in: filter.spiceLevels },
       culture: { $in: filter.cultures },
+    });
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
+    expect(mockAddFields).toHaveBeenCalledWith({
+      token: {
+        $meta: "searchSequenceToken",
+      },
     });
   });
 });
