@@ -1,5 +1,6 @@
 import { AxiosError } from "axios";
 import express, { Response } from "express";
+import { isValidObjectId } from "mongoose";
 
 import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
@@ -44,6 +45,7 @@ router.get("/", async (req, res) => {
     "spice-level": spiceLevel,
     type,
     culture,
+    token,
   } = req.query;
   const filter: Partial<RecipeFilter> = {};
 
@@ -110,9 +112,21 @@ router.get("/", async (req, res) => {
     return badRequestError(res, error as string);
   }
 
+  if (typeof token === "string") {
+    // An ObjectId must be passed if a find query should be performed
+    if (filter.query === undefined && !isValidObjectId(token)) {
+      return badRequestError(res, `Token "${token}" is not a valid ObjectId`);
+    }
+
+    // Search tokens will be validated during the query
+    filter.token = token;
+  }
+
   const recipes = await filterRecipes(filter);
 
-  if (recipes === null) {
+  if (typeof recipes === "string") {
+    return badRequestError(res, recipes);
+  } else if (recipes === null) {
     return res
       .status(500)
       .json({ error: "Failed to filter recipes. Please try again later." });

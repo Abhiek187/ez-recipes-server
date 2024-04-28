@@ -10,6 +10,8 @@ export const Indexes = {
   RecipeName: "recipe-name",
 } as const;
 
+export const MAX_DOCS = 100;
+
 /**
  * Connect to MongoDB using mongoose
  */
@@ -55,19 +57,23 @@ export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
   }
 };
 
-const createQuery = ({
-  minCals,
-  maxCals,
-  vegetarian,
-  vegan,
-  glutenFree,
-  healthy,
-  cheap,
-  sustainable,
-  spiceLevels,
-  types,
-  cultures,
-}: Partial<RecipeFilter>): mongoose.FilterQuery<Recipe> => {
+const createQuery = (
+  {
+    minCals,
+    maxCals,
+    vegetarian,
+    vegan,
+    glutenFree,
+    healthy,
+    cheap,
+    sustainable,
+    spiceLevels,
+    types,
+    cultures,
+    token,
+  }: Partial<RecipeFilter>,
+  isFindQuery = false
+): mongoose.FilterQuery<Recipe> => {
   // Create a find/match query for MongoDB
   let query: mongoose.FilterQuery<Recipe> = {};
 
@@ -124,17 +130,23 @@ const createQuery = ({
     query.culture = { $in: cultures };
   }
 
+  if (isFindQuery && token !== undefined) {
+    query._id = {
+      $gt: new mongoose.Types.ObjectId(token),
+    };
+  }
+
   return query;
 };
 
 const recipeFindQuery = async (
   filter: Partial<RecipeFilter>
 ): Promise<Recipe[] | null> => {
-  const findQuery = createQuery(filter);
+  const findQuery = createQuery(filter, true);
   console.log("MongoDB find query:", JSON.stringify(findQuery));
 
   try {
-    return await RecipeModel.find(findQuery).exec();
+    return await RecipeModel.find(findQuery).limit(MAX_DOCS).exec();
   } catch (error) {
     console.error("Failed to filter recipes:", error);
     return null;
@@ -144,7 +156,7 @@ const recipeFindQuery = async (
 const recipeAggregateQuery = async (
   // Query key is required, everything else is optional
   filter: Partial<RecipeFilter>
-): Promise<Recipe[] | null> => {
+): Promise<Recipe[] | string | null> => {
   const matchQuery = createQuery(filter);
   console.log("MongoDB match query:", JSON.stringify(matchQuery));
 
@@ -161,6 +173,7 @@ const recipeAggregateQuery = async (
         wildcard: "*",
       },
     },
+    searchAfter: filter.token,
   });
 
   if (!isEmptyObject(matchQuery)) {
@@ -168,9 +181,24 @@ const recipeAggregateQuery = async (
   }
 
   try {
-    return await pipeline.exec();
+    return await pipeline
+      .limit(MAX_DOCS)
+      .addFields({
+        token: {
+          $meta: "searchSequenceToken",
+        },
+      })
+      .exec();
   } catch (error) {
     console.error("Failed to search recipes:", error);
+
+    /* I'm not sure what's considered a valid search token beyond being base64,
+     * so return a 400 error if this specific error occurs.
+     */
+    if ((error as Error).message.includes("searchAfter")) {
+      return `Token "${filter.token}" is not a valid searchSequenceToken`;
+    }
+
     return null;
   }
 };
@@ -178,11 +206,12 @@ const recipeAggregateQuery = async (
 /**
  * Query recipes by the provided filters
  * @param filter an object describing how to filter the recipes
- * @returns a list of recipes, or `null` if an error occurred
+ * @returns a list of recipes, a `string` if a known error occurred,
+ * or `null` if an unknown error occurred
  */
 export const filterRecipes = async (
   filter: Partial<RecipeFilter>
-): Promise<Recipe[] | null> => {
+): Promise<Recipe[] | string | null> => {
   if (filter.query !== undefined) {
     // If a full-text search is required, use an aggregation pipeline
     return await recipeAggregateQuery(filter);

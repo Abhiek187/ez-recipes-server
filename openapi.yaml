@@ -3,7 +3,7 @@ openapi: 3.1.0
 info:
   title: EZ Recipes
   description: An API that fetches recipes from spoonacular and MongoDB
-  version: 2.1.0
+  version: 2.2.0
 
 servers:
   - url: https://ez-recipes-server.onrender.com
@@ -12,7 +12,7 @@ servers:
 paths:
   /api/recipes:
     get:
-      summary: Get recipes by filters
+      summary: Get up to 100 recipes by filters. Pagination is required to return more recipes.
       parameters:
         - in: query
           name: query
@@ -157,6 +157,14 @@ paths:
                 - "South American"
                 - Creole
           description: Cuisines
+        - in: query
+          name: token
+          schema:
+            type: string
+          description: >
+            A token used to paginate results.
+            If no query is passed, this is the ObjectId of the recipe to search after.
+            If a query is passed, this is the token returned from a previous query.
       responses:
         "200":
           description: Successfully filtered recipes
@@ -287,9 +295,13 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/recipe"
+      maxItems: 100
     recipe:
       type: object
       properties:
+        _id:
+          type: string
+          description: The ObjectId of a recipe as stored in MongoDB
         id:
           type: integer
           minimum: 0
@@ -465,6 +477,11 @@ components:
                             description: >
                               The name of the equipment's image. The image's URL would be
                               https://spoonacular.com/cdn/equipment_100x100/IMAGE
+        token:
+          type: string
+          description: >
+            A base64 token that can be used to paginate additional recipes.
+            Only returned if a query was passed.
     error:
       type: object
       properties:
