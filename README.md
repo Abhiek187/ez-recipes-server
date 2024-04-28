@@ -37,6 +37,7 @@ Server-->>Client: Client recipe
 - TypeScript for added type safety
 - RESTful APIs
 - MongoDB to store data, query data, and do full-text search
+- Pagination to reduce bandwidth and optimize query performance
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
