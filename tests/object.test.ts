@@ -3,17 +3,15 @@ import { expectedRecipe, mockSearchResponse } from "./recipeUtils.test";
 
 describe("isObject", () => {
   it.each([
-    [
-      {},
-      { a: 1, b: 2 },
-      mockSearchResponse,
-      expectedRecipe,
-      Math,
-      JSON,
-      Object.create(null),
-      new Number(3),
-      new Date(),
-    ],
+    {},
+    { a: 1, b: 2 },
+    mockSearchResponse,
+    expectedRecipe,
+    Math,
+    JSON,
+    Object.create(null),
+    new Number(3),
+    new Date(),
   ])("passes all positive cases", (obj: any) => {
     // Given a set of inputs that resemble objects
     // When passed to isObject

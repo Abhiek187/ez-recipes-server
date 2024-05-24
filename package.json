@@ -1,6 +1,6 @@
 {
   "name": "ez-recipes-server",
-  "version": "1.0.0",
+  "version": "2.2.0",
   "description": "Server to fetch easy-to-make recipes for the EZ Recipes app",
   "main": "dist/index.js",
   "scripts": {
@@ -16,7 +16,9 @@
   "keywords": [
     "express",
     "recipes",
-    "api"
+    "api",
+    "spoonacular",
+    "mongodb"
   ],
   "author": "Abhishek Chaudhuri",
   "license": "ISC",
