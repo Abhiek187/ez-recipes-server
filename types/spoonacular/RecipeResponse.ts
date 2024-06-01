@@ -43,7 +43,7 @@ type RecipeResponse = {
   analyzedInstructions: Instruction[];
   originalId?: number | null;
   spoonacularScore: number;
-  spoonacularSourceUrl: string;
+  spoonacularSourceUrl?: string; // not present in ID 1
 };
 
 export default RecipeResponse;
