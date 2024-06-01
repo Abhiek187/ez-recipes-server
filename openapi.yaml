@@ -312,6 +312,7 @@ components:
           description: The name of the recipe
         url:
           type: string
+          nullable: true
           description: The recipe page on spoonacular
         image:
           type: string
@@ -480,6 +481,7 @@ components:
                               https://spoonacular.com/cdn/equipment_100x100/IMAGE
         token:
           type: string
+          nullable: true
           description: >
             A base64 token that can be used to paginate additional recipes.
             Only returned if a query was passed.
