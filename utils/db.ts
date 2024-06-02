@@ -28,17 +28,23 @@ export const connectToMongoDB = async () => {
 /**
  * Write a recipe to MongoDB
  * @param recipe the recipe to save
+ * @returns the ObjectId of the recipe document, or `undefined` if the recipe couldn't be saved
  */
-export const saveRecipe = async (recipe: Recipe) => {
+export const saveRecipe = async (
+  recipe: Omit<Recipe, "_id">
+): Promise<string | undefined> => {
   try {
     const query = { id: recipe.id };
     // If the recipe exists, update it with what spoonacular returns, otherwise insert a new document
-    // Returns the document if it exists, or null if it doesn't exist
-    await RecipeModel.findOneAndUpdate(query, recipe, {
+    const doc = await RecipeModel.findOneAndUpdate(query, recipe, {
+      new: true, // return the document after the update
       upsert: true,
     }).exec();
+
+    return doc._id;
   } catch (error) {
     console.error(`Failed to save recipe ${recipe.name}:`, error);
+    return undefined;
   }
 };
 

@@ -145,9 +145,12 @@ router.get("/random", async (req, res) => {
 
     const recipes = recipeResponse.data;
     const resJson = await createClientResponse(recipes);
-    await saveRecipe(resJson); // cache in MongoDB
+    const _id = await saveRecipe(resJson); // cache in MongoDB
 
-    res.json(resJson);
+    res.json({
+      ...resJson,
+      _id,
+    });
   } catch (err) {
     const error = err as AxiosError;
     const [status, json] = handleAxiosError(error);
@@ -180,9 +183,12 @@ router.get("/:id", async (req, res) => {
 
     const recipes = recipeResponse.data;
     const resJson = await createClientResponse(recipes);
-    saveRecipe(resJson);
+    const _id = await saveRecipe(resJson);
 
-    res.json(resJson);
+    res.json({
+      ...resJson,
+      _id,
+    });
   } catch (err) {
     const error = err as AxiosError;
     const [status, json] = handleAxiosError(error);

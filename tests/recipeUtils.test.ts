@@ -4229,7 +4229,7 @@ export const mockSearchResponse: SearchResponse = {
   totalResults: 4868,
 };
 
-export const expectedRecipe: Recipe = {
+export const expectedRecipe: Omit<Recipe, "_id"> = {
   id: 660475,
   name: "Snow Pea Sesame Noodle Salad",
   url: "https://spoonacular.com/snow-pea-sesame-noodle-salad-660475",

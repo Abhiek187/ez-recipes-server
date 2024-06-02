@@ -3,7 +3,7 @@ openapi: 3.1.0
 info:
   title: EZ Recipes
   description: An API that fetches recipes from spoonacular and MongoDB
-  version: 2.2.0
+  version: 2.3.0
 
 servers:
   - url: https://ez-recipes-server.onrender.com
@@ -302,6 +302,7 @@ components:
       properties:
         _id:
           type: string
+          nullable: true
           description: The ObjectId of a recipe as stored in MongoDB
         id:
           type: integer

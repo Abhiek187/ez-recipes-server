@@ -188,7 +188,7 @@ const spiceToString = (spiceValue: number): Recipe["spiceLevel"] => {
  */
 export const createClientResponse = async (
   recipes: SearchResponse | RecipeResponse
-): Promise<Recipe> => {
+): Promise<Omit<Recipe, "_id">> => {
   let recipe: RecipeResponse;
 
   if (recipes.hasOwnProperty("results")) {
@@ -232,7 +232,7 @@ export const createClientResponse = async (
     }
   }
 
-  const resJson: Recipe = {
+  const resJson: Omit<Recipe, "_id"> = {
     id: recipe.id,
     name: recipe.title,
     url: recipe.spoonacularSourceUrl,
