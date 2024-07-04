@@ -461,7 +461,7 @@ components:
                             type: string
                             description: >
                               The name of the ingredient's image. The image's URL would be
-                              https://spoonacular.com/cdn/ingredients_100x100/IMAGE
+                              https://img.spoonacular.com/ingredients_100x100/IMAGE
                     equipment:
                       type: array
                       description: The kitchen equipment used in each step
@@ -479,7 +479,7 @@ components:
                             type: string
                             description: >
                               The name of the equipment's image. The image's URL would be
-                              https://spoonacular.com/cdn/equipment_100x100/IMAGE
+                              https://img.spoonacular.com/equipment_100x100/IMAGE
         token:
           type: string
           nullable: true
