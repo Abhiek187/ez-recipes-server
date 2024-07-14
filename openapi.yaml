@@ -115,6 +115,9 @@ paths:
                 - condiment
                 - dip
                 - spread
+                - smoothie
+                - cocktail
+                - mocktail
           description: Meal types
         - in: query
           name: culture

@@ -34,6 +34,9 @@ export const MEAL_TYPES = [
   "condiment",
   "dip",
   "spread",
+  "smoothie",
+  "cocktail",
+  "mocktail",
 ] as const;
 export type MealType = (typeof MEAL_TYPES)[number];
 export const isValidMealType = (str: string): str is MealType => {
