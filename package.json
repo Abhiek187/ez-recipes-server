@@ -36,7 +36,7 @@
     "mongoose": "^8.5.1",
     "pm2": "^5.4.2",
     "swagger-ui-express": "^5.0.1",
-    "yaml": "^2.4.5"
+    "yaml": "^2.5.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
