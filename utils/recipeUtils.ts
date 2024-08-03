@@ -20,7 +20,7 @@ import { isNumeric } from "./string";
  * @returns the query parameter converted to a number
  */
 export const sanitizeNumber = (
-  param: any,
+  param: unknown,
   name: string,
   min: number,
   max: number
@@ -69,7 +69,7 @@ export const sanitizeEnum = <T extends string>(
  * @returns the query parameters as type `T[]`
  */
 export const sanitizeEnumArray = <T extends string>(
-  params: any[],
+  params: unknown[],
   name: string,
   validator: (str: string) => str is T
 ): T[] => {
@@ -134,7 +134,7 @@ export const tasteUrlBuilder = (id: number): string => {
 export const logSpoonacularQuota = (
   method: string,
   path: string,
-  recipeResponse: AxiosResponse<any>
+  recipeResponse: AxiosResponse
 ) => {
   // Response headers are in lowercase
   const requestQuota = Number(recipeResponse.headers["x-api-quota-request"]);
@@ -191,7 +191,7 @@ export const createClientResponse = async (
 ): Promise<Omit<Recipe, "_id">> => {
   let recipe: RecipeResponse;
 
-  if (recipes.hasOwnProperty("results")) {
+  if (Object.hasOwn(recipes, "results")) {
     recipe = (recipes as SearchResponse).results[0];
   } else {
     recipe = recipes as RecipeResponse;
@@ -293,19 +293,20 @@ const stripURL = (image: string): string => {
     return imageUrl.pathname.split("/").at(-1) ?? image;
   } catch (error) {
     // Invalid URL
+    console.warn(`Failed to strip image URL (${image})`, error);
     return image;
   }
 };
 
 // Private function to check for all the properties of an object
-const typeCheck = (data: any, props: string[]): boolean => {
+const typeCheck = (data: unknown, props: string[]): boolean => {
   // Assert that data is an object
   if (!isObject(data)) {
     return false;
   }
 
   for (const prop of props) {
-    if (!data.hasOwnProperty(prop)) {
+    if (!Object.hasOwn(data as object, prop)) {
       console.log(`This object doesn't have a ${prop} property.`);
       return false;
     }
@@ -315,16 +316,16 @@ const typeCheck = (data: any, props: string[]): boolean => {
 };
 
 // Type guard to check if a response contains all the error properties found in spoonacular
-export const isErrorResponse = (data: any): data is ErrorResponse => {
+export const isErrorResponse = (data: unknown): data is ErrorResponse => {
   return typeCheck(data, ["code", "message", "status"]);
 };
 
-export const isSearchResponse = (data: any): data is SearchResponse => {
+export const isSearchResponse = (data: unknown): data is SearchResponse => {
   // Check that the data contains all the properties defined for SearchResponse
   return typeCheck(data, ["results", "offset", "number", "totalResults"]);
 };
 
-export const isRecipeResponse = (data: any): data is RecipeResponse => {
+export const isRecipeResponse = (data: unknown): data is RecipeResponse => {
   // Check that the data contains all the properties defined for RecipeResponse
   return typeCheck(data, [
     "vegetarian",

@@ -33,12 +33,14 @@ describe(`${basePath}/random`, () => {
     // Given the random recipe endpoint
     // When the API key is valid
     const recipeUrl = randomRecipeUrlBuilder();
-    let searchResponse: AxiosResponse<SearchResponse, any>;
+    let searchResponse: AxiosResponse<SearchResponse>;
 
     try {
       searchResponse = await api.get<SearchResponse>(recipeUrl);
     } catch (err) {
-      throw new Error("The random recipe endpoint failed instead of succeeded");
+      throw new Error(
+        `The random recipe endpoint failed instead of succeeded: ${err}`
+      );
     }
 
     // Then the response will be of type SearchResponse
@@ -83,12 +85,14 @@ describe(`${basePath}/:id`, () => {
     expect(isNumeric(recipeId)).toBe(true);
 
     const recipeUrl = recipeIdUrlBuilder(recipeId);
-    let recipeResponse: AxiosResponse<RecipeResponse, any>;
+    let recipeResponse: AxiosResponse<RecipeResponse>;
 
     try {
       recipeResponse = await api.get<RecipeResponse>(recipeUrl);
     } catch (err) {
-      throw new Error("The recipe ID endpoint failed instead of succeeded");
+      throw new Error(
+        `The recipe ID endpoint failed instead of succeeded: ${err}`
+      );
     }
 
     // Then the response will be of type RecipeResponse

@@ -81,7 +81,7 @@ const createQuery = (
   isFindQuery = false
 ): mongoose.FilterQuery<Recipe> => {
   // Create a find/match query for MongoDB
-  let query: mongoose.FilterQuery<Recipe> = {};
+  const query: mongoose.FilterQuery<Recipe> = {};
 
   if (minCals !== undefined) {
     query.nutrients = {

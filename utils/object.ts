@@ -7,7 +7,7 @@
  * @param data the input to check
  * @returns true if `data` is an object, false otherwise
  */
-export const isObject = (data: any): boolean =>
+export const isObject = (data: unknown): boolean =>
   typeof data === "object" && !Array.isArray(data) && data !== null;
 
 /**
