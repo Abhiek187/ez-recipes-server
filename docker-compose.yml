@@ -12,3 +12,4 @@ services:
     environment:
       - PORT=5000
       - API_KEY=$API_KEY
+      - MONGO_URI=$MONGO_URI
