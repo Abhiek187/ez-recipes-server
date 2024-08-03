@@ -14,6 +14,9 @@ updates:
       interval: "weekly"
       day: "tuesday"
     groups:
+      eslint:
+        patterns:
+          - "*eslint*"
       types:
         patterns:
           - "@types/*"
