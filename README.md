@@ -62,9 +62,8 @@ E --> F(Run Jest unit tests:\nnpm test)
 ```mermaid
 flowchart LR
 
-A(Checkout repository) --> B(Add environment variables)
-B --> C(Build Docker server image)
-C --> D(Run tests inside the container)
+A(Checkout repository) --> B(Build Docker server image)
+B --> C(Run tests inside the container)
 ```
 
 ### CodeQL
