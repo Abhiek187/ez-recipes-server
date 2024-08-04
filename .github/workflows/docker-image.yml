@@ -13,9 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker image
+        run: docker compose -f docker-compose.yml build server
+      - name: Run tests inside the container
         env:
           API_KEY: ${{ secrets.API_KEY }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: docker compose -f docker-compose.yml build server
-      - name: Run tests inside the container
         run: docker compose run --rm server npm test
