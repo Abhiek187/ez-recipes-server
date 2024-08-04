@@ -44,7 +44,7 @@ describe("sanitizeNumber", () => {
   ])(
     "should throw an error if param isn't a string or number",
     (param, name) => {
-      expect(() => sanitizeNumber(param, name, 0, 0)).toThrowError(
+      expect(() => sanitizeNumber(param, name, 0, 0)).toThrow(
         `${name} is not numeric`
       );
     }
@@ -53,7 +53,7 @@ describe("sanitizeNumber", () => {
   it.each(["number", "a100", "-3d", "NaN"])(
     "should throw an error if param isn't numeric",
     (param) => {
-      expect(() => sanitizeNumber(param, param, 0, 0)).toThrowError(
+      expect(() => sanitizeNumber(param, param, 0, 0)).toThrow(
         `${param} is not numeric`
       );
     }
@@ -63,7 +63,7 @@ describe("sanitizeNumber", () => {
     ["0", 1],
     ["-Infinity", 0],
   ])("should throw an error if param is under min", (param, min) => {
-    expect(() => sanitizeNumber(param, param, min, Infinity)).toThrowError(
+    expect(() => sanitizeNumber(param, param, min, Infinity)).toThrow(
       `${param} must be >= ${min}`
     );
   });
@@ -72,7 +72,7 @@ describe("sanitizeNumber", () => {
     ["0", -1],
     ["Infinity", 0],
   ])("should throw an error if param is over max", (param, max) => {
-    expect(() => sanitizeNumber(param, param, -Infinity, max)).toThrowError(
+    expect(() => sanitizeNumber(param, param, -Infinity, max)).toThrow(
       `${param} must be <= ${max}`
     );
   });
@@ -92,7 +92,7 @@ describe("sanitizeEnum", () => {
     const validator = (str: string): str is string =>
       ["a", "b", "c"].includes(str);
     expect(sanitizeEnum("a", "letter", validator)).toBe("a");
-    expect(() => sanitizeEnum("d", "letter", validator)).toThrowError(
+    expect(() => sanitizeEnum("d", "letter", validator)).toThrow(
       "Unknown letter received: d"
     );
   });
@@ -101,28 +101,28 @@ describe("sanitizeEnum", () => {
     expect(sanitizeEnum("none", "spice level", isValidSpiceLevel)).toBe("none");
     expect(() =>
       sanitizeEnum("unknown", "spice level", isValidSpiceLevel)
-    ).toThrowError("Unknown spice level received: unknown");
-    expect(() =>
-      sanitizeEnum("hot", "spice level", isValidSpiceLevel)
-    ).toThrowError("Unknown spice level received: hot");
+    ).toThrow("Unknown spice level received: unknown");
+    expect(() => sanitizeEnum("hot", "spice level", isValidSpiceLevel)).toThrow(
+      "Unknown spice level received: hot"
+    );
   });
 
   it("should validate meal types", () => {
     expect(sanitizeEnum("hor d'oeuvre", "meal type", isValidMealType)).toBe(
       "hor d'oeuvre"
     );
-    expect(() =>
-      sanitizeEnum("desert", "meal type", isValidMealType)
-    ).toThrowError("Unknown meal type received: desert");
+    expect(() => sanitizeEnum("desert", "meal type", isValidMealType)).toThrow(
+      "Unknown meal type received: desert"
+    );
   });
 
   it("should validate cuisines", () => {
     expect(sanitizeEnum("Middle Eastern", "cuisine", isValidCuisine)).toBe(
       "Middle Eastern"
     );
-    expect(() =>
-      sanitizeEnum("Canadian", "cuisine", isValidCuisine)
-    ).toThrowError("Unknown cuisine received: Canadian");
+    expect(() => sanitizeEnum("Canadian", "cuisine", isValidCuisine)).toThrow(
+      "Unknown cuisine received: Canadian"
+    );
   });
 });
 
@@ -136,7 +136,7 @@ describe("sanitizeEnumArray", () => {
     ).toStrictEqual(["a", "b", "c"]);
     expect(() =>
       sanitizeEnumArray(["a", "d", "e"], "letter", validator)
-    ).toThrowError("Unknown letter received: d");
+    ).toThrow("Unknown letter received: d");
   });
 
   it("should validate spice levels", () => {
@@ -145,7 +145,7 @@ describe("sanitizeEnumArray", () => {
     ).toStrictEqual(["mild", "spicy"]);
     expect(() =>
       sanitizeEnumArray(["unknown", "none"], "spice level", isValidSpiceLevel)
-    ).toThrowError("Unknown spice level received: unknown");
+    ).toThrow("Unknown spice level received: unknown");
   });
 
   it("should validate meal types", () => {
@@ -162,7 +162,7 @@ describe("sanitizeEnumArray", () => {
         "meal type",
         isValidMealType
       )
-    ).toThrowError("Unknown meal type received: side course");
+    ).toThrow("Unknown meal type received: side course");
   });
 
   it("should validate cuisines", () => {
@@ -175,7 +175,7 @@ describe("sanitizeEnumArray", () => {
     ).toStrictEqual(["Spanish", "French", "German", "Italian"]);
     expect(() =>
       sanitizeEnumArray(["Nordic", "thai", "Jewish"], "cuisine", isValidCuisine)
-    ).toThrowError("Unknown cuisine received: thai");
+    ).toThrow("Unknown cuisine received: thai");
   });
 });
 

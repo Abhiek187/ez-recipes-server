@@ -15,7 +15,7 @@ describe("isNumeric", () => {
     -1,
     -32.1,
     "0x1",
-  ])("passes all positive cases", (num: any) => {
+  ])("passes all positive cases", (num: number | string) => {
     // Given a set of inputs that resemble numbers
     // When passed to isNumeric
     // Then they should all return true
@@ -34,10 +34,10 @@ describe("isNumeric", () => {
     undefined,
     [],
     NaN,
-  ])("passes all negative cases", (num: any) => {
+  ])("passes all negative cases", (num: unknown) => {
     // Given a set of inputs that don't resemble numbers
     // When passed to isNumeric
     // Then they should all return false
-    expect(isNumeric(num)).toBe(false);
+    expect(isNumeric(num as number | string)).toBe(false);
   });
 });

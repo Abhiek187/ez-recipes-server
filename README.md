@@ -52,8 +52,9 @@ flowchart LR
 
 A(Checkout repository) -->|18.x, 20.x| B(Install Node.js)
 B --> C(Install dependencies:\nnpm ci)
-C --> D(Build app:\nnpm run build --if-present)
-D --> E(Run Jest unit tests:\nnpm test)
+C --> D(Lint app: \nnpm run lint)
+D --> E(Build app:\nnpm run build --if-present)
+E --> F(Run Jest unit tests:\nnpm test)
 ```
 
 ### Docker CI
@@ -61,9 +62,8 @@ D --> E(Run Jest unit tests:\nnpm test)
 ```mermaid
 flowchart LR
 
-A(Checkout repository) --> B(Add environment variables)
-B --> C(Build Docker server image)
-C --> D(Run tests inside the container)
+A(Checkout repository) --> B(Build Docker server image)
+B --> C(Run tests inside the container)
 ```
 
 ### CodeQL
