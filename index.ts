@@ -10,6 +10,7 @@ import terms from "./routes/terms";
 import { connectToMongoDB } from "./utils/db";
 
 const app = express();
+app.disable("x-powered-by"); // disable fingerprinting
 
 /**
  * Initialize middleware:
@@ -20,7 +21,12 @@ const app = express();
  * - Add rate limiting
  */
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    // Only allow the web app & local server to access the server in the browser
+    origin: ["http://localhost:4200", "https://ez-recipes-web.onrender.com"],
+  })
+);
 app.use(
   helmet({
     // Customize the CSP header to enable "Try it out"
