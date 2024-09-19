@@ -7,7 +7,9 @@ import helmet from "helmet";
 import docs from "./routes/docs";
 import recipes from "./routes/recipes";
 import terms from "./routes/terms";
+import chefs from "./routes/chefs";
 import { connectToMongoDB } from "./utils/db";
+import { connectToFirebase } from "./utils/auth";
 
 const app = express();
 app.disable("x-powered-by"); // disable fingerprinting
@@ -51,8 +53,10 @@ app.use(
 app.use("/", docs);
 app.use("/api/recipes", recipes);
 app.use("/api/terms", terms);
+app.use("/api/chefs", chefs);
 
 connectToMongoDB();
+connectToFirebase();
 
 // parseInt() requires a string, not undefined
 const port = parseInt(`${process.env.PORT}`) || 5000;
