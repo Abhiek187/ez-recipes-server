@@ -2,6 +2,8 @@
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
+import { createChef, deleteChef } from "../db";
+
 export default class FirebaseAdmin {
   private static _instance: FirebaseAdmin; // singleton
 
@@ -20,7 +22,7 @@ export default class FirebaseAdmin {
   }
 
   /**
-   * Create a new user in Firebase using the provided credentials
+   * Create a new user in Firebase and save it to MongoDB
    * @param email the user's email
    * @param password the user's password
    * @throws `FirebaseAuthError` if an error occurred
@@ -34,19 +36,21 @@ export default class FirebaseAdmin {
       password,
       disabled: false,
     });
+    await createChef(userRecord.uid, email);
 
-    console.log("Successfully created new user:", userRecord);
+    console.log("Successfully created a new user:", userRecord);
     return userRecord.uid;
   }
 
   /**
-   * Delete a user from Firebase, if it exists
+   * Delete a user from Firebase & MongoDB, if it exists
    * @param uid the unique ID of the user
    * @throws `FirebaseAuthError` if an error occurred
    */
   async deleteUser(uid: string) {
     const auth = getAuth();
     await auth.deleteUser(uid);
+    await deleteChef(uid);
 
     console.log(`Successfully deleted user ${uid}`);
   }

@@ -21,3 +21,4 @@ export const connectToMongoDB = async () => {
 };
 
 export * from "./recipes";
+export * from "./chefs";
