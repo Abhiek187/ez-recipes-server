@@ -9,7 +9,8 @@ import recipes from "./routes/recipes";
 import terms from "./routes/terms";
 import chefs from "./routes/chefs";
 import { connectToMongoDB } from "./utils/db";
-import { connectToFirebase } from "./utils/auth";
+import * as admin from "./utils/auth/admin";
+import * as client from "./utils/auth/client";
 
 const app = express();
 app.disable("x-powered-by"); // disable fingerprinting
@@ -56,7 +57,8 @@ app.use("/api/terms", terms);
 app.use("/api/chefs", chefs);
 
 connectToMongoDB();
-connectToFirebase();
+admin.connectToFirebase();
+client.connectToFirebase();
 
 // parseInt() requires a string, not undefined
 const port = parseInt(`${process.env.PORT}`) || 5000;
