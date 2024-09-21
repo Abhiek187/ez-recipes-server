@@ -3,8 +3,8 @@ import { body, validationResult } from "express-validator";
 import { AuthError } from "firebase/auth";
 import { FirebaseAuthError } from "firebase-admin/auth";
 
-import { createUser, deleteUser } from "../utils/auth/admin";
-import { loginUser, logoutUser } from "../utils/auth/client";
+import FirebaseAdmin from "../utils/auth/admin";
+import FirebaseClient from "../utils/auth/client";
 
 const router = express.Router();
 
@@ -30,7 +30,7 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const uid = await createUser(email, password);
+      const uid = await FirebaseAdmin.instance.createUser(email, password);
       res.status(201).json({ uid });
     } catch (err) {
       const error = err as FirebaseAuthError;
@@ -61,7 +61,10 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const loginResult = await loginUser(email, password);
+      const loginResult = await FirebaseClient.instance.loginUser(
+        email,
+        password
+      );
       res.json(loginResult);
     } catch (err) {
       const error = err as AuthError;
@@ -73,7 +76,7 @@ router.post(
 
 router.post("/logout", async (_req, res) => {
   try {
-    await logoutUser();
+    await FirebaseClient.instance.logoutUser();
     res.sendStatus(204);
   } catch (err) {
     const error = err as AuthError;
@@ -87,7 +90,7 @@ router.delete("/:id", async (req, res) => {
   const uid = req.params.id;
 
   try {
-    await deleteUser(uid);
+    await FirebaseAdmin.instance.deleteUser(uid);
     res.sendStatus(204);
   } catch (err) {
     const error = err as FirebaseAuthError;

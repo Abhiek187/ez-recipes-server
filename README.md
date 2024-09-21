@@ -111,10 +111,15 @@ API_KEY=YOUR_API_KEY
 MONGO_URI=YOUR_MONGODB_URI
 ```
 
-4. Create a [Firebase Project](https://console.firebase.google.com) and generate a private key under Service Accounts. Save it outside this repo and add the path to it in `.env`:
+4. Create a [Firebase Project](https://console.firebase.google.com) with the following:
+   - A private key under Service Accounts
+   - A web app with a configuration object
+
+Save both of these outside this repo and reference the paths to them in `.env`:
 
 ```
 GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_PRIVATE_KEY
+FIREBASE_CONFIG=PATH_TO_WEB_APP_CONFIG
 ```
 
 5. Run `npm install` to install all the dependencies.
@@ -127,7 +132,7 @@ The server will be listening on `http://localhost:5000`. To stop the server, pre
 
 ## Installing with Docker
 
-1. Follow steps 1-3 above.
+1. Follow steps 1-4 above.
 2. Run `docker compose -f docker-compose.yml -f docker-compose-[dev|prod].yml up -d` to start up both the web and server containers in dev or prod.
 
 To stop the containers, run `docker compose down`.
