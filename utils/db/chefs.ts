@@ -34,6 +34,7 @@ export const deleteChef = async (uid: string) => {
     const result = await ChefModel.deleteOne(query).exec();
     console.log(`Deleted ${result.deletedCount} chef document`); // should be just 1
   } catch (error) {
-    console.error(`Failed to delete chef ${uid}:`, error);
+    // Prevent format string injections from tainting the logs
+    console.error("Failed to delete chef", `${uid}:`, error);
   }
 };
