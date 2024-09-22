@@ -9,7 +9,7 @@
 
 This is an API built using Express to fetch low-effort recipes from [spoonacular](https://spoonacular.com/food-api). These are recipes that can be made within an hour, use common kitchen ingredients, and can produce multiple servings. It's ideal for new chefs learning how to cook, or people with little free time who want to cook something tasty. This API is connected to the [web](https://github.com/Abhiek187/ez-recipes-web), [iOS](https://github.com/Abhiek187/ez-recipes-ios), and [Android](https://github.com/Abhiek187/ez-recipes-android) apps so anyone can view the recipes on any device.
 
-In addition to spoonacular, MongoDB is used to cache the recipes for improved query performance. It is also used to perform full-text search on recipes based on various criteria like recipe name, description, or ingredients.
+In addition to spoonacular, MongoDB is used to cache the recipes for improved query performance. It is also used to perform full-text search on recipes based on various criteria like recipe name, description, or ingredients. Firebase is used to manage user authentication.
 
 ### Architecture Diagram
 
@@ -38,6 +38,7 @@ Server-->>Client: Client recipe
 - RESTful APIs
 - MongoDB to store data, query data, and do full-text search
 - Pagination to reduce bandwidth and optimize query performance
+- Firebase for user authentication
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
@@ -110,7 +111,18 @@ API_KEY=YOUR_API_KEY
 MONGO_URI=YOUR_MONGODB_URI
 ```
 
-4. Run `npm install` to install all the dependencies.
+4. Create a [Firebase Project](https://console.firebase.google.com) with the following:
+   - A private key under Service Accounts
+   - A web app with a configuration object
+
+Save both of these outside this repo and reference the paths to them in `.env`:
+
+```
+GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_PRIVATE_KEY
+FIREBASE_CONFIG=PATH_TO_WEB_APP_CONFIG
+```
+
+5. Run `npm install` to install all the dependencies.
 
 **Dev:** Run `npm start`.
 
@@ -120,7 +132,7 @@ The server will be listening on `http://localhost:5000`. To stop the server, pre
 
 ## Installing with Docker
 
-1. Follow steps 1-3 above.
+1. Follow steps 1-4 above.
 2. Run `docker compose -f docker-compose.yml -f docker-compose-[dev|prod].yml up -d` to start up both the web and server containers in dev or prod.
 
 To stop the containers, run `docker compose down`.

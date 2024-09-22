@@ -7,6 +7,8 @@ declare global {
       PORT?: string;
       API_KEY: string;
       MONGO_URI: string;
+      GOOGLE_APPLICATION_CREDENTIALS: string;
+      FIREBASE_CONFIG: string;
     }
   }
 }

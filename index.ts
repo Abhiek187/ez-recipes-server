@@ -7,6 +7,7 @@ import helmet from "helmet";
 import docs from "./routes/docs";
 import recipes from "./routes/recipes";
 import terms from "./routes/terms";
+import chefs from "./routes/chefs";
 import { connectToMongoDB } from "./utils/db";
 
 const app = express();
@@ -51,6 +52,7 @@ app.use(
 app.use("/", docs);
 app.use("/api/recipes", recipes);
 app.use("/api/terms", terms);
+app.use("/api/chefs", chefs);
 
 connectToMongoDB();
 
