@@ -1,0 +1,62 @@
+paths:
+  /:
+    post:
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/credentials"
+      responses:
+        "201":
+          description: Successfully created a new account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/uid"
+
+        "400":
+          description: The request body is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                invalidEmail:
+                  $ref: "#/components/examples/invalidEmail"
+
+        "500":
+          description: An error occurred while creating an account
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                emailAlreadyTaken:
+                  $ref: "#/components/examples/emailAlreadyTaken"
+
+components:
+  schemas:
+    credentials:
+      type: object
+      properties:
+        email:
+          type: string
+          description: The chef's email address
+        password:
+          type: string
+          description: The chef's password
+    uid:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: The unique identifier for the chef
+
+  examples:
+    invalidEmail:
+      value: { "error": "Invalid request: Invalid/missing email" }
+    emailAlreadyTaken:
+      value:
+        { "error": "The email address is already in use by another account." }

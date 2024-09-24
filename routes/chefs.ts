@@ -34,8 +34,8 @@ router.post(
       res.status(201).json({ uid });
     } catch (err) {
       const error = err as FirebaseAuthError;
-      console.error("Error creating new user:", error);
-      res.status(400).json({ error: error.message });
+      console.error("Error creating a new user:", error);
+      res.status(500).json({ error: error.message });
     }
   }
 );

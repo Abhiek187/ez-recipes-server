@@ -17,8 +17,12 @@ paths:
     $ref: "./docs/recipes.yaml#/paths/~1random"
   /api/recipes/{id}:
     $ref: "./docs/recipes.yaml#/paths/~1{id}"
+
   /api/terms:
     $ref: "./docs/terms.yaml#/paths/~1"
+
+  /api/chefs:
+    $ref: "./docs/chefs.yaml#/paths/~1"
 
 # Show all schemas on the main page
 components:
@@ -33,5 +37,11 @@ components:
         error:
           type: string
           description: The error message
+
     terms:
       $ref: "./docs/terms.yaml#/components/schemas/terms"
+
+    credentials:
+      $ref: "./docs/chefs.yaml#/components/schemas/credentials"
+    uid:
+      $ref: "./docs/chefs.yaml#/components/schemas/uid"
