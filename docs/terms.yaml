@@ -1,0 +1,28 @@
+paths:
+  /:
+    get:
+      summary: Get all cooking terms
+      responses:
+        "200":
+          description: Successfully returned all terms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/terms"
+
+components:
+  schemas:
+    terms:
+      type: array
+      items:
+        type: object
+        properties:
+          _id:
+            type: string
+            description: A unique object ID
+          word:
+            type: string
+            description: The word
+          definition:
+            type: string
+            description: The word's definition

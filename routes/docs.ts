@@ -1,5 +1,6 @@
 import express from "express";
 import fs from "fs";
+import path from "path";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yaml";
 
@@ -10,5 +11,6 @@ const swaggerDocument: swaggerUi.JsonObject = YAML.parse(swaggerFile);
 const router = express.Router();
 router.use("/", swaggerUi.serve);
 router.get("/", swaggerUi.setup(swaggerDocument));
+router.use("/docs", express.static(path.join(__dirname, "..", "docs")));
 
 export default router;
