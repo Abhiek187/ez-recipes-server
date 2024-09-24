@@ -2,6 +2,8 @@ paths:
   /:
     post:
       summary: Create an account
+      tags:
+        - chefs
       requestBody:
         required: true
         content:

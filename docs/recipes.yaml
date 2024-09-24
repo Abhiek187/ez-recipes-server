@@ -2,6 +2,8 @@ paths:
   /:
     get:
       summary: Get up to 100 recipes by filters. Pagination is required to return more recipes.
+      tags:
+        - recipes
       parameters:
         - in: query
           name: query
@@ -179,6 +181,8 @@ paths:
   /random:
     get:
       summary: Get a random, low-effort recipe
+      tags:
+        - recipes
       responses:
         "200":
           description: Successfully returned a recipe
@@ -210,6 +214,8 @@ paths:
   /{id}:
     get:
       summary: Get a recipe by its ID
+      tags:
+        - recipes
       parameters:
         - $ref: "#/components/parameters/recipeId"
 
