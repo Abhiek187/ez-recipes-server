@@ -46,9 +46,12 @@ components:
         email:
           type: string
           description: The chef's email address
+          format: email
         password:
           type: string
           description: The chef's password
+          format: password
+          minLength: 8
     uid:
       type: object
       properties:
