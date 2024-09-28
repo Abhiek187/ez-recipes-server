@@ -6,7 +6,7 @@ import RecipeResponse from "../types/spoonacular/RecipeResponse";
 import SearchResponse from "../types/spoonacular/SearchResponse";
 import { isObject } from "./object";
 import ErrorResponse from "../types/spoonacular/ErrorResponse";
-import api, { handleAxiosError } from "./api";
+import spoonacularApi, { handleAxiosError } from "./api";
 import TasteResponse from "../types/spoonacular/TasteResponse";
 import { isNumeric } from "./string";
 
@@ -158,7 +158,7 @@ export const getSpiceLevel = async (
   const url = tasteUrlBuilder(recipeId);
 
   try {
-    const tasteResponse = await api.get<TasteResponse>(url);
+    const tasteResponse = await spoonacularApi.get<TasteResponse>(url);
     logSpoonacularQuota("GET", url, tasteResponse);
 
     const spiceValue = tasteResponse.data.spiciness;

@@ -17,7 +17,7 @@ import {
   sanitizeNumber,
 } from "../utils/recipeUtils";
 import * as recipeUtils from "../utils/recipeUtils";
-import api from "../utils/api";
+import spoonacularApi from "../utils/api";
 
 const OLD_ENV = process.env;
 
@@ -278,7 +278,7 @@ describe("getSpiceLevel", () => {
   ])(
     "associates a spice level of %d with %s",
     async (spiceValue: number, expectedSpiceLevel: string) => {
-      jest.spyOn(api, "get").mockImplementation(() =>
+      jest.spyOn(spoonacularApi, "get").mockImplementation(() =>
         Promise.resolve({
           data: {
             sweetness: 48.35,
@@ -299,7 +299,7 @@ describe("getSpiceLevel", () => {
 
   it("returns unknown if the API fails", async () => {
     jest
-      .spyOn(api, "get")
+      .spyOn(spoonacularApi, "get")
       .mockImplementation(() => Promise.reject("GET taste mocked to fail"));
 
     const spiceLevel = await recipeUtils.getSpiceLevel(0);

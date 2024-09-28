@@ -43,6 +43,18 @@ export default class FirebaseAdmin {
   }
 
   /**
+   * Validate a Firebase ID token and check if it's revoked
+   * @param token the ID token to validate
+   * @throws `FirebaseAuthError` if an error occurred
+   * @returns the UID from the token
+   */
+  async validateToken(token: string): Promise<string> {
+    const auth = getAuth();
+    const decodedToken = await auth.verifyIdToken(token, true);
+    return decodedToken.uid;
+  }
+
+  /**
    * Delete a user from Firebase & MongoDB, if it exists
    * @param uid the unique ID of the user
    * @throws `FirebaseAuthError` if an error occurred

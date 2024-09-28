@@ -11,7 +11,7 @@ import {
   recipeIdUrlBuilder,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
-import api from "../utils/api";
+import spoonacularApi from "../utils/api";
 
 // Write tests based on the possible responses from openapi.yaml
 const basePath = "/api/recipes";
@@ -36,7 +36,7 @@ describe(`${basePath}/random`, () => {
     let searchResponse: AxiosResponse<SearchResponse>;
 
     try {
-      searchResponse = await api.get<SearchResponse>(recipeUrl);
+      searchResponse = await spoonacularApi.get<SearchResponse>(recipeUrl);
     } catch (err) {
       throw new Error(
         `The random recipe endpoint failed instead of succeeded: ${err}`
@@ -58,7 +58,7 @@ describe(`${basePath}/random`, () => {
     const recipeUrl = randomRecipeUrlBuilder();
 
     try {
-      await api.get<SearchResponse>(recipeUrl, {
+      await spoonacularApi.get<SearchResponse>(recipeUrl, {
         headers: {
           "x-api-key": "384ba039c39e90f",
         },
@@ -88,7 +88,7 @@ describe(`${basePath}/:id`, () => {
     let recipeResponse: AxiosResponse<RecipeResponse>;
 
     try {
-      recipeResponse = await api.get<RecipeResponse>(recipeUrl);
+      recipeResponse = await spoonacularApi.get<RecipeResponse>(recipeUrl);
     } catch (err) {
       throw new Error(
         `The recipe ID endpoint failed instead of succeeded: ${err}`
@@ -112,7 +112,7 @@ describe(`${basePath}/:id`, () => {
     const recipeUrl = recipeIdUrlBuilder(recipeId);
 
     try {
-      await api.get<RecipeResponse>(recipeUrl, {
+      await spoonacularApi.get<RecipeResponse>(recipeUrl, {
         headers: {
           "x-api-key": "384ba039c39e90f",
         },
@@ -139,7 +139,7 @@ describe(`${basePath}/:id`, () => {
     const recipeUrl = recipeIdUrlBuilder(recipeId);
 
     try {
-      await api.get<RecipeResponse>(recipeUrl);
+      await spoonacularApi.get<RecipeResponse>(recipeUrl);
 
       throw new Error("The recipe ID endpoint succeeded instead of failed");
     } catch (err) {

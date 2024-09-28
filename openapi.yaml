@@ -23,8 +23,8 @@ paths:
 
   /api/chefs:
     $ref: "./docs/chefs.yaml#/paths/~1"
-  /api/chefs/{id}/verify:
-    $ref: "./docs/chefs.yaml#/paths/~1{id}~1verify"
+  /api/chefs/verify:
+    $ref: "./docs/chefs.yaml#/paths/~1verify"
 
 # Components to be shown on the main page
 components:
