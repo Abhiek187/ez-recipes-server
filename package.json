@@ -6,7 +6,9 @@
   "scripts": {
     "start": "ts-node-dev index",
     "test": "jest",
+    "prebuild": "rimraf dist",
     "build": "tsc",
+    "postbuild": "copyfiles docs/* dist",
     "lint": "eslint . --max-warnings 0",
     "server": "pm2-runtime start dist/index.js"
   },
@@ -50,9 +52,11 @@
     "@types/jest": "^29.5.13",
     "@types/node": "^22.6.1",
     "@types/swagger-ui-express": "^4.1.6",
+    "copyfiles": "^2.4.1",
     "eslint": "^9.11.1",
     "globals": "^15.9.0",
     "jest": "^29.7.0",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.2.5",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.2",
