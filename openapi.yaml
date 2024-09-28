@@ -23,9 +23,17 @@ paths:
 
   /api/chefs:
     $ref: "./docs/chefs.yaml#/paths/~1"
+  /api/chefs/{id}/verify:
+    $ref: "./docs/chefs.yaml#/paths/~1{id}~1verify"
 
-# Show all schemas on the main page
+# Components to be shown on the main page
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     recipes:
       $ref: "./docs/recipes.yaml#/components/schemas/recipes"
@@ -45,3 +53,5 @@ components:
       $ref: "./docs/chefs.yaml#/components/schemas/credentials"
     uid:
       $ref: "./docs/chefs.yaml#/components/schemas/uid"
+    email:
+      $ref: "./docs/chefs.yaml#/components/schemas/email"

@@ -38,6 +38,31 @@ paths:
                 emailAlreadyTaken:
                   $ref: "#/components/examples/emailAlreadyTaken"
 
+  /{id}/verify:
+    post:
+      summary: Verify the chef's account
+      tags:
+        - chefs
+      security:
+        - bearerAuth: [] # no scopes for bearer auth
+      responses:
+        "200":
+          description: Successfully sent a verification email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/email"
+
+        "401":
+          description: The token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                invalidToken:
+                  $ref: "#/components/examples/invalidToken"
+
 components:
   schemas:
     credentials:
@@ -58,6 +83,13 @@ components:
         uid:
           type: string
           description: The unique identifier for the chef
+    email:
+      type: object
+      properties:
+        email:
+          type: string
+          description: The chef's email
+          format: email
 
   examples:
     invalidEmail:
@@ -65,3 +97,5 @@ components:
     emailAlreadyTaken:
       value:
         { "error": "The email address is already in use by another account." }
+    invalidToken:
+      value: { "error": "" }
