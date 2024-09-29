@@ -1,6 +1,6 @@
 // Need to enable allowSyntheticDefaultImports
 import { initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
+import { getAuth, UserRecord } from "firebase-admin/auth";
 
 import { createChef, deleteChef } from "../db";
 
@@ -52,6 +52,17 @@ export default class FirebaseAdmin {
     const auth = getAuth();
     const decodedToken = await auth.verifyIdToken(token, true);
     return decodedToken.uid;
+  }
+
+  /**
+   * Get the user's profile
+   * @param uid the unique ID of the user
+   * @throws `FirebaseAuthError` if an error occurred
+   * @returns an object containing user data
+   */
+  async getUser(uid: string): Promise<UserRecord> {
+    const auth = getAuth();
+    return await auth.getUser(uid);
   }
 
   /**
