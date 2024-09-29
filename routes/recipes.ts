@@ -14,7 +14,7 @@ import {
   sanitizeNumber,
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
-import api, { handleAxiosError } from "../utils/api";
+import spoonacularApi, { handleAxiosError } from "../utils/api";
 import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
 import RecipeFilter from "../types/client/RecipeFilter";
 import {
@@ -140,7 +140,7 @@ router.get("/random", async (req, res) => {
   const url = randomRecipeUrlBuilder();
 
   try {
-    const recipeResponse = await api.get<SearchResponse>(url);
+    const recipeResponse = await spoonacularApi.get<SearchResponse>(url);
     logSpoonacularQuota(req.method, req.originalUrl, recipeResponse);
 
     const recipes = recipeResponse.data;
@@ -178,7 +178,7 @@ router.get("/:id", async (req, res) => {
   const url = recipeIdUrlBuilder(id);
 
   try {
-    const recipeResponse = await api.get<RecipeResponse>(url);
+    const recipeResponse = await spoonacularApi.get<RecipeResponse>(url);
     logSpoonacularQuota(req.method, req.originalUrl, recipeResponse);
 
     const recipes = recipeResponse.data;

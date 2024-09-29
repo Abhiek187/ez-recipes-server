@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import express from "express";
 import { body, validationResult } from "express-validator";
 import { AuthError } from "firebase/auth";
@@ -5,6 +6,10 @@ import { FirebaseAuthError } from "firebase-admin/auth";
 
 import FirebaseAdmin from "../utils/auth/admin";
 import FirebaseClient from "../utils/auth/client";
+import auth from "../middleware/auth";
+import { verifyEmail } from "../utils/auth/api";
+import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
+import { handleAxiosError } from "../utils/api";
 
 const router = express.Router();
 
@@ -30,8 +35,8 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const uid = await FirebaseAdmin.instance.createUser(email, password);
-      res.status(201).json({ uid });
+      const userInfo = await FirebaseAdmin.instance.createUser(email, password);
+      res.status(201).json(userInfo);
     } catch (err) {
       const error = err as FirebaseAuthError;
       console.error("Error creating a new user:", error);
@@ -39,6 +44,34 @@ router.post(
     }
   }
 );
+
+router.post("/verify", auth, async (_req, res) => {
+  // Send a verification email
+  const { token } = res.locals;
+
+  try {
+    const emailResponse = await verifyEmail(token);
+    console.log(`Sending verification email to ${emailResponse.email}...`);
+    res.json(emailResponse);
+  } catch (error) {
+    if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
+      const { code, message } = error.response.data.error;
+      res
+        .status(code)
+        .json({ error: `Failed to send a verification email: ${message}` });
+    } else if (isAxiosError(error)) {
+      const [status, json] = handleAxiosError(error);
+      res.status(status).json(json);
+    } else {
+      res.status(500).json({
+        error: `Failed to send a verification email: ${JSON.stringify(
+          error,
+          Object.getOwnPropertyNames(error)
+        )}`,
+      });
+    }
+  }
+});
 
 router.post(
   "/login",

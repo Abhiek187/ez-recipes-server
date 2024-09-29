@@ -4,7 +4,7 @@ import RecipeError from "../types/client/RecipeError";
 import { isErrorResponse } from "./recipeUtils";
 
 // Apply all common API settings
-const api = axios.create({
+const spoonacularApi = axios.create({
   baseURL: "https://api.spoonacular.com/recipes",
   headers: {
     "x-api-key": process.env.API_KEY ?? "",
@@ -44,4 +44,4 @@ export const handleAxiosError = (error: AxiosError): [number, RecipeError] => {
   return [error.response?.status ?? 500, errorBody];
 };
 
-export default api;
+export default spoonacularApi;

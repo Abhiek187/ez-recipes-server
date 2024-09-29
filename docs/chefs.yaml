@@ -16,7 +16,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/uid"
+                $ref: "#/components/schemas/userInfo"
 
         "400":
           description: The request body is invalid
@@ -38,6 +38,35 @@ paths:
                 emailAlreadyTaken:
                   $ref: "#/components/examples/emailAlreadyTaken"
 
+  /verify:
+    post:
+      summary: Verify the chef's account
+      tags:
+        - chefs
+      security:
+        - bearerAuth: [] # no scopes for bearer auth
+      responses:
+        "200":
+          description: Successfully sent a verification email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/email"
+
+        "400":
+          description: An error occurred while sending a verification email
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                tooManyAttempts:
+                  $ref: "#/components/examples/tooManyAttempts"
+                userNotFound:
+                  $ref: "#/components/examples/userNotFound"
+                tokenExpired:
+                  $ref: "#/components/examples/tokenExpired"
+
 components:
   schemas:
     credentials:
@@ -52,12 +81,28 @@ components:
           description: The chef's password
           format: password
           minLength: 8
-    uid:
+    userInfo:
       type: object
       properties:
         uid:
           type: string
           description: The unique identifier for the chef
+        token:
+          type: string
+          description: The ID token for the chef
+        emailVerified:
+          type: boolean
+          description: Whether or not the email address is verified
+    email:
+      type: object
+      properties:
+        kind:
+          type: string
+          description: The type of response gotten from the Firebase REST API
+        email:
+          type: string
+          description: The chef's email
+          format: email
 
   examples:
     invalidEmail:
@@ -65,3 +110,18 @@ components:
     emailAlreadyTaken:
       value:
         { "error": "The email address is already in use by another account." }
+    tooManyAttempts:
+      value:
+        {
+          "error": "Failed to send a verification email: TOO_MANY_ATTEMPTS_TRY_LATER",
+        }
+    userNotFound:
+      value:
+        {
+          "error": "Invalid Firebase token provided: Error: There is no user record corresponding to the provided identifier.",
+        }
+    tokenExpired:
+      value:
+        {
+          "error": "Invalid Firebase token provided: Error: Firebase ID token has expired. Get a fresh ID token from your client app and try again (auth/id-token-expired). See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.",
+        }
