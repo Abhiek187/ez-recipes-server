@@ -1,5 +1,10 @@
+import { FilterQuery, UpdateQuery } from "mongoose";
+
 import ChefModel from "../../models/ChefModel";
 import Chef from "../../types/client/Chef";
+import Encryptor from "../crypto";
+
+const encryptor = new Encryptor();
 
 /**
  * Create a new chef in the DB
@@ -10,6 +15,7 @@ export const createChef = async (uid: string, email: string) => {
   const chef: Chef = {
     _id: uid,
     email,
+    refreshToken: null,
     ratings: {},
     recentRecipes: [],
     favoriteRecipes: [],
@@ -20,6 +26,47 @@ export const createChef = async (uid: string, email: string) => {
     console.log(`Successfully added chef ${doc._id} to the DB`);
   } catch (error) {
     console.error(`Failed to create chef ${uid}:`, error);
+  }
+};
+
+/**
+ * Store the chef's refresh token encrypted in the DB
+ * @param uid the UID of the chef
+ * @param refreshToken the chef's refresh token
+ */
+export const saveRefreshToken = async (uid: string, refreshToken: string) => {
+  const filter: FilterQuery<Chef> = {
+    _id: uid,
+  };
+  const encryptedRefreshToken = encryptor.encrypt(refreshToken);
+  const update: UpdateQuery<Chef> = {
+    refreshToken: encryptedRefreshToken,
+  };
+
+  try {
+    const result = await ChefModel.updateOne(filter, update).exec();
+    console.log(`Successfully added refresh token for chef ${uid}:`, result);
+  } catch (error) {
+    console.error(`Failed to save the refresh token for chef ${uid}:`, error);
+  }
+};
+
+/**
+ * Get the decrypted refresh token for the chef
+ * @param uid the UID of the chef
+ * @returns the refresh token, or `null` if the token couldn't be found
+ */
+export const getRefreshToken = async (uid: string): Promise<string | null> => {
+  try {
+    const doc = await ChefModel.findOne({ _id: uid }).exec();
+    const encryptedRefreshToken = doc?.refreshToken;
+    if (encryptedRefreshToken === undefined || encryptedRefreshToken === null)
+      return null;
+
+    return encryptor.decrypt(encryptedRefreshToken);
+  } catch (error) {
+    console.error(`Failed to get the refresh token for chef ${uid}:`, error);
+    return null;
   }
 };
 

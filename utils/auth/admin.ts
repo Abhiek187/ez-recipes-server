@@ -2,7 +2,9 @@
 import { initializeApp } from "firebase-admin/app";
 import { getAuth, UserRecord } from "firebase-admin/auth";
 
-import { createChef, deleteChef } from "../db";
+import { createChef, deleteChef, saveRefreshToken } from "../db";
+import UserInfoResponse from "../../types/firebase/UserInfoResponse";
+import { exchangeCustomToken } from "./api";
 
 export default class FirebaseAdmin {
   private static _instance: FirebaseAdmin; // singleton
@@ -26,20 +28,43 @@ export default class FirebaseAdmin {
    * @param email the user's email
    * @param password the user's password
    * @throws `FirebaseAuthError` if an error occurred
-   * @returns the user's UID (unique ID)
+   * @returns the user's UID (unique ID), ID token, and whether the email is verified
    */
-  async createUser(email: string, password: string): Promise<string> {
+  async createUser(email: string, password: string): Promise<UserInfoResponse> {
     const auth = getAuth();
+    // New users must verify their emails
+    const emailVerified = false;
     const userRecord = await auth.createUser({
       email,
-      emailVerified: false,
+      emailVerified,
       password,
       disabled: false,
     });
+    const uid = userRecord.uid;
     await createChef(userRecord.uid, email);
+    // Save the refresh token after creating a new chef doc
+    const idToken = await this.getIdToken(uid);
 
     console.log("Successfully created a new user:", userRecord);
-    return userRecord.uid;
+    return {
+      uid,
+      token: idToken,
+      emailVerified,
+    };
+  }
+
+  /**
+   * Get an ID token for a given user & store the refresh token
+   * @param uid the unique ID of the user
+   * @throws `FirebaseAuthError` if an error occurred
+   * @returns an ID token
+   */
+  async getIdToken(uid: string): Promise<string> {
+    const auth = getAuth();
+    const customToken = await auth.createCustomToken(uid);
+    const { idToken, refreshToken } = await exchangeCustomToken(customToken);
+    await saveRefreshToken(uid, refreshToken);
+    return idToken;
   }
 
   /**

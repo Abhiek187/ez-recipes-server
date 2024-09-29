@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 
 import FirebaseAdmin from "../utils/auth/admin";
 
-export default async (req: Request, res: Response, next: NextFunction) => {
+const auth = async (req: Request, res: Response, next: NextFunction) => {
   // Validate the ID token from Firebase
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith("Bearer ")
@@ -27,3 +27,5 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       .json({ error: `Invalid Firebase token provided: ${error}` });
   }
 };
+
+export default auth;

@@ -35,8 +35,8 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const uid = await FirebaseAdmin.instance.createUser(email, password);
-      res.status(201).json({ uid });
+      const userInfo = await FirebaseAdmin.instance.createUser(email, password);
+      res.status(201).json(userInfo);
     } catch (err) {
       const error = err as FirebaseAuthError;
       console.error("Error creating a new user:", error);

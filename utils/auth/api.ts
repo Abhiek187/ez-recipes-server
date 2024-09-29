@@ -2,6 +2,7 @@ import axios from "axios";
 
 import VerifyEmailResponse from "../../types/firebase/VerifyEmailResponse";
 import FirebaseTokenResponse from "../../types/firebase/FirebaseTokenResponse";
+import FirebaseTokenExchangeResponse from "../../types/firebase/FirebaseTokenExchangeResponse";
 
 const idApi = axios.create({
   baseURL: "https://identitytoolkit.googleapis.com/v1",
@@ -18,6 +19,25 @@ const secureApi = axios.create({
   },
   signal: new AbortController().signal,
 });
+
+/**
+ * Exchange a custom token for an ID & refresh token
+ * @param customToken a custom token created by the Firebase Admin SDK
+ * @throws `FirebaseRestError` if an error occurred
+ * @returns an ID & refresh token
+ */
+export const exchangeCustomToken = async (
+  customToken: string
+): Promise<FirebaseTokenExchangeResponse> => {
+  const response = await idApi.post<FirebaseTokenExchangeResponse>(
+    "/accounts:signInWithCustomToken",
+    {
+      token: customToken,
+      returnSecureToken: true,
+    }
+  );
+  return response.data;
+};
 
 /**
  * Send a verification email to the user

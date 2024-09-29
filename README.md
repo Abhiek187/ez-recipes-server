@@ -124,7 +124,14 @@ FIREBASE_CONFIG=PATH_TO_WEB_APP_CONFIG
 WEB_API_KEY=YOUR_WEB_API_KEY
 ```
 
-5. Run `npm install` to install all the dependencies.
+5. Generate a SECRET_KEY for encryption and save it in `.env`:
+
+```bash
+openssl rand -base64 64 # YOUR_SECRET_KEY
+SECRET_KEY=YOUR_SECRET_KEY
+```
+
+6. Run `npm install` to install all the dependencies.
 
 **Dev:** Run `npm start`.
 
@@ -134,7 +141,7 @@ The server will be listening on `http://localhost:5000`. To stop the server, pre
 
 ## Installing with Docker
 
-1. Follow steps 1-4 above.
+1. Follow the above installation steps.
 2. Run `docker compose -f docker-compose.yml -f docker-compose-[dev|prod].yml up -d` to start up both the web and server containers in dev or prod.
 
 To stop the containers, run `docker compose down`.

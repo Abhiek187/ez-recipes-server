@@ -51,7 +51,7 @@ components:
 
     credentials:
       $ref: "./docs/chefs.yaml#/components/schemas/credentials"
-    uid:
-      $ref: "./docs/chefs.yaml#/components/schemas/uid"
+    userInfo:
+      $ref: "./docs/chefs.yaml#/components/schemas/userInfo"
     email:
       $ref: "./docs/chefs.yaml#/components/schemas/email"
