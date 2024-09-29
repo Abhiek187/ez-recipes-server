@@ -4,7 +4,8 @@ type FirebaseRestError = {
   error: {
     code: number;
     message: string;
-    errors: {
+    status?: string; // status included in secure API, but not errors
+    errors?: {
       message: string;
       domain: string;
       reason: string;
