@@ -4,8 +4,6 @@ import ChefModel from "../../models/ChefModel";
 import Chef from "../../types/client/Chef";
 import Encryptor from "../crypto";
 
-const encryptor = new Encryptor();
-
 /**
  * Create a new chef in the DB
  * @param uid the UID of the chef
@@ -38,6 +36,7 @@ export const saveRefreshToken = async (uid: string, refreshToken: string) => {
   const filter: FilterQuery<Chef> = {
     _id: uid,
   };
+  const encryptor = new Encryptor();
   const encryptedRefreshToken = encryptor.encrypt(refreshToken);
   const update: UpdateQuery<Chef> = {
     refreshToken: encryptedRefreshToken,
@@ -63,6 +62,7 @@ export const getRefreshToken = async (uid: string): Promise<string | null> => {
     if (encryptedRefreshToken === undefined || encryptedRefreshToken === null)
       return null;
 
+    const encryptor = new Encryptor();
     return encryptor.decrypt(encryptedRefreshToken);
   } catch (error) {
     console.error(`Failed to get the refresh token for chef ${uid}:`, error);
