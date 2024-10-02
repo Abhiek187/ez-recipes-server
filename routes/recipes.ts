@@ -62,7 +62,8 @@ router.get("/", async (req, res) => {
       filter.maxCals = sanitizeNumber(maxCals, "max-cals", 0, 2000);
     }
   } catch (error) {
-    return badRequestError(res, error as string);
+    badRequestError(res, error as string);
+    return;
   }
 
   if (vegetarian !== undefined) {
@@ -109,13 +110,15 @@ router.get("/", async (req, res) => {
       filter.cultures = sanitizeEnumArray(culture, "cuisine", isValidCuisine);
     }
   } catch (error) {
-    return badRequestError(res, error as string);
+    badRequestError(res, error as string);
+    return;
   }
 
   if (typeof token === "string") {
     // An ObjectId must be passed if a find query should be performed
     if (filter.query === undefined && !isValidObjectId(token)) {
-      return badRequestError(res, `Token "${token}" is not a valid ObjectId`);
+      badRequestError(res, `Token "${token}" is not a valid ObjectId`);
+      return;
     }
 
     // Search tokens will be validated during the query
@@ -125,14 +128,14 @@ router.get("/", async (req, res) => {
   const recipes = await filterRecipes(filter);
 
   if (typeof recipes === "string") {
-    return badRequestError(res, recipes);
+    badRequestError(res, recipes);
   } else if (recipes === null) {
-    return res
+    res
       .status(500)
       .json({ error: "Failed to filter recipes. Please try again later." });
+  } else {
+    res.json(recipes);
   }
-
-  res.json(recipes);
 });
 
 // Get a random, low-effort recipe
@@ -164,7 +167,8 @@ router.get("/:id", async (req, res) => {
 
   // Check that ID in the URL is numeric to prevent SSRF (server-side request forgery) attacks
   if (!isNumeric(id)) {
-    return res.status(400).json({ error: "The recipe ID must be numeric" });
+    res.status(400).json({ error: "The recipe ID must be numeric" });
+    return;
   }
 
   // If the recipe exists in MongoDB, return that to save an API call to spoonacular
