@@ -27,9 +27,10 @@ router.post(
     const validationErrors = validationResult(req);
     if (!validationErrors.isEmpty()) {
       const errorMessages = validationErrors.array().map((error) => error.msg);
-      return res
+      res
         .status(400)
         .json({ error: `Invalid request: ${errorMessages.join(" | ")}` });
+      return;
     }
 
     const { email, password } = req.body;
@@ -86,9 +87,10 @@ router.post(
     const validationErrors = validationResult(req);
     if (!validationErrors.isEmpty()) {
       const errorMessages = validationErrors.array().map((error) => error.msg);
-      return res
+      res
         .status(400)
         .json({ error: `Invalid request: ${errorMessages.join(" | ")}` });
+      return;
     }
 
     const { email, password } = req.body;

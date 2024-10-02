@@ -10,9 +10,10 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     : authHeader;
 
   if (token === undefined) {
-    return res
+    res
       .status(401)
       .json({ error: "Missing the Firebase ID token from the request" });
+    return;
   }
 
   try {
