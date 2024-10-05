@@ -103,6 +103,9 @@ components:
           type: string
           description: The chef's email
           format: email
+        token:
+          type: string
+          description: The ID token for the chef
 
   examples:
     invalidEmail:

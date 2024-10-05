@@ -1,6 +1,22 @@
 import { NextFunction, Request, Response } from "express";
+import { FirebaseAuthError } from "firebase-admin/auth";
+import { jwtDecode } from "jwt-decode";
 
 import FirebaseAdmin from "../utils/auth/admin";
+import { refreshIdToken } from "../utils/auth/api";
+import { getRefreshToken, saveRefreshToken } from "../utils/db";
+
+const saveTokenAndContinue = (
+  res: Response,
+  next: NextFunction,
+  uid: string,
+  token: string
+) => {
+  // Save the UID & token for requests that need it
+  res.locals.uid = uid;
+  res.locals.token = token;
+  next();
+};
 
 const auth = async (req: Request, res: Response, next: NextFunction) => {
   // Validate the ID token from Firebase
@@ -18,11 +34,40 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const uid = await FirebaseAdmin.instance.validateToken(token);
-    // Save the UID & token for requests that need it
-    res.locals.uid = uid;
-    res.locals.token = token;
-    next();
-  } catch (error) {
+    saveTokenAndContinue(res, next, uid, token);
+  } catch (err) {
+    const error = err as FirebaseAuthError;
+
+    // If the token is expired, try refreshing it (revoked tokens can't be refreshed)
+    if (error.code === "auth/id-token-expired") {
+      try {
+        // Need to decode the token ourself since Firebase won't accept expired tokens
+        // Assuming the rest of the token is valid, and a new token will be generated anyway
+        const { sub: uid } = jwtDecode(token);
+        if (uid === undefined) {
+          throw new Error("UID not found in the token");
+        }
+
+        const refreshToken = await getRefreshToken(uid);
+        if (refreshToken === null) {
+          throw new Error(`Couldn't find a refresh token for user: ${uid}`);
+        }
+
+        // newUid should === uid, but better to be safe than sorry
+        const {
+          id_token: newIdToken,
+          refresh_token: newRefreshToken,
+          user_id: newUid,
+        } = await refreshIdToken(refreshToken);
+
+        await saveRefreshToken(newUid, newRefreshToken);
+        saveTokenAndContinue(res, next, newUid, newIdToken);
+        return;
+      } catch (error2) {
+        console.error(`Failed to refresh the ID token: ${error2}`);
+      }
+    }
+
     res
       .status(401)
       .json({ error: `Invalid Firebase token provided: ${error}` });
