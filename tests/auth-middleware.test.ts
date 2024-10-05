@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import * as jwt from "jwt-decode";
 
 import auth from "../middleware/auth";
 import FirebaseAdmin from "../utils/auth/admin";
@@ -18,11 +19,15 @@ const mockResponse = {
 } as unknown as Response;
 const mockNext = jest.fn();
 
-const mockValidateToken = (isSuccess: boolean) => {
+const mockValidateToken = (isSuccess: boolean, isExpired = false) => {
   jest.spyOn(FirebaseAdmin, "instance", "get").mockReturnValue({
     validateToken: isSuccess
       ? jest.fn().mockResolvedValue("mock-uid")
-      : jest.fn().mockRejectedValue("mock error"),
+      : jest
+          .fn()
+          .mockRejectedValue(
+            isExpired ? { code: "auth/id-token-expired" } : "mock error"
+          ),
   } as unknown as FirebaseAdmin);
 };
 
@@ -53,6 +58,19 @@ describe("auth-middleware", () => {
     mockValidateToken(false);
     await auth(mockRequest("mock-invalid-jwt"), mockResponse, mockNext);
 
+    expect(mockNext).not.toHaveBeenCalled();
+    expect(mockResponse.status).toHaveBeenCalledWith(401);
+    expect(mockResponse.json).toHaveBeenCalled();
+  });
+
+  it("tries to refresh an expired token", async () => {
+    const jwtDecodeSpy = jest.spyOn(jwt, "jwtDecode");
+    const mockToken = "e30.e30.e30"; // e30 === {}
+
+    mockValidateToken(false, true);
+    await auth(mockRequest(mockToken), mockResponse, mockNext);
+
+    expect(jwtDecodeSpy).toHaveBeenCalledWith(mockToken);
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();
