@@ -53,7 +53,10 @@ router.post("/verify", auth, async (_req, res) => {
   try {
     const emailResponse = await verifyEmail(token);
     console.log(`Sending verification email to ${emailResponse.email}...`);
-    res.json(emailResponse);
+    res.json({
+      ...emailResponse,
+      token,
+    });
   } catch (error) {
     if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
       const { code, message } = error.response.data.error;
