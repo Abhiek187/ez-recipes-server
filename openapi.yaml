@@ -49,6 +49,8 @@ components:
     terms:
       $ref: "./docs/terms.yaml#/components/schemas/terms"
 
+    userProfile:
+      $ref: "./docs/chefs.yaml#/components/schemas/userProfile"
     credentials:
       $ref: "./docs/chefs.yaml#/components/schemas/credentials"
     userInfo:
