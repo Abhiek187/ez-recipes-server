@@ -26,3 +26,19 @@ export const isEmptyObject = (object: Record<string, unknown>) => {
 
   return true;
 };
+
+/**
+ * Filter an object by certain keys
+ * @param object the object to filter
+ * @param keys an array of keys to keep in the object,
+ * if the key doesn't exist in `object`, it's ignored
+ * @returns a new object only containing the keys passed
+ */
+export const filterObject = <T extends string>(
+  object: { [key in T]: unknown },
+  keys: T[]
+): typeof object => {
+  return Object.fromEntries(
+    Object.entries(object).filter(([key]) => keys.includes(key as T))
+  ) as typeof object;
+};

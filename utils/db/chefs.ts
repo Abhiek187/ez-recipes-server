@@ -28,6 +28,21 @@ export const createChef = async (uid: string, email: string) => {
 };
 
 /**
+ * Get a chef by their UID
+ * @param uid the UID of the chef
+ * @returns the chef's document, or `null` if the chef couldn't be found
+ */
+export const getChef = async (uid: string): Promise<Chef | null> => {
+  try {
+    // Return a POJO instead of a Document so filterObject works
+    return await ChefModel.findOne({ _id: uid }).lean().exec();
+  } catch (error) {
+    console.error("Failed to find chef", `${uid}:`, error);
+    return null;
+  }
+};
+
+/**
  * Store the chef's refresh token encrypted in the DB
  * @param uid the UID of the chef
  * @param refreshToken the chef's refresh token

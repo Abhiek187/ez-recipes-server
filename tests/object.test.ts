@@ -1,4 +1,4 @@
-import { isEmptyObject, isObject } from "../utils/object";
+import { filterObject, isEmptyObject, isObject } from "../utils/object";
 import { expectedRecipe, mockSearchResponse } from "./recipeUtils.test";
 
 describe("isObject", () => {
@@ -67,4 +67,37 @@ describe("isEmptyObject", () => {
       expect(isEmptyObject(obj)).toBe(false);
     }
   );
+});
+
+describe("filterObject", () => {
+  const object = { a: 1, b: "is", c: true };
+
+  it("creates an identical object if all keys are passed", () => {
+    const keys = ["a", "b", "c"];
+    const filteredObject = filterObject(object, keys);
+
+    expect(Object.is(object, filteredObject)).toBe(false);
+    expect(object).toMatchObject(filteredObject);
+  });
+
+  it("filters some keys in the object", () => {
+    const keys = ["a", "c"];
+    const filteredObject = filterObject(object, keys);
+
+    expect(Object.keys(filteredObject).sort()).toEqual(keys.sort());
+  });
+
+  it("returns an empty object if no keys are passed", () => {
+    const keys: string[] = [];
+    const filteredObject = filterObject(object, keys);
+
+    expect(isEmptyObject(filteredObject)).toBe(true);
+  });
+
+  it("ignores keys not present in the object", () => {
+    const keys = ["b", "d"];
+    const filteredObject = filterObject(object, keys);
+
+    expect(Object.keys(filteredObject).sort()).toEqual(["b"]);
+  });
 });

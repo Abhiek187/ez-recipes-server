@@ -1,5 +1,36 @@
 paths:
   /:
+    get:
+      summary: Get the chef's profile
+      tags:
+        - chefs
+      security:
+        - bearerAuth: [] # no scopes for bearer auth
+      responses:
+        "200":
+          description: Successfully fetched the chef's profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userProfile"
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                missingToken:
+                  $ref: "#/components/examples/missingToken"
+
+        "404":
+          description: The chef couldn't be found
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
     post:
       summary: Create an account
       tags:
@@ -44,7 +75,7 @@ paths:
       tags:
         - chefs
       security:
-        - bearerAuth: [] # no scopes for bearer auth
+        - bearerAuth: []
       responses:
         "200":
           description: Successfully sent a verification email
@@ -64,11 +95,48 @@ paths:
                   $ref: "#/components/examples/tooManyAttempts"
                 userNotFound:
                   $ref: "#/components/examples/userNotFound"
-                tokenExpired:
-                  $ref: "#/components/examples/tokenExpired"
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                missingToken:
+                  $ref: "#/components/examples/missingToken"
 
 components:
   schemas:
+    userProfile:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: The unique identifier for the chef
+        email:
+          type: string
+          description: The chef's email address
+          format: email
+        ratings:
+          type: object
+          description: >-
+            Key-value pairs, where the key is the recipe ID and the value is the rating given
+          additionalProperties:
+            type: integer
+        recentRecipes:
+          type: array
+          items:
+            type: string
+            description: The ID of a recipe recently viewed
+        favoriteRecipes:
+          type: array
+          items:
+            type: string
+            description: The ID of a favorite recipe
+        token:
+          type: string
+          description: The ID token for the chef
     credentials:
       type: object
       properties:
@@ -123,8 +191,8 @@ components:
         {
           "error": "Invalid Firebase token provided: Error: There is no user record corresponding to the provided identifier.",
         }
-    tokenExpired:
+    missingToken:
       value:
         {
-          "error": "Invalid Firebase token provided: Error: Firebase ID token has expired. Get a fresh ID token from your client app and try again (auth/id-token-expired). See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.",
+          "error": "Invalid Firebase token provided: Error: Decoding Firebase ID token failed. Make sure you passed the entire string JWT which represents an ID token. See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.",
         }

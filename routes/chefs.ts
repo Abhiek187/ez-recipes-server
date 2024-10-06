@@ -10,8 +10,32 @@ import auth from "../middleware/auth";
 import { verifyEmail } from "../utils/auth/api";
 import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
+import { getChef } from "../utils/db";
+import { filterObject } from "../utils/object";
 
 const router = express.Router();
+
+router.get("/", auth, async (_req, res) => {
+  // Get the user's profile
+  const { token, uid } = res.locals;
+  const chef = await getChef(uid);
+
+  if (chef === null) {
+    // Shouldn't normally occur, unless MongoDB is out-of-sync with Firebase
+    res.status(404).json({ error: `Chef with UID ${uid} not found` });
+  } else {
+    res.status(200).json({
+      uid,
+      ...filterObject(chef, [
+        "email",
+        "ratings",
+        "recentRecipes",
+        "favoriteRecipes",
+      ]),
+      token,
+    });
+  }
+});
 
 router.post(
   "/",
