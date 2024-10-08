@@ -1,5 +1,5 @@
 import { isAxiosError } from "axios";
-import express from "express";
+import express, { Response } from "express";
 import { body, validationResult } from "express-validator";
 import { FirebaseAuthError } from "firebase-admin/auth";
 
@@ -10,6 +10,27 @@ import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
 import { getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
+
+const handleFirebaseRestError = (
+  prefix: string,
+  error: unknown,
+  res: Response
+) => {
+  if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
+    const { code, message } = error.response.data.error;
+    res.status(code).json({ error: `${prefix}: ${message}` });
+  } else if (isAxiosError(error)) {
+    const [status, json] = handleAxiosError(error);
+    res.status(status).json(json);
+  } else {
+    res.status(500).json({
+      error: `${prefix}: ${JSON.stringify(
+        error,
+        Object.getOwnPropertyNames(error)
+      )}`,
+    });
+  }
+};
 
 const router = express.Router();
 
@@ -80,22 +101,7 @@ router.post("/verify", auth, async (_req, res) => {
       token,
     });
   } catch (error) {
-    if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
-      const { code, message } = error.response.data.error;
-      res
-        .status(code)
-        .json({ error: `Failed to send a verification email: ${message}` });
-    } else if (isAxiosError(error)) {
-      const [status, json] = handleAxiosError(error);
-      res.status(status).json(json);
-    } else {
-      res.status(500).json({
-        error: `Failed to send a verification email: ${JSON.stringify(
-          error,
-          Object.getOwnPropertyNames(error)
-        )}`,
-      });
-    }
+    handleFirebaseRestError("Failed to send a verification email", error, res);
   }
 });
 
@@ -133,20 +139,7 @@ router.post(
         emailVerified: registered,
       });
     } catch (error) {
-      if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
-        const { code, message } = error.response.data.error;
-        res.status(code).json({ error: `Failed to login: ${message}` });
-      } else if (isAxiosError(error)) {
-        const [status, json] = handleAxiosError(error);
-        res.status(status).json(json);
-      } else {
-        res.status(500).json({
-          error: `Failed to login: ${JSON.stringify(
-            error,
-            Object.getOwnPropertyNames(error)
-          )}`,
-        });
-      }
+      handleFirebaseRestError("Failed to login", error, res);
     }
   }
 );
