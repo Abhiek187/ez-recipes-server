@@ -25,6 +25,10 @@ paths:
     $ref: "./docs/chefs.yaml#/paths/~1"
   /api/chefs/verify:
     $ref: "./docs/chefs.yaml#/paths/~1verify"
+  /api/chefs/login:
+    $ref: "./docs/chefs.yaml#/paths/~1login"
+  /api/chefs/logout:
+    $ref: "./docs/chefs.yaml#/paths/~1logout"
 
 # Components to be shown on the main page
 components:

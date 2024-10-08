@@ -106,6 +106,65 @@ paths:
                 missingToken:
                   $ref: "#/components/examples/missingToken"
 
+  /login:
+    post:
+      summary: Login to the chef's account
+      tags:
+        - chefs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/credentials"
+      responses:
+        "200":
+          description: Successfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userInfo"
+
+        "400":
+          description: The request body is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                invalidEmail:
+                  $ref: "#/components/examples/invalidEmail"
+                invalidCredentials:
+                  $ref: "#/components/examples/invalidCredentials"
+
+  /logout:
+    post:
+      summary: Logout by revoking all existing tokens
+      tags:
+        - chefs
+      security:
+        - bearerAuth: []
+      response:
+        "204":
+          description: Successfully logged out
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                missingToken:
+                  $ref: "#/components/examples/missingToken"
+
+        "500":
+          description: An error occurred while logging out
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
 components:
   schemas:
     userProfile:
@@ -196,3 +255,5 @@ components:
         {
           "error": "Invalid Firebase token provided: Error: Decoding Firebase ID token failed. Make sure you passed the entire string JWT which represents an ID token. See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.",
         }
+    invalidCredentials:
+      value: { "error": "Failed to login: INVALID_LOGIN_CREDENTIALS" }

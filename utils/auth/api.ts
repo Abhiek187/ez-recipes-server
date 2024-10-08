@@ -3,6 +3,7 @@ import axios from "axios";
 import VerifyEmailResponse from "../../types/firebase/VerifyEmailResponse";
 import FirebaseTokenResponse from "../../types/firebase/FirebaseTokenResponse";
 import FirebaseTokenExchangeResponse from "../../types/firebase/FirebaseTokenExchangeResponse";
+import FirebaseLoginResponse from "../../types/firebase/FirebaseLoginResponse";
 
 const idApi = axios.create({
   baseURL: "https://identitytoolkit.googleapis.com/v1",
@@ -33,6 +34,28 @@ export const exchangeCustomToken = async (
     "/accounts:signInWithCustomToken",
     {
       token: customToken,
+      returnSecureToken: true,
+    }
+  );
+  return response.data;
+};
+
+/**
+ * Login the user using their email and password
+ * @param email the user's email
+ * @param password the user's password
+ * @throws `FirebaseRestError` if an error occurred
+ * @returns the user's UID, tokens, and other information
+ */
+export const login = async (
+  email: string,
+  password: string
+): Promise<FirebaseLoginResponse> => {
+  const response = await idApi.post<FirebaseLoginResponse>(
+    "/accounts:signInWithPassword",
+    {
+      email,
+      password,
       returnSecureToken: true,
     }
   );
