@@ -91,6 +91,18 @@ export default class FirebaseAdmin {
   }
 
   /**
+   * Log out the user by revoking their tokens
+   * @param uid the unique ID of the user
+   * @throws `FirebaseAuthError` if an error occurred
+   */
+  async logoutUser(uid: string) {
+    const auth = getAuth();
+    await auth.revokeRefreshTokens(uid);
+
+    console.log(`Revoked refresh tokens for user ${uid}`);
+  }
+
+  /**
    * Delete a user from Firebase & MongoDB, if it exists
    * @param uid the unique ID of the user
    * @throws `FirebaseAuthError` if an error occurred

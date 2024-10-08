@@ -1,17 +1,36 @@
 import { isAxiosError } from "axios";
 import express from "express";
 import { body, validationResult } from "express-validator";
-import { AuthError } from "firebase/auth";
 import { FirebaseAuthError } from "firebase-admin/auth";
 
 import FirebaseAdmin from "../utils/auth/admin";
-import FirebaseClient from "../utils/auth/client";
 import auth from "../middleware/auth";
-import { verifyEmail } from "../utils/auth/api";
+import { login, verifyEmail } from "../utils/auth/api";
 import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
-import { getChef } from "../utils/db";
+import { getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
+
+const handleFirebaseRestError = (
+  prefix: string,
+  error: unknown,
+  res: express.Response
+) => {
+  if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
+    const { code, message } = error.response.data.error;
+    res.status(code).json({ error: `${prefix}: ${message}` });
+  } else if (isAxiosError(error)) {
+    const [status, json] = handleAxiosError(error);
+    res.status(status).json(json);
+  } else {
+    res.status(500).json({
+      error: `${prefix}: ${JSON.stringify(
+        error,
+        Object.getOwnPropertyNames(error)
+      )}`,
+    });
+  }
+};
 
 const router = express.Router();
 
@@ -82,22 +101,7 @@ router.post("/verify", auth, async (_req, res) => {
       token,
     });
   } catch (error) {
-    if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
-      const { code, message } = error.response.data.error;
-      res
-        .status(code)
-        .json({ error: `Failed to send a verification email: ${message}` });
-    } else if (isAxiosError(error)) {
-      const [status, json] = handleAxiosError(error);
-      res.status(status).json(json);
-    } else {
-      res.status(500).json({
-        error: `Failed to send a verification email: ${JSON.stringify(
-          error,
-          Object.getOwnPropertyNames(error)
-        )}`,
-      });
-    }
+    handleFirebaseRestError("Failed to send a verification email", error, res);
   }
 });
 
@@ -123,25 +127,31 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const loginResult = await FirebaseClient.instance.loginUser(
+      const { localId, idToken, registered, refreshToken } = await login(
         email,
         password
       );
-      res.json(loginResult);
-    } catch (err) {
-      const error = err as AuthError;
-      console.error("Error logging in:", error);
-      res.status(400).json({ error: error.message });
+      await saveRefreshToken(localId, refreshToken);
+
+      res.json({
+        uid: localId,
+        token: idToken,
+        emailVerified: registered,
+      });
+    } catch (error) {
+      handleFirebaseRestError("Failed to login", error, res);
     }
   }
 );
 
-router.post("/logout", async (_req, res) => {
+router.post("/logout", auth, async (_req, res) => {
+  const { uid } = res.locals;
+
   try {
-    await FirebaseClient.instance.logoutUser();
+    await FirebaseAdmin.instance.logoutUser(uid);
     res.sendStatus(204);
   } catch (err) {
-    const error = err as AuthError;
+    const error = err as FirebaseAuthError;
     console.error("Error logging out:", error);
     res.status(500).json({ error: error.message });
   }
