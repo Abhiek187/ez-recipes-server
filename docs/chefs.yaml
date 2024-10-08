@@ -139,7 +139,7 @@ paths:
 
   /logout:
     post:
-      summary: Logout by revoking all existing tokens
+      summary: Logout of the chef's account
       tags:
         - chefs
       security:
