@@ -1,5 +1,5 @@
 import { isAxiosError } from "axios";
-import express, { Response } from "express";
+import express from "express";
 import { body, validationResult } from "express-validator";
 import { FirebaseAuthError } from "firebase-admin/auth";
 
@@ -14,7 +14,7 @@ import { filterObject } from "../utils/object";
 const handleFirebaseRestError = (
   prefix: string,
   error: unknown,
-  res: Response
+  res: express.Response
 ) => {
   if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
     const { code, message } = error.response.data.error;
