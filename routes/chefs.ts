@@ -1,15 +1,31 @@
 import { isAxiosError } from "axios";
 import express from "express";
 import { body, validationResult } from "express-validator";
+import { Request } from "express-validator/lib/base";
 import { FirebaseAuthError } from "firebase-admin/auth";
 
 import FirebaseAdmin from "../utils/auth/admin";
 import auth from "../middleware/auth";
-import { login, verifyEmail } from "../utils/auth/api";
+import {
+  changeEmail,
+  login,
+  resetPassword,
+  verifyEmail,
+} from "../utils/auth/api";
 import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
 import { getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
+
+const checkValidations = (req: Request, res: express.Response) => {
+  const validationErrors = validationResult(req);
+  if (!validationErrors.isEmpty()) {
+    const errorMessages = validationErrors.array().map((error) => error.msg);
+    res
+      .status(400)
+      .json({ error: `Invalid request: ${errorMessages.join(" | ")}` });
+  }
+};
 
 const handleFirebaseRestError = (
   prefix: string,
@@ -67,14 +83,8 @@ router.post(
     .withMessage("Password must be at least 8 characters long"),
   async (req, res) => {
     // Create an account
-    const validationErrors = validationResult(req);
-    if (!validationErrors.isEmpty()) {
-      const errorMessages = validationErrors.array().map((error) => error.msg);
-      res
-        .status(400)
-        .json({ error: `Invalid request: ${errorMessages.join(" | ")}` });
-      return;
-    }
+    checkValidations(req, res);
+    if (res.writableEnded) return;
 
     const { email, password } = req.body;
 
@@ -85,6 +95,50 @@ router.post(
       const error = err as FirebaseAuthError;
       console.error("Error creating a new user:", error);
       res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+router.patch(
+  "/",
+  body().isObject().withMessage("Body is missing or not an object"),
+  body("type")
+    .isIn(["email", "password"])
+    .withMessage("Change type must be 'email' or 'password'"),
+  body("email").isEmail().withMessage("Invalid email"),
+  auth,
+  async (req, res) => {
+    // Update the user's credentials
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const { type, email } = req.body;
+    const { token } = res.locals;
+
+    if (type === "email") {
+      try {
+        const emailResponse = await changeEmail(email, token);
+        console.log(`Sending verification email to ${emailResponse.email}...`);
+        res.json({
+          ...emailResponse,
+          token,
+        });
+      } catch (error) {
+        handleFirebaseRestError("Failed to change the email", error, res);
+      }
+    } else {
+      try {
+        const emailResponse = await resetPassword(email);
+        console.log(
+          `Sending password reset email to ${emailResponse.email}...`
+        );
+        res.json({
+          ...emailResponse,
+          token,
+        });
+      } catch (error) {
+        handleFirebaseRestError("Failed to reset the password", error, res);
+      }
     }
   }
 );
@@ -115,14 +169,8 @@ router.post(
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
   async (req, res) => {
-    const validationErrors = validationResult(req);
-    if (!validationErrors.isEmpty()) {
-      const errorMessages = validationErrors.array().map((error) => error.msg);
-      res
-        .status(400)
-        .json({ error: `Invalid request: ${errorMessages.join(" | ")}` });
-      return;
-    }
+    checkValidations(req, res);
+    if (res.writableEnded) return;
 
     const { email, password } = req.body;
 

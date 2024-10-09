@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import VerifyEmailResponse from "../../types/firebase/VerifyEmailResponse";
+import OobCodeResponse from "../../types/firebase/OobCodeResponse";
 import FirebaseTokenResponse from "../../types/firebase/FirebaseTokenResponse";
 import FirebaseTokenExchangeResponse from "../../types/firebase/FirebaseTokenExchangeResponse";
 import FirebaseLoginResponse from "../../types/firebase/FirebaseLoginResponse";
@@ -68,17 +68,48 @@ export const login = async (
  * @throws `FirebaseRestError` if an error occurred
  * @returns the email address to verify
  */
-export const verifyEmail = async (
-  token: string
-): Promise<VerifyEmailResponse> => {
+export const verifyEmail = async (token: string): Promise<OobCodeResponse> => {
   // OOB = out-of-band
-  const response = await idApi.post<VerifyEmailResponse>(
-    "/accounts:sendOobCode",
-    {
-      requestType: "VERIFY_EMAIL",
-      idToken: token,
-    }
-  );
+  const response = await idApi.post<OobCodeResponse>("/accounts:sendOobCode", {
+    requestType: "VERIFY_EMAIL",
+    idToken: token,
+  });
+  return response.data;
+};
+
+/**
+ * Send an email to reset the user's password
+ * @param email the email address to send the notification
+ * @throws `FirebaseRestError` if an error occurred
+ * @returns the email address sent to
+ */
+export const resetPassword = async (
+  email: string
+): Promise<OobCodeResponse> => {
+  const response = await idApi.post<OobCodeResponse>("/accounts:sendOobCode", {
+    requestType: "PASSWORD_RESET",
+    email,
+  });
+  return response.data;
+};
+
+/**
+ * Send an email to confirm a new email address
+ * @param email the new email address to verify
+ * @param token the Firebase ID token
+ * @throws `FirebaseRestError` if an error occurred
+ * @returns the email address to verify
+ */
+export const changeEmail = async (
+  email: string,
+  token: string
+): Promise<OobCodeResponse> => {
+  // Documented in Identity Platform, but not in Firebase
+  const response = await idApi.post<OobCodeResponse>("/accounts:sendOobCode", {
+    requestType: "VERIFY_AND_CHANGE_EMAIL",
+    newEmail: email,
+    idToken: token,
+  });
   return response.data;
 };
 
