@@ -24,11 +24,19 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
   const token = authHeader?.startsWith("Bearer ")
     ? authHeader.split("Bearer ")[1]
     : authHeader;
+  const isChangingPassword =
+    req.url === "/" && req.method === "PATCH" && req.body.type === "password";
 
   if (token === undefined) {
-    res
-      .status(401)
-      .json({ error: "Missing the Firebase ID token from the request" });
+    // Skip validation if changing passwords
+    if (isChangingPassword) {
+      next();
+    } else {
+      res
+        .status(401)
+        .json({ error: "Missing the Firebase ID token from the request" });
+    }
+
     return;
   }
 

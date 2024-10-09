@@ -70,10 +70,13 @@ paths:
                   $ref: "#/components/examples/emailAlreadyTaken"
 
     patch:
-      summary: Send an email to change the chef's credentials
+      summary: >-
+        Send an email to change the chef's credentials.
+        An ID token is optional if changing passwords.
       tags:
         - chefs
       security:
+        - {} # no security
         - bearerAuth: []
       requestBody:
         required: true
@@ -274,6 +277,8 @@ components:
           format: email
     email:
       type: object
+      # token may not be there if changing passwords
+      required: ["kind", "email"]
       properties:
         kind:
           type: string
