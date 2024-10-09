@@ -272,7 +272,6 @@ components:
           description: Whether or not the email address is verified
     changeRequest:
       type: object
-      required: ["type"]
       properties:
         type:
           type: string
