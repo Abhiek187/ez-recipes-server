@@ -100,4 +100,18 @@ describe("filterObject", () => {
 
     expect(Object.keys(filteredObject).sort()).toEqual(["b"]);
   });
+
+  it("includes keys with nullable types", () => {
+    const keys = ["a", "d", "e", "f", "g"];
+    const objectWithOptionalKeys = {
+      ...object,
+      d: undefined,
+      e: null,
+      f: 0,
+      g: [],
+    };
+    const filteredObject = filterObject(objectWithOptionalKeys, keys);
+
+    expect(Object.keys(filteredObject).sort()).toEqual(keys);
+  });
 });

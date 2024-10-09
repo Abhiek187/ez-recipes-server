@@ -41,7 +41,7 @@ export default class FirebaseAdmin {
       disabled: false,
     });
     const uid = userRecord.uid;
-    await createChef(userRecord.uid, email);
+    await createChef(userRecord.uid);
     // Save the refresh token after creating a new chef doc
     const idToken = await this.getIdToken(uid);
 

@@ -53,17 +53,21 @@ router.get("/", auth, async (_req, res) => {
   if (chef === null) {
     // Shouldn't normally occur, unless MongoDB is out-of-sync with Firebase
     res.status(404).json({ error: `Chef with UID ${uid} not found` });
-  } else {
+    return;
+  }
+
+  try {
+    const userRecord = await FirebaseAdmin.instance.getUser(uid);
     res.status(200).json({
       uid,
-      ...filterObject(chef, [
-        "email",
-        "ratings",
-        "recentRecipes",
-        "favoriteRecipes",
-      ]),
+      ...filterObject(userRecord, ["email"]),
+      ...filterObject(chef, ["ratings", "recentRecipes", "favoriteRecipes"]),
       token,
     });
+  } catch (err) {
+    const error = err as FirebaseAuthError;
+    console.error("Error fetching the user's profile:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
