@@ -6,12 +6,7 @@ import { FirebaseAuthError } from "firebase-admin/auth";
 
 import FirebaseAdmin from "../utils/auth/admin";
 import auth from "../middleware/auth";
-import {
-  changeEmail,
-  login,
-  resetPassword,
-  verifyEmail,
-} from "../utils/auth/api";
+import FirebaseApi from "../utils/auth/api";
 import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
 import { getChef, saveRefreshToken } from "../utils/db";
@@ -117,7 +112,10 @@ router.patch(
 
     if (type === "email") {
       try {
-        const emailResponse = await changeEmail(email, token);
+        const emailResponse = await FirebaseApi.instance.changeEmail(
+          email,
+          token
+        );
         console.log(`Sending verification email to ${emailResponse.email}...`);
         res.json({
           ...emailResponse,
@@ -128,7 +126,7 @@ router.patch(
       }
     } else {
       try {
-        const emailResponse = await resetPassword(email);
+        const emailResponse = await FirebaseApi.instance.resetPassword(email);
         console.log(
           `Sending password reset email to ${emailResponse.email}...`
         );
@@ -148,7 +146,7 @@ router.post("/verify", auth, async (_req, res) => {
   const { token } = res.locals;
 
   try {
-    const emailResponse = await verifyEmail(token);
+    const emailResponse = await FirebaseApi.instance.verifyEmail(token);
     console.log(`Sending verification email to ${emailResponse.email}...`);
     res.json({
       ...emailResponse,
@@ -175,10 +173,8 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const { localId, idToken, registered, refreshToken } = await login(
-        email,
-        password
-      );
+      const { localId, idToken, registered, refreshToken } =
+        await FirebaseApi.instance.login(email, password);
       await saveRefreshToken(localId, refreshToken);
 
       res.json({
