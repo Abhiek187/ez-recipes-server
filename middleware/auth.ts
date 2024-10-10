@@ -3,7 +3,7 @@ import { FirebaseAuthError } from "firebase-admin/auth";
 import { jwtDecode } from "jwt-decode";
 
 import FirebaseAdmin from "../utils/auth/admin";
-import { refreshIdToken } from "../utils/auth/api";
+import FirebaseApi from "../utils/auth/api";
 import { getRefreshToken, saveRefreshToken } from "../utils/db";
 
 const saveTokenAndContinue = (
@@ -24,11 +24,19 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
   const token = authHeader?.startsWith("Bearer ")
     ? authHeader.split("Bearer ")[1]
     : authHeader;
+  const isChangingPassword =
+    req.url === "/" && req.method === "PATCH" && req.body.type === "password";
 
   if (token === undefined) {
-    res
-      .status(401)
-      .json({ error: "Missing the Firebase ID token from the request" });
+    // Skip validation if changing passwords
+    if (isChangingPassword) {
+      next();
+    } else {
+      res
+        .status(401)
+        .json({ error: "Missing the Firebase ID token from the request" });
+    }
+
     return;
   }
 
@@ -58,7 +66,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
           id_token: newIdToken,
           refresh_token: newRefreshToken,
           user_id: newUid,
-        } = await refreshIdToken(refreshToken);
+        } = await FirebaseApi.instance.refreshIdToken(refreshToken);
 
         await saveRefreshToken(newUid, newRefreshToken);
         saveTokenAndContinue(res, next, newUid, newIdToken);

@@ -4,7 +4,7 @@ import { getAuth, UserRecord } from "firebase-admin/auth";
 
 import { createChef, deleteChef, saveRefreshToken } from "../db";
 import UserInfoResponse from "../../types/firebase/UserInfoResponse";
-import { exchangeCustomToken } from "./api";
+import FirebaseApi from "./api";
 
 export default class FirebaseAdmin {
   private static _instance: FirebaseAdmin; // singleton
@@ -41,7 +41,7 @@ export default class FirebaseAdmin {
       disabled: false,
     });
     const uid = userRecord.uid;
-    await createChef(userRecord.uid, email);
+    await createChef(userRecord.uid);
     // Save the refresh token after creating a new chef doc
     const idToken = await this.getIdToken(uid);
 
@@ -62,7 +62,8 @@ export default class FirebaseAdmin {
   async getIdToken(uid: string): Promise<string> {
     const auth = getAuth();
     const customToken = await auth.createCustomToken(uid);
-    const { idToken, refreshToken } = await exchangeCustomToken(customToken);
+    const { idToken, refreshToken } =
+      await FirebaseApi.instance.exchangeCustomToken(customToken);
     await saveRefreshToken(uid, refreshToken);
     return idToken;
   }

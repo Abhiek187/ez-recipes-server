@@ -4,8 +4,9 @@ import * as jwt from "jwt-decode";
 import auth from "../middleware/auth";
 import FirebaseAdmin from "../utils/auth/admin";
 
-const mockRequest = (authorization?: string) =>
+const mockRequest = (authorization?: string, req?: object) =>
   ({
+    ...req,
     headers: {
       authorization,
     },
@@ -34,6 +35,7 @@ const mockValidateToken = (isSuccess: boolean, isExpired = false) => {
 describe("auth-middleware", () => {
   afterEach(() => {
     jest.clearAllMocks();
+    mockResponse.locals = {};
   });
 
   it("accepts a valid JWT", async () => {
@@ -43,6 +45,23 @@ describe("auth-middleware", () => {
     expect(mockNext).toHaveBeenCalled();
     expect(mockResponse.locals.uid).toBeDefined();
     expect(mockResponse.locals.token).toBeDefined();
+  });
+
+  it("skips validation if changing passwords", async () => {
+    mockValidateToken(true);
+    await auth(
+      mockRequest(undefined, {
+        url: "/",
+        method: "PATCH",
+        body: { type: "password", email: "test@email.com" },
+      }),
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalled();
+    expect(mockResponse.locals.uid).not.toBeDefined();
+    expect(mockResponse.locals.token).not.toBeDefined();
   });
 
   it("rejects a missing token", async () => {

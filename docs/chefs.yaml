@@ -31,6 +31,13 @@ paths:
               schema:
                 $ref: "..#/components/schemas/error"
 
+        "500":
+          description: An error occurred while fetching the chef's profile
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
     post:
       summary: Create an account
       tags:
@@ -61,6 +68,49 @@ paths:
 
         "500":
           description: An error occurred while creating an account
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                emailAlreadyTaken:
+                  $ref: "#/components/examples/emailAlreadyTaken"
+
+    patch:
+      summary: >-
+        Send an email to change the chef's credentials.
+        An ID token is optional if changing passwords.
+      tags:
+        - chefs
+      security:
+        - {} # no security
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/changeRequest"
+      responses:
+        "200":
+          description: Successfully sent an email to verify the change request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/email"
+
+        "400":
+          description: The request body is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                invalidEmail:
+                  $ref: "#/components/examples/invalidEmail"
+
+        "500":
+          description: An error occurred while changing the credentials
           content:
             application/json:
               schema:
@@ -220,8 +270,21 @@ components:
         emailVerified:
           type: boolean
           description: Whether or not the email address is verified
+    changeRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["email", "password"]
+          description: The field to update (email = change email, password = reset password)
+        email:
+          type: string
+          description: The email address to send a verification to
+          format: email
     email:
       type: object
+      # token may not be there if changing passwords
+      required: ["kind", "email"]
       properties:
         kind:
           type: string

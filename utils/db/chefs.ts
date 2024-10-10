@@ -7,12 +7,10 @@ import Encryptor from "../crypto";
 /**
  * Create a new chef in the DB
  * @param uid the UID of the chef
- * @param email the email of the chef
  */
-export const createChef = async (uid: string, email: string) => {
+export const createChef = async (uid: string) => {
   const chef: Chef = {
     _id: uid,
-    email,
     refreshToken: null,
     ratings: {},
     recentRecipes: [],

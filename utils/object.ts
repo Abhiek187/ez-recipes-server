@@ -35,7 +35,7 @@ export const isEmptyObject = (object: Record<string, unknown>) => {
  * @returns a new object only containing the keys passed
  */
 export const filterObject = <T extends string>(
-  object: { [key in T]: unknown },
+  object: { [key in T]?: unknown },
   keys: T[]
 ): typeof object => {
   return Object.fromEntries(
