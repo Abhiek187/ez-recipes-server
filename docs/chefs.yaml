@@ -119,6 +119,33 @@ paths:
                 emailAlreadyTaken:
                   $ref: "#/components/examples/emailAlreadyTaken"
 
+    delete:
+      summary: Delete an account
+      tags:
+        - chefs
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Successfully deleted the account
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                missingToken:
+                  $ref: "#/components/examples/missingToken"
+
+        "500":
+          description: An error occurred while deleting the account
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
   /verify:
     post:
       summary: Verify the chef's account

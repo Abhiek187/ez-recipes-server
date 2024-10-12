@@ -145,6 +145,20 @@ router.patch(
   }
 );
 
+router.delete("/", auth, async (_req, res) => {
+  // Delete the user's account
+  const { uid } = res.locals;
+
+  try {
+    await FirebaseAdmin.instance.deleteUser(uid);
+    res.sendStatus(204);
+  } catch (err) {
+    const error = err as FirebaseAuthError;
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/verify", auth, async (_req, res) => {
   // Send a verification email
   const { token } = res.locals;
@@ -202,20 +216,6 @@ router.post("/logout", auth, async (_req, res) => {
     const error = err as FirebaseAuthError;
     console.error("Error logging out:", error);
     res.status(500).json({ error: error.message });
-  }
-});
-
-router.delete("/:id", async (req, res) => {
-  // Delete the user's account
-  const uid = req.params.id;
-
-  try {
-    await FirebaseAdmin.instance.deleteUser(uid);
-    res.sendStatus(204);
-  } catch (err) {
-    const error = err as FirebaseAuthError;
-    console.error("Error deleting user:", error);
-    res.status(404).json({ error: error.message });
   }
 });
 
