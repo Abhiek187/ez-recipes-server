@@ -267,6 +267,58 @@ paths:
                 nonExistentRecipeId:
                   $ref: "#/components/examples/nonExistentRecipeId"
 
+    patch:
+      summary: >-
+        Update information about a recipe. Some info may require authentication.
+      tags:
+        - recipes
+      security:
+        - {} # no security
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/recipePatch"
+      responses:
+        "200":
+          description: Successfully updated the recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/token"
+
+        "400":
+          description: The request body is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                invalidRecipeId:
+                  $ref: "#/components/examples/invalidRecipeId"
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                userNotFound:
+                  $ref: "#/components/examples/userNotFound"
+
+        "404":
+          description: The recipe or chef couldn't be found
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                nonExistentRecipeId:
+                  $ref: "#/components/examples/nonExistentRecipeId"
+
 components:
   parameters:
     recipeId:
@@ -473,6 +525,43 @@ components:
           description: >
             A base64 token that can be used to paginate additional recipes.
             Only returned if a query was passed.
+        rating:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 5
+          description: >-
+            The average rating for the recipe from 1-5 stars, null if no ratings are available
+        views:
+          type: integer
+          minimum: 0
+          description: The total number of views for the recipe
+        likes:
+          type: integer
+          minimum: 0
+          description: The number of chefs that like the recipe
+    recipePatch:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: The rating to give the recipe, from 1-5 stars, requires auth
+        view:
+          type: boolean
+          description: true if the recipe's view count should be incremented
+        isFavorite:
+          type: boolean
+          description: >-
+            true if the recipe should be added to favorites,
+            false if it should be removed, requires auth
+    token:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The ID token for the chef
 
   examples:
     invalidFilter:
@@ -491,3 +580,10 @@ components:
         }
     nonExistentRecipeId:
       value: { "error": "A recipe with the id 0 does not exist." }
+    userNotFound:
+      value:
+        {
+          "error":
+            "Invalid Firebase token provided: Error: There is no user record corresponding
+            to the provided identifier.",
+        }
