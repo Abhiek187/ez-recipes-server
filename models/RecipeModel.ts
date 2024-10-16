@@ -66,6 +66,9 @@ const RecipeSchema = new Schema<Recipe>({
   nutrients: { type: [NutritionSchema], required: true },
   ingredients: { type: [IngredientSchema], required: true },
   instructions: { type: [InstructionSchema], required: true },
+  averageRating: { type: Number, default: null },
+  totalRatings: { type: Number, default: 0 },
+  views: { type: Number, default: 0 },
 });
 
 export default model("recipe", RecipeSchema);

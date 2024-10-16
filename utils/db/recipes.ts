@@ -1,10 +1,11 @@
-import mongoose from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 
 import { MAX_DOCS, Indexes } from ".";
 import RecipeModel from "../../models/RecipeModel";
 import Recipe from "../../types/client/Recipe";
 import RecipeFilter from "../../types/client/RecipeFilter";
 import { isEmptyObject } from "../object";
+import RecipePatch from "../../types/client/RecipePatch";
 
 /**
  * Write a recipe to MongoDB
@@ -60,9 +61,9 @@ const createQuery = (
     token,
   }: Partial<RecipeFilter>,
   isFindQuery = false
-): mongoose.FilterQuery<Recipe> => {
+): FilterQuery<Recipe> => {
   // Create a find/match query for MongoDB
-  const query: mongoose.FilterQuery<Recipe> = {};
+  const query: FilterQuery<Recipe> = {};
 
   if (minCals !== undefined) {
     query.nutrients = {
@@ -119,7 +120,7 @@ const createQuery = (
 
   if (isFindQuery && token !== undefined) {
     query._id = {
-      $gt: new mongoose.Types.ObjectId(token),
+      $gt: new Types.ObjectId(token),
     };
   }
 
@@ -205,5 +206,43 @@ export const filterRecipes = async (
   } else {
     // Otherwise, use a simple find query
     return await recipeFindQuery(filter);
+  }
+};
+
+/**
+ * Update statistical information about a recipe
+ * @param id the ID of the recipe to update
+ * @param body information to update in the recipe
+ */
+export const updateRecipeStats = async (id: number, body: RecipePatch) => {
+  const { rating, view } = body;
+
+  try {
+    const doc = await RecipeModel.findOne({ id }).exec();
+    if (doc === null) {
+      console.warn(`Recipe with ID ${id} not found`);
+      return;
+    }
+
+    if (rating !== undefined) {
+      const currentAverage = doc.averageRating;
+      const currentTotal = doc.totalRatings;
+      const newTotal = currentTotal + 1;
+      const newAverage =
+        currentAverage === null
+          ? rating
+          : (currentAverage * currentTotal + rating) / newTotal;
+
+      // Store the exact average in the DB & round it in the UI
+      doc.averageRating = newAverage;
+      doc.totalRatings = newTotal;
+    }
+    if (view === true) {
+      doc.views += 1;
+    }
+
+    await doc.save();
+  } catch (error) {
+    console.error("Failed to update recipe stats:", error);
   }
 };

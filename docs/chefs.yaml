@@ -261,10 +261,10 @@ components:
           additionalProperties:
             type: integer
         recentRecipes:
-          type: array
-          items:
-            type: string
-            description: The ID of a recipe recently viewed
+          type: object
+          description: >-
+            Key-value pairs, where the key is the recipe ID
+            and the value is the timestamp the recipe was last viewed
         favoriteRecipes:
           type: array
           items:

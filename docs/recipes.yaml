@@ -525,21 +525,21 @@ components:
           description: >
             A base64 token that can be used to paginate additional recipes.
             Only returned if a query was passed.
-        rating:
+        averageRating:
           type: number
           nullable: true
           minimum: 1
           maximum: 5
           description: >-
             The average rating for the recipe from 1-5 stars, null if no ratings are available
+        totalRatings:
+          type: number
+          minimum: 0
+          description: The total number of ratings for the recipe
         views:
           type: integer
           minimum: 0
           description: The total number of views for the recipe
-        likes:
-          type: integer
-          minimum: 0
-          description: The number of chefs that like the recipe
     recipePatch:
       type: object
       properties:

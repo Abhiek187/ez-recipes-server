@@ -4560,4 +4560,7 @@ export const expectedRecipe: Omit<Recipe, "_id"> = {
       ],
     },
   ],
+  averageRating: null,
+  totalRatings: 0,
+  views: 0,
 };

@@ -26,10 +26,12 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     : authHeader;
   const isChangingPassword =
     req.url === "/" && req.method === "PATCH" && req.body.type === "password";
+  const isViewingRecipe =
+    req.url === "/:id" && req.method === "PATCH" && req.body.view === true;
 
   if (token === undefined) {
-    // Skip validation if changing passwords
-    if (isChangingPassword) {
+    // Skip validation for certain requests
+    if (isChangingPassword || isViewingRecipe) {
       next();
     } else {
       res

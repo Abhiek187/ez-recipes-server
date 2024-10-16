@@ -64,6 +64,23 @@ describe("auth-middleware", () => {
     expect(mockResponse.locals.token).not.toBeDefined();
   });
 
+  it("skips validation if viewing a recipe", async () => {
+    mockValidateToken(true);
+    await auth(
+      mockRequest(undefined, {
+        url: "/:id",
+        method: "PATCH",
+        body: { view: true },
+      }),
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalled();
+    expect(mockResponse.locals.uid).not.toBeDefined();
+    expect(mockResponse.locals.token).not.toBeDefined();
+  });
+
   it("rejects a missing token", async () => {
     mockValidateToken(true);
     await auth(mockRequest(), mockResponse, mockNext);

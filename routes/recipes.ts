@@ -15,13 +15,21 @@ import {
 } from "../utils/recipeUtils";
 import { isNumeric } from "../utils/string";
 import spoonacularApi, { handleAxiosError } from "../utils/api";
-import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
+import {
+  fetchRecipe,
+  filterRecipes,
+  saveRecipe,
+  updateChef,
+  updateRecipeStats,
+} from "../utils/db";
 import RecipeFilter from "../types/client/RecipeFilter";
 import {
   isValidSpiceLevel,
   isValidMealType,
   isValidCuisine,
 } from "../types/client/Recipe";
+import auth from "../middleware/auth";
+import RecipePatch from "../types/client/RecipePatch";
 
 const badRequestError = (res: Response, error: string) => {
   res.status(400).json({ error });
@@ -198,6 +206,23 @@ router.get("/:id", async (req, res) => {
     const [status, json] = handleAxiosError(error);
     res.status(status).json(json);
   }
+});
+
+router.patch("/:id", auth, async (req, res) => {
+  // Update info for both the recipe and chef
+  const { token, uid } = res.locals;
+  const { id } = req.params;
+  const body = req.body as RecipePatch;
+
+  if (!isNumeric(id)) {
+    res.status(400).json({ error: "The recipe ID must be numeric" });
+    return;
+  }
+
+  await updateRecipeStats(Number(id), body);
+  await updateChef(uid, id, body);
+
+  res.status(200).json({ token });
 });
 
 export default router;
