@@ -1,8 +1,8 @@
 type Chef = {
   _id: string; // Firebase UID
   refreshToken: string | null;
-  ratings: Record<string, number>;
-  recentRecipes: Record<string, Date>;
+  ratings: Map<string, number>;
+  recentRecipes: Map<string, Date>;
   favoriteRecipes: string[];
 };
 

@@ -1,46 +1,67 @@
 import { Schema, model } from "mongoose";
 import Recipe, { CUISINES, MEAL_TYPES } from "../types/client/Recipe";
 
-const NutritionSchema = new Schema<Recipe["nutrients"][number]>({
-  name: { type: String, required: true },
-  amount: { type: Number, required: true },
-  unit: { type: String, required: true },
-});
+// Allow empty strings as part of the required validator
+Schema.Types.String.checkRequired((v) => typeof v === "string");
 
-const IngredientSchema = new Schema<Recipe["ingredients"][number]>({
-  id: { type: Number, required: true },
-  name: { type: String, required: true },
-  amount: { type: Number, required: true },
-  unit: { type: String, required: true },
-});
+const NutritionSchema = new Schema<Recipe["nutrients"][number]>(
+  {
+    name: { type: String, required: true },
+    amount: { type: Number, required: true },
+    unit: { type: String, required: true },
+  },
+  { _id: false } // don't add _id to every object
+);
+
+const IngredientSchema = new Schema<Recipe["ingredients"][number]>(
+  {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    amount: { type: Number, required: true },
+    unit: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 const StepIngredientSchema = new Schema<
   Recipe["instructions"][number]["steps"][number]["ingredients"][number]
->({
-  id: { type: Number, required: true },
-  name: { type: String, required: true },
-  image: { type: String, required: true },
-});
+>(
+  {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 const StepEquipmentSchema = new Schema<
   Recipe["instructions"][number]["steps"][number]["equipment"][number]
->({
-  id: { type: Number, required: true },
-  name: { type: String, required: true },
-  image: { type: String, required: true },
-});
+>(
+  {
+    id: { type: Number, required: true },
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+  },
+  { _id: false }
+);
 
-const StepSchema = new Schema<Recipe["instructions"][number]["steps"][number]>({
-  number: { type: Number, required: true },
-  step: { type: String, required: true },
-  ingredients: { type: [StepIngredientSchema], required: true },
-  equipment: { type: [StepEquipmentSchema], required: true },
-});
+const StepSchema = new Schema<Recipe["instructions"][number]["steps"][number]>(
+  {
+    number: { type: Number, required: true },
+    step: { type: String, required: true },
+    ingredients: { type: [StepIngredientSchema], required: true },
+    equipment: { type: [StepEquipmentSchema], required: true },
+  },
+  { _id: false }
+);
 
-const InstructionSchema = new Schema<Recipe["instructions"][number]>({
-  name: { type: String, required: true },
-  steps: { type: [StepSchema], required: true },
-});
+const InstructionSchema = new Schema<Recipe["instructions"][number]>(
+  {
+    name: { type: String, required: true },
+    steps: { type: [StepSchema], required: true },
+  },
+  { _id: false }
+);
 
 const RecipeSchema = new Schema<Recipe>({
   id: { type: Number, required: true },

@@ -1,4 +1,4 @@
-import { FilterQuery, UpdateQuery } from "mongoose";
+import { FilterQuery, FlattenMaps, UpdateQuery } from "mongoose";
 
 import ChefModel from "../../models/ChefModel";
 import Chef from "../../types/client/Chef";
@@ -13,8 +13,8 @@ export const createChef = async (uid: string) => {
   const chef: Chef = {
     _id: uid,
     refreshToken: null,
-    ratings: {},
-    recentRecipes: {},
+    ratings: new Map(),
+    recentRecipes: new Map(),
     favoriteRecipes: [],
   };
 
@@ -31,7 +31,9 @@ export const createChef = async (uid: string) => {
  * @param uid the UID of the chef
  * @returns the chef's document, or `null` if the chef couldn't be found
  */
-export const getChef = async (uid: string): Promise<Chef | null> => {
+export const getChef = async (
+  uid: string
+): Promise<FlattenMaps<Chef> | null> => {
   try {
     // Return a POJO instead of a Document so filterObject works
     return await ChefModel.findOne({ _id: uid }).lean().exec();
@@ -62,10 +64,10 @@ export const updateChef = async (
     }
 
     if (rating !== undefined) {
-      doc.ratings[id] = rating;
+      doc.ratings.set(id, rating);
     }
     if (view === true) {
-      doc.recentRecipes[id] = new Date();
+      doc.recentRecipes.set(id, new Date());
     }
     if (isFavorite !== undefined) {
       const favoriteRecipesSet = new Set(doc.favoriteRecipes);
