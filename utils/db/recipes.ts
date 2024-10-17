@@ -31,7 +31,7 @@ export const saveRecipe = async (
 };
 
 /**
- * Check if a recipe with an ID exists in MongoDB
+ * Fetch a single recipe from MongoDB, if it exists
  * @param id the recipe ID
  * @returns the recipe, or `null` if it couldn't be found
  */
@@ -42,6 +42,21 @@ export const fetchRecipe = async (id: number): Promise<Recipe | null> => {
   } catch (error) {
     console.error(`Failed to fetch recipe with ID ${id}:`, error);
     return null;
+  }
+};
+
+/**
+ * Check if a recipe with ID exists in MongoDB
+ * @param id the recipe ID
+ * @returns `true` if the recipe could be found, `false` otherwise
+ */
+export const recipeExists = async (id: number): Promise<boolean> => {
+  try {
+    const count = await RecipeModel.countDocuments({ id }).exec();
+    return count > 0;
+  } catch (error) {
+    console.error("Failed to count recipes:", error);
+    return false;
   }
 };
 
@@ -210,39 +225,63 @@ export const filterRecipes = async (
 };
 
 /**
- * Update statistical information about a recipe
+ * Update statistical information about a recipe.
+ * If the chef isn't authenticated, a limited set of updates are made.
  * @param id the ID of the recipe to update
  * @param body information to update in the recipe
+ * @param isAuthenticated whether the chef is authenticated
+ * @param oldRating the chef's original rating for the recipe if they updated it
+ * @returns an error if the recipe couldn't be updated
  */
-export const updateRecipeStats = async (id: number, body: RecipePatch) => {
+export const updateRecipeStats = async (
+  id: number,
+  body: RecipePatch,
+  isAuthenticated: boolean,
+  oldRating?: number
+): Promise<{ code: number; message: string } | undefined> => {
   const { rating, view } = body;
 
   try {
     const doc = await RecipeModel.findOne({ id }).exec();
     if (doc === null) {
-      console.warn(`Recipe with ID ${id} not found`);
-      return;
+      const message = `Recipe with ID ${id} not found`;
+      console.error(message);
+      return { code: 404, message };
     }
 
-    if (rating !== undefined) {
+    if (rating !== undefined && isAuthenticated) {
       const currentAverage = doc.averageRating;
       const currentTotal = doc.totalRatings;
-      const newTotal = currentTotal + 1;
-      const newAverage =
-        currentAverage === null
-          ? rating
-          : (currentAverage * currentTotal + rating) / newTotal;
 
-      // Store the exact average in the DB & round it in the UI
-      doc.averageRating = newAverage;
-      doc.totalRatings = newTotal;
+      if (
+        oldRating !== undefined &&
+        currentAverage !== null &&
+        currentTotal > 0
+      ) {
+        // totalRatings stays the same
+        doc.averageRating =
+          currentAverage + (rating - oldRating) / currentTotal;
+      } else {
+        const newTotal = currentTotal + 1;
+        const newAverage =
+          currentAverage === null
+            ? rating
+            : (currentAverage * currentTotal + rating) / newTotal;
+
+        // Store the exact average in the DB & round it in the UI
+        doc.averageRating = newAverage;
+        doc.totalRatings = newTotal;
+      }
     }
+    // View counts can be updated anonymously
     if (view === true) {
       doc.views += 1;
     }
 
     await doc.save();
   } catch (error) {
-    console.error("Failed to update recipe stats:", error);
+    const message = "Failed to update the recipe's stats";
+    console.error(`${message}:`, error);
+    return { code: 500, message };
   }
 };

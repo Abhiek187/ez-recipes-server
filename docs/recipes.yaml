@@ -319,6 +319,13 @@ paths:
                 nonExistentRecipeId:
                   $ref: "#/components/examples/nonExistentRecipeId"
 
+        "500":
+          description: An unknown error occurred while updating the recipe or chef
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
 components:
   parameters:
     recipeId:
@@ -561,7 +568,7 @@ components:
       properties:
         token:
           type: string
-          description: The ID token for the chef
+          description: The ID token for the chef, if one was passed
 
   examples:
     invalidFilter:

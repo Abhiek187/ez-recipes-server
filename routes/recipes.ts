@@ -18,6 +18,7 @@ import spoonacularApi, { handleAxiosError } from "../utils/api";
 import {
   fetchRecipe,
   filterRecipes,
+  recipeExists,
   saveRecipe,
   updateChef,
   updateRecipeStats,
@@ -215,11 +216,13 @@ router.patch("/:id", auth, async (req, res) => {
   const { id } = req.params;
   const body = req.body as RecipePatch | undefined;
 
+  // Param validations
   if (!isNumeric(id)) {
     res.status(400).json({ error: "The recipe ID must be numeric" });
     return;
   }
 
+  // Body validations
   if (body === undefined || !isObject(body)) {
     res.status(400).json({
       error: "One of 'rating', 'view', or 'isFavorite' must be provided",
@@ -244,8 +247,42 @@ router.patch("/:id", auth, async (req, res) => {
     return;
   }
 
-  await updateRecipeStats(Number(id), body);
-  await updateChef(uid, id, body);
+  // Recipe validations
+  if (!(await recipeExists(Number(id)))) {
+    res.status(404).json({ error: `Recipe with ID ${id} not found` });
+    return;
+  }
+
+  // Check if the user already rated a recipe and update the average/total accordingly
+  const isAuthenticated = uid !== undefined;
+  let oldRating = undefined;
+
+  if (isAuthenticated) {
+    const [newDidUpdateRating, updateChefError] = await updateChef(
+      uid,
+      id,
+      body
+    );
+    oldRating = newDidUpdateRating;
+
+    if (updateChefError !== undefined) {
+      res.status(updateChefError.code).json({ error: updateChefError.message });
+      return;
+    }
+  }
+
+  const updateRecipeError = await updateRecipeStats(
+    Number(id),
+    body,
+    isAuthenticated,
+    oldRating
+  );
+  if (updateRecipeError !== undefined) {
+    res
+      .status(updateRecipeError.code)
+      .json({ error: updateRecipeError.message });
+    return;
+  }
 
   res.status(200).json({ token });
 });

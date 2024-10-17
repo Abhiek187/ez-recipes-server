@@ -48,25 +48,36 @@ export const getChef = async (
  * @param uid the UID of the chef
  * @param id the ID of the recipe
  * @param body information to update for the chef
+ * @returns a tuple containing:
+ *  - The chef's original recipe rating if they updated it
+ *  - An error if the chef couldn't be updated
  */
 export const updateChef = async (
   uid: string,
   id: string,
   body: RecipePatch
-) => {
+): Promise<
+  [number | undefined, { code: number; message: string } | undefined]
+> => {
   const { rating, view, isFavorite } = body;
+  let oldRating = undefined;
 
   try {
     const doc = await ChefModel.findOne({ _id: uid }).exec();
     if (doc === null) {
-      console.warn(`Chef with ID ${uid} not found`);
-      return;
+      // Shouldn't normally occur, unless MongoDB is out-of-sync with Firebase
+      const message = `Chef with ID ${uid} not found`;
+      console.error(message);
+      return [oldRating, { code: 404, message }];
     }
 
     if (rating !== undefined) {
+      // Allow the chef to update their existing rating
+      oldRating = doc.ratings.get(id);
       doc.ratings.set(id, rating);
     }
     if (view === true) {
+      // Set the most recent timestamp the chef viewed this recipe
       doc.recentRecipes.set(id, new Date());
     }
     if (isFavorite !== undefined) {
@@ -82,8 +93,10 @@ export const updateChef = async (
     }
 
     await doc.save();
+    return [oldRating, undefined];
   } catch (error) {
     console.error("Failed to update chef", `${uid}`, error);
+    return [oldRating, { code: 500, message: `Failed to update chef: ${uid}` }];
   }
 };
 
