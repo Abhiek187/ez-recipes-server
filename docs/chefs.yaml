@@ -261,10 +261,10 @@ components:
           additionalProperties:
             type: integer
         recentRecipes:
-          type: array
-          items:
-            type: string
-            description: The ID of a recipe recently viewed
+          type: object
+          description: >-
+            Key-value pairs, where the key is the recipe ID
+            and the value is the timestamp the recipe was last viewed
         favoriteRecipes:
           type: array
           items:
@@ -338,12 +338,18 @@ components:
     userNotFound:
       value:
         {
-          "error": "Invalid Firebase token provided: Error: There is no user record corresponding to the provided identifier.",
+          "error":
+            "Invalid Firebase token provided: Error: There is no user record corresponding
+            to the provided identifier.",
         }
     missingToken:
       value:
         {
-          "error": "Invalid Firebase token provided: Error: Decoding Firebase ID token failed. Make sure you passed the entire string JWT which represents an ID token. See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.",
+          "error":
+            "Invalid Firebase token provided: Error: Decoding Firebase ID token failed.
+            Make sure you passed the entire string JWT which represents an ID token.
+            See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on
+            how to retrieve an ID token.",
         }
     invalidCredentials:
       value: { "error": "Failed to login: INVALID_LOGIN_CREDENTIALS" }

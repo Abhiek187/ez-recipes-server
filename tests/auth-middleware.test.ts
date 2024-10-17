@@ -6,6 +6,7 @@ import FirebaseAdmin from "../utils/auth/admin";
 
 const mockRequest = (authorization?: string, req?: object) =>
   ({
+    originalUrl: "/",
     ...req,
     headers: {
       authorization,
@@ -51,9 +52,27 @@ describe("auth-middleware", () => {
     mockValidateToken(true);
     await auth(
       mockRequest(undefined, {
-        url: "/",
+        originalUrl: "/api/chefs",
         method: "PATCH",
         body: { type: "password", email: "test@email.com" },
+      }),
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalled();
+    expect(mockResponse.locals.uid).not.toBeDefined();
+    expect(mockResponse.locals.token).not.toBeDefined();
+  });
+
+  it("skips validation if viewing a recipe", async () => {
+    mockValidateToken(true);
+    await auth(
+      mockRequest(undefined, {
+        originalUrl: "/api/recipes/:id",
+        params: { id: 0 },
+        method: "PATCH",
+        body: { view: true },
       }),
       mockResponse,
       mockNext

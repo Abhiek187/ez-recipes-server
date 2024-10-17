@@ -43,6 +43,10 @@ components:
       $ref: "./docs/recipes.yaml#/components/schemas/recipes"
     recipe:
       $ref: "./docs/recipes.yaml#/components/schemas/recipe"
+    recipePatch:
+      $ref: "./docs/recipes.yaml#/components/schemas/recipePatch"
+    token:
+      $ref: "./docs/recipes.yaml#/components/schemas/token"
     error:
       type: object
       properties:

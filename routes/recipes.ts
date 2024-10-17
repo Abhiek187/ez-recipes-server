@@ -13,15 +13,25 @@ import {
   sanitizeEnumArray,
   sanitizeNumber,
 } from "../utils/recipeUtils";
-import { isNumeric } from "../utils/string";
+import { isInteger, isNumeric } from "../utils/string";
 import spoonacularApi, { handleAxiosError } from "../utils/api";
-import { fetchRecipe, filterRecipes, saveRecipe } from "../utils/db";
+import {
+  fetchRecipe,
+  filterRecipes,
+  recipeExists,
+  saveRecipe,
+  updateChef,
+  updateRecipeStats,
+} from "../utils/db";
 import RecipeFilter from "../types/client/RecipeFilter";
 import {
   isValidSpiceLevel,
   isValidMealType,
   isValidCuisine,
 } from "../types/client/Recipe";
+import auth from "../middleware/auth";
+import RecipePatch from "../types/client/RecipePatch";
+import { isObject } from "../utils/object";
 
 const badRequestError = (res: Response, error: string) => {
   res.status(400).json({ error });
@@ -198,6 +208,79 @@ router.get("/:id", async (req, res) => {
     const [status, json] = handleAxiosError(error);
     res.status(status).json(json);
   }
+});
+
+router.patch("/:id", auth, async (req, res) => {
+  // Update info for both the recipe and chef
+  const { token, uid } = res.locals;
+  const { id } = req.params;
+  const body = req.body as RecipePatch | undefined;
+
+  // Param validations
+  if (!isNumeric(id)) {
+    res.status(400).json({ error: "The recipe ID must be numeric" });
+    return;
+  }
+
+  // Body validations
+  if (body === undefined || !isObject(body)) {
+    res.status(400).json({
+      error: "One of 'rating', 'view', or 'isFavorite' must be provided",
+    });
+    return;
+  }
+  if (
+    body.rating !== undefined &&
+    (!isInteger(body.rating) || body.rating < 1 || body.rating > 5)
+  ) {
+    res
+      .status(400)
+      .json({ error: "The rating must be a whole number between 1 and 5" });
+    return;
+  }
+  if (body.view !== undefined && typeof body.view !== "boolean") {
+    res.status(400).json({ error: "'view' must be true or false" });
+    return;
+  }
+  if (body.isFavorite !== undefined && typeof body.isFavorite !== "boolean") {
+    res.status(400).json({ error: "'isFavorite' must be true or false" });
+    return;
+  }
+
+  // Recipe validations
+  if (!(await recipeExists(Number(id)))) {
+    res.status(404).json({ error: `Recipe with ID ${id} not found` });
+    return;
+  }
+
+  // Check if the user already rated a recipe and update the average/total accordingly
+  const isAuthenticated = uid !== undefined;
+  let oldRating = undefined;
+
+  if (isAuthenticated) {
+    const [newOldRating, updateChefError] = await updateChef(uid, id, body);
+    oldRating = newOldRating;
+
+    if (updateChefError !== undefined) {
+      res.status(updateChefError.code).json({ error: updateChefError.message });
+      return;
+    }
+  }
+
+  const updateRecipeError = await updateRecipeStats(
+    Number(id),
+    body,
+    isAuthenticated,
+    oldRating
+  );
+  if (updateRecipeError !== undefined) {
+    res
+      .status(updateRecipeError.code)
+      .json({ error: updateRecipeError.message });
+    return;
+  }
+
+  res.status(200).json({ token });
 });
 
 export default router;

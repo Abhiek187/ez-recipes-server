@@ -280,6 +280,9 @@ export const createClientResponse = async (
         })),
       })),
     })),
+    averageRating: null,
+    totalRatings: 0,
+    views: 0,
   };
 
   return resJson;
