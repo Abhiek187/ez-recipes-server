@@ -258,12 +258,8 @@ router.patch("/:id", auth, async (req, res) => {
   let oldRating = undefined;
 
   if (isAuthenticated) {
-    const [newDidUpdateRating, updateChefError] = await updateChef(
-      uid,
-      id,
-      body
-    );
-    oldRating = newDidUpdateRating;
+    const [newOldRating, updateChefError] = await updateChef(uid, id, body);
+    oldRating = newOldRating;
 
     if (updateChefError !== undefined) {
       res.status(updateChefError.code).json({ error: updateChefError.message });

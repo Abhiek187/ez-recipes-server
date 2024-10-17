@@ -269,7 +269,7 @@ paths:
 
     patch:
       summary: >-
-        Update information about a recipe. Some info may require authentication.
+        Update information about a recipe. Some fields require authentication.
       tags:
         - recipes
       security:
@@ -320,7 +320,7 @@ paths:
                   $ref: "#/components/examples/nonExistentRecipeId"
 
         "500":
-          description: An unknown error occurred while updating the recipe or chef
+          description: An error occurred while updating the recipe or chef
           content:
             application/json:
               schema:

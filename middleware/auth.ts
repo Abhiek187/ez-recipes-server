@@ -25,9 +25,14 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     ? authHeader.split("Bearer ")[1]
     : authHeader;
   const isChangingPassword =
-    req.url === "/" && req.method === "PATCH" && req.body.type === "password";
+    req.originalUrl === "/api/chefs" &&
+    req.method === "PATCH" &&
+    req.body?.type === "password";
   const isViewingRecipe =
-    req.url === "/:id" && req.method === "PATCH" && req.body.view === true;
+    req.originalUrl.startsWith("/api/recipes/") &&
+    req.params.id !== undefined &&
+    req.method === "PATCH" &&
+    typeof req.body?.view === "boolean";
 
   if (token === undefined) {
     // Skip validation for certain requests

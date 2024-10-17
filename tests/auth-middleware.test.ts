@@ -6,6 +6,7 @@ import FirebaseAdmin from "../utils/auth/admin";
 
 const mockRequest = (authorization?: string, req?: object) =>
   ({
+    originalUrl: "/",
     ...req,
     headers: {
       authorization,
@@ -51,7 +52,7 @@ describe("auth-middleware", () => {
     mockValidateToken(true);
     await auth(
       mockRequest(undefined, {
-        url: "/",
+        originalUrl: "/api/chefs",
         method: "PATCH",
         body: { type: "password", email: "test@email.com" },
       }),
@@ -68,7 +69,8 @@ describe("auth-middleware", () => {
     mockValidateToken(true);
     await auth(
       mockRequest(undefined, {
-        url: "/:id",
+        originalUrl: "/api/recipes/:id",
+        params: { id: 0 },
         method: "PATCH",
         body: { view: true },
       }),
