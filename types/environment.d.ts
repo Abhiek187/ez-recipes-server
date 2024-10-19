@@ -8,7 +8,6 @@ declare global {
       API_KEY: string;
       MONGO_URI: string;
       GOOGLE_APPLICATION_CREDENTIALS: string;
-      FIREBASE_CONFIG: string;
       WEB_API_KEY: string;
       SECRET_KEY: string;
     }
