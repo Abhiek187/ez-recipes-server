@@ -18,3 +18,17 @@ export const isNumeric = (num: number | string): boolean =>
  */
 export const isInteger = (num: number | string): boolean =>
   isNumeric(num) && Number.isInteger(Number(num));
+
+/**
+ * Check if the provided timestamp is at least `days` from today's date
+ * @param timestamp the UTC timestamp to check
+ * @param days the number of days to check from today's date
+ * @returns true if `timestamp` is at least `days` old, false otherwise
+ */
+export const isAtLeastDaysOld = (timestamp: string, days: number): boolean => {
+  // If the timestamp is invalid, NaN will always return false
+  const oldUTC = new Date(timestamp).getTime();
+  const currentUTC = Date.now();
+  const daysInMs = days * 24 * 60 * 60 * 1000;
+  return currentUTC - oldUTC >= daysInMs;
+};

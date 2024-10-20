@@ -11,6 +11,7 @@ import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
 import { getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
+import { isAtLeastDaysOld } from "../utils/string";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -215,6 +216,28 @@ router.post("/logout", auth, async (_req, res) => {
   } catch (err) {
     const error = err as FirebaseAuthError;
     console.error("Error logging out:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/private", async (_req, res) => {
+  // Delete accounts with unverified emails after 1 week
+  try {
+    const users = await FirebaseAdmin.instance.getAllUsers();
+
+    for (const user of users) {
+      const { uid, emailVerified, metadata } = user;
+
+      // Metadata times are in UTC string format
+      if (!emailVerified && isAtLeastDaysOld(metadata.creationTime, 7)) {
+        await FirebaseAdmin.instance.deleteUser(uid);
+      }
+    }
+
+    res.sendStatus(204);
+  } catch (err) {
+    const error = err as FirebaseAuthError;
+    console.error("Error deleting inactive users:", error);
     res.status(500).json({ error: error.message });
   }
 });

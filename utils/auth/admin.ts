@@ -92,6 +92,17 @@ export default class FirebaseAdmin {
   }
 
   /**
+   * Get all users in Firebase
+   * @throws `FirebaseAuthError` if an error occurred
+   * @returns an array of user records
+   */
+  async getAllUsers(): Promise<UserRecord[]> {
+    const auth = getAuth();
+    const result = await auth.listUsers(); // use pagination if there are over 1000 users
+    return result.users;
+  }
+
+  /**
    * Log out the user by revoking their tokens
    * @param uid the unique ID of the user
    * @throws `FirebaseAuthError` if an error occurred

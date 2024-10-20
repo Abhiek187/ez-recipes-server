@@ -1,4 +1,4 @@
-import { isInteger, isNumeric } from "../utils/string";
+import { isAtLeastDaysOld, isInteger, isNumeric } from "../utils/string";
 
 describe("isNumeric", () => {
   it.each([
@@ -74,4 +74,46 @@ describe("isInteger", () => {
     // Then they should all return false
     expect(isInteger(num as number | string)).toBe(false);
   });
+});
+
+describe("isAtLeastDaysOld", () => {
+  const mockDate = new Date(2024, 9, 19, 15, 48, 50);
+
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(mockDate);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it.each([
+    [new Date(2024, 9, 12).toUTCString(), 7],
+    [new Date(2024, 8, 19, 15, 48, 50).toUTCString(), 7],
+    [new Date(2024, 9, 18, 15, 48, 50).toUTCString(), 1],
+    [mockDate.toUTCString(), 0],
+  ])(
+    `passes positive case: ${mockDate.toUTCString()} - %s >= %d day(s)`,
+    (date, days) => {
+      expect(isAtLeastDaysOld(date, days)).toBe(true);
+    }
+  );
+
+  it.each([
+    [new Date(2024, 9, 15, 21, 56, 55).toUTCString(), 7],
+    [new Date(2024, 9, 12, 16, 48, 50).toUTCString(), 7],
+    [mockDate.toUTCString(), 1],
+  ])(
+    `passes negative case: ${mockDate.toUTCString()} - %s < %d day(s)`,
+    (date, days) => {
+      expect(isAtLeastDaysOld(date, days)).toBe(false);
+    }
+  );
+
+  it.each(["", "cheese", "Wed, 32 Feb 2024", new Date("bacon").toUTCString()])(
+    "returns false for invalid date: %s",
+    (date) => {
+      expect(isAtLeastDaysOld(date, 0)).toBe(false);
+    }
+  );
 });
