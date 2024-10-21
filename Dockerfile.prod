@@ -11,7 +11,7 @@ COPY package*.json ./
 # No need to set execution permissions or run crontab on that file
 COPY jobs/node-cron /etc/crontabs/root
 # Typescript is the only dev dependency needed in production
-RUN npm ci --omit=dev && npm ci typescript
+RUN npm ci --omit=dev && npm ci typescript && npm cache clean --force
 
 # Bundle app source
 COPY . .
