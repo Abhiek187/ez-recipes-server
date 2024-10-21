@@ -7,7 +7,9 @@ WORKDIR /usr/src/server
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
 COPY package*.json ./
-
+# Copy cron job for the root user (busybox uses /etc/crontabs plural)
+# No need to set execution permissions or run crontab on that file
+COPY jobs/node-cron /etc/crontabs/root
 # Typescript is the only dev dependency needed in production
 RUN npm ci --omit=dev && npm ci typescript
 
@@ -18,5 +20,7 @@ COPY . .
 RUN npm run build
 
 # Run the node server on port 5000 and open the connection
+# Start cron job in the foreground, output to stdout/stderr
+# (busybox has crond, not cron)
 EXPOSE $PORT
-CMD [ "npm", "run", "server" ]
+CMD [ "/bin/sh", "-c", "crond -f -d 8 & npm run server" ]

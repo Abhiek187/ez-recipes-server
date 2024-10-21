@@ -113,14 +113,12 @@ MONGO_URI=YOUR_MONGODB_URI
 
 4. Create a [Firebase Project](https://console.firebase.google.com) with the following:
    - A private key under Service Accounts
-   - A web app with a configuration object
    - A web API key
 
-Save both of these outside this repo and reference the paths to them in `.env`:
+Save both of these outside this repo and reference them in `.env`:
 
 ```
 GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_PRIVATE_KEY
-FIREBASE_CONFIG=PATH_TO_WEB_APP_CONFIG
 WEB_API_KEY=YOUR_WEB_API_KEY
 ```
 

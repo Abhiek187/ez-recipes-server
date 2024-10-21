@@ -20,5 +20,13 @@ export const connectToMongoDB = async () => {
   }
 };
 
+/**
+ * Disconnect from MongoDB using mongoose
+ */
+export const disconnectFromMongoDB = async () => {
+  await mongoose.disconnect();
+  console.log("Disconnected from MongoDB");
+};
+
 export * from "./recipes";
 export * from "./chefs";

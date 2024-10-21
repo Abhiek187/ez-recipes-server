@@ -17,9 +17,6 @@ updates:
       eslint:
         patterns:
           - "*eslint*"
-      firebase:
-        patterns:
-          - "firebase*"
       types:
         patterns:
           - "@types/*"
