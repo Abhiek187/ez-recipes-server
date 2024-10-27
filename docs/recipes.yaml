@@ -109,6 +109,7 @@ paths:
                 - smoothie
                 - cocktail
                 - mocktail
+                - seasoning
           description: Meal types
         - in: query
           name: culture
@@ -151,6 +152,8 @@ paths:
                 - "South American"
                 - Creole
                 - "Central American"
+                - bbq
+                - Barbecue
           description: Cuisines
         - in: query
           name: token

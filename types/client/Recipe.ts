@@ -37,6 +37,7 @@ export const MEAL_TYPES = [
   "smoothie",
   "cocktail",
   "mocktail",
+  "seasoning",
 ] as const;
 export type MealType = (typeof MEAL_TYPES)[number];
 export const isValidMealType = (str: string): str is MealType => {
@@ -76,6 +77,8 @@ export const CUISINES = [
   "South American",
   "Creole",
   "Central American",
+  "bbq",
+  "Barbecue",
 ] as const;
 export type Cuisine = (typeof CUISINES)[number];
 export const isValidCuisine = (str: string): str is Cuisine => {
