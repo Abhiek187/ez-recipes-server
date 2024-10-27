@@ -221,7 +221,7 @@ paths:
         - chefs
       security:
         - bearerAuth: []
-      response:
+      responses:
         "204":
           description: Successfully logged out
 
