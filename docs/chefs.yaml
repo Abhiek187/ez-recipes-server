@@ -265,6 +265,9 @@ components:
           description: >-
             Key-value pairs, where the key is the recipe ID
             and the value is the timestamp the recipe was last viewed
+          additionalProperties:
+            type: string
+            format: date-time
         favoriteRecipes:
           type: array
           items:
