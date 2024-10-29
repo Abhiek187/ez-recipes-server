@@ -278,6 +278,8 @@ paths:
       security:
         - {} # no security
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/recipeId"
       requestBody:
         required: true
         content:

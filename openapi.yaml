@@ -9,6 +9,14 @@ servers:
   - url: https://ez-recipes-server.onrender.com
     description: Server deployed on render.com
 
+tags:
+  - name: recipes
+    description: APIs pertaining to recipes
+  - name: terms
+    description: APIs pertaining to cooking terms
+  - name: chefs
+    description: APIs pertaining to chef account information
+
 paths:
   /api/recipes:
     # ~0 == ~, ~1 == /
