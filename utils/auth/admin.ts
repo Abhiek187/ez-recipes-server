@@ -103,6 +103,21 @@ export default class FirebaseAdmin {
   }
 
   /**
+   * Change the user's password
+   * @param uid the unique ID of the user
+   * @param password the new password to set
+   * @throws `FirebaseAuthError` if an error occurred
+   */
+  async changePassword(uid: string, password: string) {
+    const auth = getAuth();
+    const userRecord = await auth.updateUser(uid, {
+      password,
+    });
+
+    console.log(`Successfully changed the user's password:`, userRecord);
+  }
+
+  /**
    * Log out the user by revoking their tokens
    * @param uid the unique ID of the user
    * @throws `FirebaseAuthError` if an error occurred

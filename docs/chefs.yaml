@@ -79,7 +79,8 @@ paths:
     patch:
       summary: >-
         Send an email to change the chef's credentials.
-        An ID token is optional if changing passwords.
+        If changing passwords and a valid ID token is provided,
+        the password will be updated immediately.
       tags:
         - chefs
       security:
@@ -93,7 +94,8 @@ paths:
               $ref: "#/components/schemas/changeRequest"
       responses:
         "200":
-          description: Successfully sent an email to verify the change request
+          description: >-
+            Successfully updated the credentials or sent an email to verify the change request
           content:
             application/json:
               schema:
@@ -305,6 +307,7 @@ components:
           description: Whether or not the email address is verified
     changeRequest:
       type: object
+      required: ["type", "email"]
       properties:
         type:
           type: string
@@ -314,6 +317,11 @@ components:
           type: string
           description: The email address to send a verification to
           format: email
+        password:
+          type: string
+          description: The new password
+          format: password
+          minLength: 8
     email:
       type: object
       # token may not be there if changing passwords

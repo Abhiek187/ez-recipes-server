@@ -105,14 +105,21 @@ router.patch(
     .isIn(["email", "password"])
     .withMessage("Change type must be 'email' or 'password'"),
   body("email").isEmail().withMessage("Invalid email"),
+  // Only check the password if it's provided
+  body("password")
+    .optional({ values: "falsy" })
+    .isString()
+    .withMessage("Password must be a string")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long"),
   auth,
   async (req, res) => {
     // Update the user's credentials
     checkValidations(req, res);
     if (res.writableEnded) return;
 
-    const { type, email } = req.body;
-    const { token } = res.locals;
+    const { type, email, password } = req.body;
+    const { token, uid } = res.locals;
 
     if (type === "email") {
       try {
@@ -128,7 +135,27 @@ router.patch(
       } catch (error) {
         handleFirebaseRestError("Failed to change the email", error, res);
       }
+    } else if (
+      password !== undefined &&
+      token !== undefined &&
+      uid !== undefined
+    ) {
+      // Change the user's password if they're already signed in
+      try {
+        await FirebaseAdmin.instance.changePassword(uid, password);
+        // Keep the response consistent with the other update types
+        res.json({
+          kind: "",
+          email,
+          token,
+        });
+      } catch (err) {
+        const error = err as FirebaseAuthError;
+        console.error("Error changing the user's password:", error);
+        res.status(500).json({ error: error.message });
+      }
     } else {
+      // Reset the user's password when unauthenticated
       try {
         const emailResponse = await FirebaseApi.instance.resetPassword(email);
         console.log(
