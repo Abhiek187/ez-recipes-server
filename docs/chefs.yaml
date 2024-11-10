@@ -254,6 +254,9 @@ components:
           type: string
           description: The chef's email address
           format: email
+        emailVerified:
+          type: boolean
+          description: Whether or not the email address is verified
         ratings:
           type: object
           description: >-
