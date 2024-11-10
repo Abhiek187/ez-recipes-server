@@ -4,6 +4,7 @@ import OobCodeResponse from "../../types/firebase/OobCodeResponse";
 import FirebaseTokenResponse from "../../types/firebase/FirebaseTokenResponse";
 import FirebaseTokenExchangeResponse from "../../types/firebase/FirebaseTokenExchangeResponse";
 import FirebaseLoginResponse from "../../types/firebase/FirebaseLoginResponse";
+import ContinueAction from "../../types/firebase/ContinueAction";
 
 export default class FirebaseApi {
   private static _instance: FirebaseApi;
@@ -34,6 +35,10 @@ export default class FirebaseApi {
     }
 
     return this._instance;
+  }
+
+  private createDeepLink(action: ContinueAction) {
+    return `https://ez-recipes-web.onrender.com/profile?action=${action}`;
   }
 
   /**
@@ -87,6 +92,7 @@ export default class FirebaseApi {
       {
         requestType: "VERIFY_EMAIL",
         idToken: token,
+        continueUrl: this.createDeepLink(ContinueAction.VERIFY_EMAIL),
       }
     );
     return response.data;
@@ -104,6 +110,7 @@ export default class FirebaseApi {
       {
         requestType: "PASSWORD_RESET",
         email,
+        continueUrl: this.createDeepLink(ContinueAction.RESET_PASSWORD),
       }
     );
     return response.data;
@@ -124,6 +131,7 @@ export default class FirebaseApi {
         requestType: "VERIFY_AND_CHANGE_EMAIL",
         newEmail: email,
         idToken: token,
+        continueUrl: this.createDeepLink(ContinueAction.CHANGE_EMAIL),
       }
     );
     return response.data;
