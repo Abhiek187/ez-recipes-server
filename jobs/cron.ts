@@ -39,4 +39,6 @@ class CronJobs {
   }
 }
 
-new CronJobs();
+if (require.main === module) {
+  new CronJobs();
+}
