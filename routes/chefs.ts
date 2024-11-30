@@ -218,14 +218,15 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const { localId, idToken, registered, refreshToken } =
+      const { localId, idToken, refreshToken } =
         await FirebaseApi.instance.login(email, password);
       await saveRefreshToken(localId, refreshToken);
+      const { emailVerified } = await FirebaseAdmin.instance.getUser(localId);
 
       res.json({
         uid: localId,
         token: idToken,
-        emailVerified: registered,
+        emailVerified,
       });
     } catch (error) {
       handleFirebaseRestError("Failed to login", error, res);
