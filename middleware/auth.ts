@@ -25,7 +25,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     ? authHeader.split("Bearer ")[1]
     : authHeader;
   const isResettingPassword =
-    req.originalUrl === "/api/chefs" &&
+    ["/api/chefs", "/api/chefs/"].includes(req.originalUrl) &&
     req.method === "PATCH" &&
     req.body?.type === "password" &&
     req.body?.password === undefined;
