@@ -9,13 +9,35 @@
 
 This is an API built using Express to fetch low-effort recipes from [spoonacular](https://spoonacular.com/food-api). These are recipes that can be made within an hour, use common kitchen ingredients, and can produce multiple servings. It's ideal for new chefs learning how to cook, or people with little free time who want to cook something tasty. This API is connected to the [web](https://github.com/Abhiek187/ez-recipes-web), [iOS](https://github.com/Abhiek187/ez-recipes-ios), and [Android](https://github.com/Abhiek187/ez-recipes-android) apps so anyone can view the recipes on any device.
 
-In addition to spoonacular, MongoDB is used to cache the recipes for improved query performance. It is also used to perform full-text search on recipes based on various criteria like recipe name, description, or ingredients. Firebase is used to manage user authentication.
+In addition to spoonacular, MongoDB is used to cache the recipes for improved query performance. It is also used to perform full-text search on recipes based on various criteria like recipe name, description, or ingredients.
 
-### Architecture Diagram
+Firebase is used to manage user authentication. Chefs can create an account to get access to additional features, including:
+
+- Rating recipes
+- Favoriting recipes
+- Accessing recently viewed recipes
+
+By delegating Firebase to the server-side, these settings can be synced across all the client apps for a seamless cooking experience.
+
+## Features
+
+- TypeScript for added type safety
+- RESTful APIs
+- MongoDB to store data, query data, and do full-text search
+- Pagination to reduce bandwidth and optimize query performance
+- Firebase for user authentication
+- Docker to containerize the server on any machine
+- OpenAPI to publish standardized API documentation
+- GitHub Actions for automated testing and deployment in a CI/CD pipeline
+- Mermaid to write diagrams as code
+
+## Architecture Diagram
 
 <img src="architecture-diagram.png" alt="Architecture diagram for EZ Recipes" width="400">
 
-### Sequence Diagram
+## Sequence Diagrams
+
+### Fetch Random Recipe
 
 Below is a sequence diagram when the client asks the server to fetch a random recipe:
 
@@ -32,17 +54,93 @@ Server->>MongoDB: Upsert recipe
 Server-->>Client: Client recipe
 ```
 
-## Features
+### Create Account
 
-- TypeScript for added type safety
-- RESTful APIs
-- MongoDB to store data, query data, and do full-text search
-- Pagination to reduce bandwidth and optimize query performance
-- Firebase for user authentication
-- Docker to containerize the server on any machine
-- OpenAPI to publish standardized API documentation
-- GitHub Actions for automated testing and deployment in a CI/CD pipeline
-- Mermaid to write diagrams as code
+Below shows how the client & server interact with Firebase & MongoDB to handle authentication:
+
+```mermaid
+sequenceDiagram
+
+actor User
+User->>App: Open profile
+App->>App: Load/decrypt ID token
+App->>Server: GET /api/chefs
+Server->>Server: Validate/refresh token
+Server-->>App: 401 Unauthorized
+App-->>User: Show unauthenticated profile page
+User->>User: Open sign-up form
+User->>App: Enter new email and password
+App->>Server: POST /api/chefs
+Server->>Firebase: Create user
+Server->>MongoDB: Create chef document
+Server->>Firebase: Create custom token
+Server->>Firebase: Exchange custom token for ID token
+Server->>MongoDB: Save refresh token
+Server-->>App: Chef created
+App->>App: Encrypt/save ID token
+App->>Server: POST /api/chefs/verify
+Server->>Server: Validate/refresh token
+Server-->>User: Send verification email
+User->>App: Deep link to profile
+App->>App: Load/decrypt ID token
+App->>Server: GET /api/chefs
+Server->>Server: Validate/refresh token
+Server->>MongoDB: Get chef document
+Server->>Firebase: Get user record
+Server-->>App: 200 OK
+App->>App: Encrypt/save ID token
+App-->>User: Show authenticated profile page
+```
+
+### Login
+
+```mermaid
+sequenceDiagram
+
+actor User
+User->>App: Open profile
+App->>App: Load/decrypt ID token
+App->>Server: GET /api/chefs
+Server->>Server: Validate/refresh token
+Server-->>App: 401 Unauthorized
+App-->>User: Show unauthenticated profile page
+User->>User: Open login form
+User->>App: Enter email and password
+App->>Server: POST /api/chefs/login
+Server->>Firebase: Sign in user
+Server->>MongoDB: Save refresh token
+Server-->>App: 200 OK
+App->>App: Encrypt/save ID token
+opt Email isn't verified
+  App->>Server: POST /api/chefs/verify
+  Server->>Server: Validate/refresh token
+  Server-->>User: Send verification email
+  User->>App: Deep link to profile
+end
+App->>App: Load/decrypt ID token
+App->>Server: GET /api/chefs
+Server->>Server: Validate/refresh token
+Server->>MongoDB: Get chef document
+Server->>Firebase: Get user record
+Server-->>App: 200 OK
+App->>App: Encrypt/save ID token
+App-->>User: Show authenticated profile page
+```
+
+### Logout
+
+```mermaid
+sequenceDiagram
+
+actor User
+User->>App: Click logout
+App->>App: Load/decrypt ID token
+App->>Server: POST /api/chefs/logout
+Server->>Firebase: Revoke refresh token
+Server-->>App: 204 No Content
+App->>App: Delete ID token
+App-->>User: Show unauthenticated profile page
+```
 
 ## Pipeline Diagrams
 
