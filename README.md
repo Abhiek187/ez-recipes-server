@@ -142,6 +142,22 @@ App->>App: Delete ID token
 App-->>User: Show unauthenticated profile page
 ```
 
+### Delete Account
+
+```mermaid
+sequenceDiagram
+
+actor User
+User->>App: Click delete account
+App->>App: Load/decrypt ID token
+App->>Server: DELETE /api/chefs
+Server->>Firebase: Delete user
+Server->>MongoDB: Delete chef document
+Server-->>App: 204 No Content
+App->>App: Delete ID token
+App-->>User: Show unauthenticated profile page
+```
+
 ## Pipeline Diagrams
 
 ### NPM CI
