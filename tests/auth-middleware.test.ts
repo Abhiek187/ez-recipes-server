@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthClientErrorCode } from "firebase-admin/auth";
 import * as jwt from "jwt-decode";
 
 import auth from "../middleware/auth";
@@ -21,15 +22,30 @@ const mockResponse = {
 } as unknown as Response;
 const mockNext = jest.fn();
 
-const mockValidateToken = (isSuccess: boolean, isExpired = false) => {
+const mockValidateToken = (
+  isSuccess: boolean,
+  isExpired = false,
+  isInvalidKid = false
+) => {
   jest.spyOn(FirebaseAdmin, "instance", "get").mockReturnValue({
     validateToken: isSuccess
       ? jest.fn().mockResolvedValue("mock-uid")
-      : jest
-          .fn()
-          .mockRejectedValue(
-            isExpired ? { code: "auth/id-token-expired" } : "mock error"
-          ),
+      : jest.fn().mockRejectedValue(
+          isExpired
+            ? {
+                ...AuthClientErrorCode.ID_TOKEN_EXPIRED,
+                code: `auth/${AuthClientErrorCode.ID_TOKEN_EXPIRED.code}`,
+              }
+            : isInvalidKid
+            ? {
+                code: `auth/${AuthClientErrorCode.INVALID_ARGUMENT.code}`,
+                message:
+                  'Firebase ID token has "kid" claim which does not correspond to a known ' +
+                  "public key. Most likely the ID token is expired, so get a fresh token from " +
+                  "your client app and try again.",
+              }
+            : "mock error"
+        ),
   } as unknown as FirebaseAdmin);
 };
 
@@ -106,6 +122,19 @@ describe("auth-middleware", () => {
     const mockToken = "e30.e30.e30"; // e30 === {}
 
     mockValidateToken(false, true);
+    await auth(mockRequest(mockToken), mockResponse, mockNext);
+
+    expect(jwtDecodeSpy).toHaveBeenCalledWith(mockToken);
+    expect(mockNext).not.toHaveBeenCalled();
+    expect(mockResponse.status).toHaveBeenCalledWith(401);
+    expect(mockResponse.json).toHaveBeenCalled();
+  });
+
+  it("tries to refresh a token with an invalid kid", async () => {
+    const jwtDecodeSpy = jest.spyOn(jwt, "jwtDecode");
+    const mockToken = "e30.e30.e30";
+
+    mockValidateToken(false, false, true);
     await auth(mockRequest(mockToken), mockResponse, mockNext);
 
     expect(jwtDecodeSpy).toHaveBeenCalledWith(mockToken);

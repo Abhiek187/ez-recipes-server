@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { FirebaseAuthError } from "firebase-admin/auth";
+import { AuthClientErrorCode, FirebaseAuthError } from "firebase-admin/auth";
 import { jwtDecode } from "jwt-decode";
 
 import FirebaseAdmin from "../utils/auth/admin";
@@ -55,7 +55,12 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     const error = err as FirebaseAuthError;
 
     // If the token is expired, try refreshing it (revoked tokens can't be refreshed)
-    if (error.code === "auth/id-token-expired") {
+    // The token could also be expired if the kid claim is invalid
+    // (but don't check for auth/argument-error)
+    if (
+      error.code === `auth/${AuthClientErrorCode.ID_TOKEN_EXPIRED.code}` ||
+      error.message?.includes("expired")
+    ) {
       try {
         // Need to decode the token ourself since Firebase won't accept expired tokens
         // Assuming the rest of the token is valid, and a new token will be generated anyway
