@@ -52,6 +52,7 @@ router.get("/", async (req, res) => {
     healthy,
     cheap,
     sustainable,
+    rating,
     "spice-level": spiceLevel,
     type,
     culture,
@@ -70,6 +71,9 @@ router.get("/", async (req, res) => {
     }
     if (maxCals !== undefined) {
       filter.maxCals = sanitizeNumber(maxCals, "max-cals", 0, 2000);
+    }
+    if (rating !== undefined) {
+      filter.rating = sanitizeNumber(rating, "rating", 1, 5);
     }
   } catch (error) {
     badRequestError(res, error as string);

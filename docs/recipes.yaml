@@ -62,6 +62,13 @@ paths:
           allowEmptyValue: true
           description: Sustainable recipes
         - in: query
+          name: rating
+          schema:
+            type: number
+            minimum: 1
+            maximum: 5
+          description: Minimum average rating
+        - in: query
           name: spice-level
           schema:
             # Form style & explode (multiple of the same parameter)
