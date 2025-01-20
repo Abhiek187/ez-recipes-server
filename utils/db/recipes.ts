@@ -70,6 +70,7 @@ const createQuery = (
     healthy,
     cheap,
     sustainable,
+    rating,
     spiceLevels,
     types,
     cultures,
@@ -122,6 +123,9 @@ const createQuery = (
   }
   if (sustainable !== undefined) {
     query.isSustainable = sustainable;
+  }
+  if (rating !== undefined) {
+    query.averageRating = { $gte: rating };
   }
   if (spiceLevels !== undefined) {
     query.spiceLevel = { $in: spiceLevels };
