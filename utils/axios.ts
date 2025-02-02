@@ -11,9 +11,9 @@ import { isObject } from "./object";
 // Redact sensitive headers and body fields from the logs
 const MASK = "██";
 const HEADERS_TO_REDACT = ["authorization", "cookie", "x-api-key"];
-const FIELDS_TO_REDACT = ["password"];
+const FIELDS_TO_REDACT = ["password", "refresh_token"];
 
-const redactHeadersAndFields = (
+export const redactHeadersAndFields = (
   headers?: RawAxiosRequestHeaders | RawAxiosResponseHeaders,
   data?: unknown
 ): {
