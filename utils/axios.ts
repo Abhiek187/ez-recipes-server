@@ -8,11 +8,16 @@ import axios, {
 } from "axios";
 import { isObject } from "./object";
 
-// Redact sensitive headers and body fields from the logs
 const MASK = "██";
 const HEADERS_TO_REDACT = ["authorization", "cookie", "x-api-key"];
 const FIELDS_TO_REDACT = ["password", "refresh_token"];
 
+/**
+ * Redact sensitive headers and body fields from the logs
+ * @param headers the request/response headers to redact
+ * @param data the request/response body to redact
+ * @returns a copy of both the headers and data with sensitive fields redacted
+ */
 export const redactHeadersAndFields = (
   headers?: RawAxiosRequestHeaders | RawAxiosResponseHeaders,
   data?: unknown
@@ -106,7 +111,7 @@ const createAxios = (config: CreateAxiosDefaults): AxiosInstance => {
       return response;
     },
     (error) => {
-      // Log rejected errors
+      // Log rejected responses
       if (isAxiosError(error)) {
         const { code, message, config, response } = error;
         const { method, baseURL, url } = config ?? {};
