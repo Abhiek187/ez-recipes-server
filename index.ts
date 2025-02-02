@@ -9,6 +9,7 @@ import recipes from "./routes/recipes";
 import terms from "./routes/terms";
 import chefs from "./routes/chefs";
 import { connectToMongoDB } from "./utils/db";
+import logger from "./middleware/logger";
 
 const app = express();
 app.disable("x-powered-by"); // disable fingerprinting
@@ -20,6 +21,7 @@ app.disable("x-powered-by"); // disable fingerprinting
  * - Enable CORS
  * - Add security headers
  * - Add rate limiting
+ * - Add logging
  */
 app.use(express.json());
 app.use(
@@ -47,6 +49,7 @@ app.use(
     validate: { xForwardedForHeader: false }, // apply the limit globally
   })
 );
+app.use(logger);
 
 // Define routes
 app.use("/", docs);

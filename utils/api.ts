@@ -1,10 +1,11 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 
 import RecipeError from "../types/client/RecipeError";
 import { isErrorResponse } from "./recipeUtils";
+import createAxios from "./axios";
 
 // Apply all common API settings
-const spoonacularApi = axios.create({
+const spoonacularApi = createAxios({
   baseURL: "https://api.spoonacular.com/recipes",
   headers: {
     "x-api-key": process.env.API_KEY ?? "",
@@ -20,8 +21,6 @@ export const handleAxiosError = (error: AxiosError): [number, RecipeError] => {
   const errorData = error.response?.data;
 
   if (isErrorResponse(errorData)) {
-    console.error(errorData);
-
     const errorBody: RecipeError = {
       error: errorData.message,
     };
@@ -29,7 +28,6 @@ export const handleAxiosError = (error: AxiosError): [number, RecipeError] => {
   }
 
   // Try returning the raw response, otherwise return a generic Axios error
-  console.error(error);
   let errorMessage: string;
 
   if (typeof error.response?.data === "string") {

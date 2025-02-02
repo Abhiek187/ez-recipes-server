@@ -41,7 +41,6 @@ const router = express.Router();
 
 // Query recipes in MongoDB
 router.get("/", async (req, res) => {
-  console.log(`${req.method} ${req.originalUrl}`);
   const {
     query,
     "min-cals": minCals,

@@ -294,9 +294,10 @@ const stripURL = (image: string): string => {
   try {
     const imageUrl = new URL(image);
     return imageUrl.pathname.split("/").at(-1) ?? image;
-  } catch (error) {
+  } catch (err) {
     // Invalid URL
-    console.warn(`Failed to strip image URL (${image})`, error);
+    const error = err as Error;
+    console.warn(`Failed to strip image URL (${image}): ${error.message}`);
     return image;
   }
 };

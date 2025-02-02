@@ -1,10 +1,11 @@
-import axios, { AxiosInstance } from "axios";
+import { AxiosInstance } from "axios";
 
 import OobCodeResponse from "../../types/firebase/OobCodeResponse";
 import FirebaseTokenResponse from "../../types/firebase/FirebaseTokenResponse";
 import FirebaseTokenExchangeResponse from "../../types/firebase/FirebaseTokenExchangeResponse";
 import FirebaseLoginResponse from "../../types/firebase/FirebaseLoginResponse";
 import ContinueAction from "../../types/firebase/ContinueAction";
+import createAxios from "../axios";
 
 export default class FirebaseApi {
   private static _instance: FirebaseApi;
@@ -12,7 +13,7 @@ export default class FirebaseApi {
   private secureApi: AxiosInstance;
 
   private constructor() {
-    this.idApi = axios.create({
+    this.idApi = createAxios({
       baseURL: "https://identitytoolkit.googleapis.com/v1",
       params: {
         key: process.env.WEB_API_KEY,
@@ -20,7 +21,7 @@ export default class FirebaseApi {
       signal: new AbortController().signal,
     });
 
-    this.secureApi = axios.create({
+    this.secureApi = createAxios({
       baseURL: "https://securetoken.googleapis.com/v1",
       params: {
         key: process.env.WEB_API_KEY,
