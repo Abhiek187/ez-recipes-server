@@ -117,6 +117,7 @@ paths:
                 - cocktail
                 - mocktail
                 - seasoning
+                - batter
           description: Meal types
         - in: query
           name: culture
@@ -161,6 +162,7 @@ paths:
                 - "Central American"
                 - bbq
                 - Barbecue
+                - Scandinavian
           description: Cuisines
         - in: query
           name: token
