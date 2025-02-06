@@ -32,6 +32,7 @@ import {
 import auth from "../middleware/auth";
 import RecipePatch from "../types/client/RecipePatch";
 import { isObject } from "../utils/object";
+import checkAuthStatus from "../utils/auth/checkAuthStatus";
 
 const badRequestError = (res: Response, error: string) => {
   res.status(400).json({ error });
@@ -153,6 +154,10 @@ router.get("/", async (req, res) => {
 
 // Get a random, low-effort recipe
 router.get("/random", async (req, res) => {
+  // Check if the user is authorized before using spoonacular quota
+  checkAuthStatus(req, res);
+  if (res.writableEnded) return;
+
   const url = randomRecipeUrlBuilder();
 
   try {
@@ -191,6 +196,8 @@ router.get("/:id", async (req, res) => {
     res.json(existingRecipe);
     return;
   }
+  checkAuthStatus(req, res);
+  if (res.writableEnded) return;
 
   const url = recipeIdUrlBuilder(id);
 
