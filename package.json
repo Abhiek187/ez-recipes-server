@@ -41,7 +41,7 @@
     "firebase-admin": "^13.1.0",
     "helmet": "^8.0.0",
     "jwt-decode": "^4.0.0",
-    "mongoose": "^8.10.1",
+    "mongoose": "^8.10.2",
     "pm2": "^5.4.3",
     "swagger-ui-express": "^5.0.1",
     "yaml": "^2.7.0"
