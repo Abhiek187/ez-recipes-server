@@ -166,10 +166,10 @@ App-->>User: Show unauthenticated profile page
 flowchart LR
 
 A(Checkout repository) -->|18.x, 20.x| B(Install Node.js)
-B --> C(Install dependencies:\nnpm ci)
-C --> D(Lint app: \nnpm run lint)
-D --> E(Build app:\nnpm run build --if-present)
-E --> F(Run Jest unit tests:\nnpm test)
+B --> C(Install dependencies:<br>npm ci)
+C --> D(Lint app:<br>npm run lint)
+D --> E(Build app:<br>npm run build --if-present)
+E --> F(Run Jest unit tests:<br>npm test)
 ```
 
 ### Docker CI
