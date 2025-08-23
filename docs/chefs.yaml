@@ -6,6 +6,7 @@ paths:
         - chefs
       security:
         - bearerAuth: [] # no scopes for bearer auth
+        - cookieAuth: []
       responses:
         "200":
           description: Successfully fetched the chef's profile
@@ -51,6 +52,10 @@ paths:
       responses:
         "201":
           description: Successfully created a new account
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: "#/components/schemas/idTokenCookie"
           content:
             application/json:
               schema:
@@ -130,6 +135,10 @@ paths:
       responses:
         "204":
           description: Successfully deleted the account
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: "#/components/schemas/idTokenClearCookie"
 
         "401":
           description: The token passed is invalid
@@ -199,6 +208,10 @@ paths:
       responses:
         "200":
           description: Successfully logged in
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: "#/components/schemas/idTokenCookie"
           content:
             application/json:
               schema:
@@ -226,6 +239,10 @@ paths:
       responses:
         "204":
           description: Successfully logged out
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: "#/components/schemas/idTokenClearCookie"
 
         "401":
           description: The token passed is invalid
@@ -337,6 +354,12 @@ components:
         token:
           type: string
           description: The ID token for the chef
+    idTokenCookie:
+      type: string
+      example: idToken=eyJ...; Max-Age=2592000; Path=/; Expires=Mon, 22 Sep 2025 22:04:07 GMT; HttpOnly; Secure; SameSite=Strict
+    idTokenClearCookie:
+      type: string
+      example: idToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict
 
   examples:
     invalidEmail:

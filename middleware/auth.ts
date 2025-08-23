@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import FirebaseAdmin from "../utils/auth/admin";
 import FirebaseApi from "../utils/auth/api";
 import { getRefreshToken, saveRefreshToken } from "../utils/db";
+import { COOKIE_30_DAYS, COOKIES } from "../utils/cookie";
 
 const saveTokenAndContinue = (
   res: Response,
@@ -15,15 +16,21 @@ const saveTokenAndContinue = (
   // Save the UID & token for requests that need it
   res.locals.uid = uid;
   res.locals.token = token;
+  res.cookie(COOKIES.ID_TOKEN, token, COOKIE_30_DAYS);
   next();
 };
 
 const auth = async (req: Request, res: Response, next: NextFunction) => {
   // Validate the ID token from Firebase
   const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith("Bearer ")
+  let token = authHeader?.startsWith("Bearer ")
     ? authHeader.split("Bearer ")[1]
     : authHeader;
+  // If no token is passed in the auth header, check for a cookie
+  if (token === undefined) {
+    token = req.cookies?.[COOKIES.ID_TOKEN];
+  }
+
   const isResettingPassword =
     ["/api/chefs", "/api/chefs/"].includes(req.originalUrl) &&
     req.method === "PATCH" &&
