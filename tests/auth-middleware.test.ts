@@ -14,15 +14,19 @@ const mockRequest = (authorization?: string, req?: object) =>
       authorization,
     },
   } as Request);
+
 const mockJson = jest.fn();
 const mockStatus = jest.fn().mockReturnValue({ json: mockJson });
 const mockCookie = jest.fn();
+const mockClearCookie = jest.fn();
 const mockResponse = {
   status: mockStatus,
   json: mockJson,
   locals: {},
   cookie: mockCookie,
+  clearCookie: mockClearCookie,
 } as unknown as Response;
+
 const mockNext = jest.fn();
 
 const mockValidateToken = (
@@ -138,6 +142,7 @@ describe("auth-middleware", () => {
     await auth(mockRequest("mock-invalid-jwt"), mockResponse, mockNext);
 
     expect(mockCookie).not.toHaveBeenCalled();
+    expect(mockClearCookie).toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();
@@ -152,6 +157,7 @@ describe("auth-middleware", () => {
 
     expect(jwtDecodeSpy).toHaveBeenCalledWith(mockToken);
     expect(mockCookie).not.toHaveBeenCalled();
+    expect(mockClearCookie).toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();
@@ -166,6 +172,7 @@ describe("auth-middleware", () => {
 
     expect(jwtDecodeSpy).toHaveBeenCalledWith(mockToken);
     expect(mockCookie).not.toHaveBeenCalled();
+    expect(mockClearCookie).toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();

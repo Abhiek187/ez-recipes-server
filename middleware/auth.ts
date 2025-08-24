@@ -5,7 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import FirebaseAdmin from "../utils/auth/admin";
 import FirebaseApi from "../utils/auth/api";
 import { getRefreshToken, saveRefreshToken } from "../utils/db";
-import { COOKIE_30_DAYS, COOKIES } from "../utils/cookie";
+import { BASE_COOKIE_OPTIONS, COOKIE_30_DAYS, COOKIES } from "../utils/cookie";
 
 const saveTokenAndContinue = (
   res: Response,
@@ -96,6 +96,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
       }
     }
 
+    res.clearCookie(COOKIES.ID_TOKEN, BASE_COOKIE_OPTIONS);
     res
       .status(401)
       .json({ error: `Invalid Firebase token provided: ${error}` });
