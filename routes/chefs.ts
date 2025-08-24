@@ -11,7 +11,7 @@ import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
 import { getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
-import { BASE_COOKIE_OPTIONS, COOKIE_30_DAYS, COOKIES } from "../utils/cookie";
+import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -90,7 +90,7 @@ router.post(
 
     try {
       const userInfo = await FirebaseAdmin.instance.createUser(email, password);
-      res.cookie(COOKIES.ID_TOKEN, userInfo.token, COOKIE_30_DAYS);
+      res.cookie(COOKIES.ID_TOKEN, userInfo.token, COOKIE_2_WEEKS);
       res.status(201).json(userInfo);
     } catch (err) {
       const error = err as FirebaseAuthError;
@@ -226,7 +226,7 @@ router.post(
       await saveRefreshToken(localId, refreshToken);
       const { emailVerified } = await FirebaseAdmin.instance.getUser(localId);
 
-      res.cookie(COOKIES.ID_TOKEN, idToken, COOKIE_30_DAYS);
+      res.cookie(COOKIES.ID_TOKEN, idToken, COOKIE_2_WEEKS);
       res.json({
         uid: localId,
         token: idToken,

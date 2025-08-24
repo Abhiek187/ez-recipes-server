@@ -5,7 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import FirebaseAdmin from "../utils/auth/admin";
 import FirebaseApi from "../utils/auth/api";
 import { getRefreshToken, saveRefreshToken } from "../utils/db";
-import { BASE_COOKIE_OPTIONS, COOKIE_30_DAYS, COOKIES } from "../utils/cookie";
+import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
 
 const saveTokenAndContinue = (
   res: Response,
@@ -16,7 +16,7 @@ const saveTokenAndContinue = (
   // Save the UID & token for requests that need it
   res.locals.uid = uid;
   res.locals.token = token;
-  res.cookie(COOKIES.ID_TOKEN, token, COOKIE_30_DAYS);
+  res.cookie(COOKIES.ID_TOKEN, token, COOKIE_2_WEEKS);
   next();
 };
 

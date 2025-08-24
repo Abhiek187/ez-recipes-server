@@ -7,10 +7,12 @@ export const COOKIES = {
 export const BASE_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true, // inaccessible via document.cookie, prevents XSS
   secure: true, // only sent in HTTPS requests
-  sameSite: "none", // only sent on sites with the same domain, prevents CSRF
+  sameSite: "strict", // only sent on sites with the same domain, prevents CSRF
+  // Only works if the domain isn't part of the Public Suffix List (PSL)
+  // domain: "onrender.com", // https://publicsuffix.org/list/public_suffix_list.dat
 };
 
-export const COOKIE_30_DAYS: CookieOptions = {
+export const COOKIE_2_WEEKS: CookieOptions = {
   ...BASE_COOKIE_OPTIONS,
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
 };
