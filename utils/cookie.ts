@@ -8,6 +8,7 @@ export const BASE_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true, // inaccessible via document.cookie, prevents XSS
   secure: true, // only sent in HTTPS requests
   sameSite: "strict", // only sent on sites with the same domain, prevents CSRF
+  domain: ".onrender.com", // allow the cookie to be shared between the web & server
 };
 
 export const COOKIE_30_DAYS: CookieOptions = {
