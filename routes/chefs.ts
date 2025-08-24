@@ -11,6 +11,7 @@ import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
 import { getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
+import { BASE_COOKIE_OPTIONS, COOKIE_30_DAYS, COOKIES } from "../utils/cookie";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -89,6 +90,7 @@ router.post(
 
     try {
       const userInfo = await FirebaseAdmin.instance.createUser(email, password);
+      res.cookie(COOKIES.ID_TOKEN, userInfo.token, COOKIE_30_DAYS);
       res.status(201).json(userInfo);
     } catch (err) {
       const error = err as FirebaseAuthError;
@@ -178,6 +180,7 @@ router.delete("/", auth, async (_req, res) => {
 
   try {
     await FirebaseAdmin.instance.deleteUser(uid);
+    res.clearCookie(COOKIES.ID_TOKEN, BASE_COOKIE_OPTIONS);
     res.sendStatus(204);
   } catch (err) {
     const error = err as FirebaseAuthError;
@@ -223,6 +226,7 @@ router.post(
       await saveRefreshToken(localId, refreshToken);
       const { emailVerified } = await FirebaseAdmin.instance.getUser(localId);
 
+      res.cookie(COOKIES.ID_TOKEN, idToken, COOKIE_30_DAYS);
       res.json({
         uid: localId,
         token: idToken,
@@ -239,6 +243,7 @@ router.post("/logout", auth, async (_req, res) => {
 
   try {
     await FirebaseAdmin.instance.logoutUser(uid);
+    res.clearCookie(COOKIES.ID_TOKEN, BASE_COOKIE_OPTIONS);
     res.sendStatus(204);
   } catch (err) {
     const error = err as FirebaseAuthError;

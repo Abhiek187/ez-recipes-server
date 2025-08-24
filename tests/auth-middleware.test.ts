@@ -4,6 +4,7 @@ import * as jwt from "jwt-decode";
 
 import auth from "../middleware/auth";
 import FirebaseAdmin from "../utils/auth/admin";
+import { COOKIES } from "../utils/cookie";
 
 const mockRequest = (authorization?: string, req?: object) =>
   ({
@@ -13,13 +14,19 @@ const mockRequest = (authorization?: string, req?: object) =>
       authorization,
     },
   } as Request);
+
 const mockJson = jest.fn();
 const mockStatus = jest.fn().mockReturnValue({ json: mockJson });
+const mockCookie = jest.fn();
+const mockClearCookie = jest.fn();
 const mockResponse = {
   status: mockStatus,
   json: mockJson,
   locals: {},
+  cookie: mockCookie,
+  clearCookie: mockClearCookie,
 } as unknown as Response;
+
 const mockNext = jest.fn();
 
 const mockValidateToken = (
@@ -59,6 +66,25 @@ describe("auth-middleware", () => {
     mockValidateToken(true);
     await auth(mockRequest("mock-valid-jwt"), mockResponse, mockNext);
 
+    expect(mockCookie).toHaveBeenCalled();
+    expect(mockNext).toHaveBeenCalled();
+    expect(mockResponse.locals.uid).toBeDefined();
+    expect(mockResponse.locals.token).toBeDefined();
+  });
+
+  it("accepts a valid cookie", async () => {
+    mockValidateToken(true);
+    await auth(
+      mockRequest(undefined, {
+        cookies: {
+          [COOKIES.ID_TOKEN]: "mock-valid-jwt",
+        },
+      }),
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockCookie).toHaveBeenCalled();
     expect(mockNext).toHaveBeenCalled();
     expect(mockResponse.locals.uid).toBeDefined();
     expect(mockResponse.locals.token).toBeDefined();
@@ -76,6 +102,7 @@ describe("auth-middleware", () => {
       mockNext
     );
 
+    expect(mockCookie).not.toHaveBeenCalled();
     expect(mockNext).toHaveBeenCalled();
     expect(mockResponse.locals.uid).not.toBeDefined();
     expect(mockResponse.locals.token).not.toBeDefined();
@@ -94,6 +121,7 @@ describe("auth-middleware", () => {
       mockNext
     );
 
+    expect(mockCookie).not.toHaveBeenCalled();
     expect(mockNext).toHaveBeenCalled();
     expect(mockResponse.locals.uid).not.toBeDefined();
     expect(mockResponse.locals.token).not.toBeDefined();
@@ -103,6 +131,7 @@ describe("auth-middleware", () => {
     mockValidateToken(true);
     await auth(mockRequest(), mockResponse, mockNext);
 
+    expect(mockCookie).not.toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();
@@ -112,6 +141,8 @@ describe("auth-middleware", () => {
     mockValidateToken(false);
     await auth(mockRequest("mock-invalid-jwt"), mockResponse, mockNext);
 
+    expect(mockCookie).not.toHaveBeenCalled();
+    expect(mockClearCookie).toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();
@@ -125,6 +156,8 @@ describe("auth-middleware", () => {
     await auth(mockRequest(mockToken), mockResponse, mockNext);
 
     expect(jwtDecodeSpy).toHaveBeenCalledWith(mockToken);
+    expect(mockCookie).not.toHaveBeenCalled();
+    expect(mockClearCookie).toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();
@@ -138,6 +171,8 @@ describe("auth-middleware", () => {
     await auth(mockRequest(mockToken), mockResponse, mockNext);
 
     expect(jwtDecodeSpy).toHaveBeenCalledWith(mockToken);
+    expect(mockCookie).not.toHaveBeenCalled();
+    expect(mockClearCookie).toHaveBeenCalled();
     expect(mockNext).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(401);
     expect(mockResponse.json).toHaveBeenCalled();

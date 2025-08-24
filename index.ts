@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config"; // fetch secrets from .env
 import express from "express";
@@ -17,6 +18,7 @@ app.disable("x-powered-by"); // disable fingerprinting
 /**
  * Initialize middleware:
  * - Parse JSON
+ * - Parse cookies
  * - Serve Swagger UI files
  * - Enable CORS
  * - Add security headers
@@ -24,10 +26,13 @@ app.disable("x-powered-by"); // disable fingerprinting
  * - Add logging
  */
 app.use(express.json());
+app.use(cookieParser());
 app.use(
   cors({
     // Only allow the web app & local server to access the server in the browser
     origin: ["http://localhost:4200", "https://ez-recipes-web.onrender.com"],
+    // Required to allow browsers to send cookies
+    credentials: true,
   })
 );
 app.use(
