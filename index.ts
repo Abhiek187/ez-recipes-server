@@ -31,6 +31,8 @@ app.use(
   cors({
     // Only allow the web app & local server to access the server in the browser
     origin: ["http://localhost:4200", "https://ez-recipes-web.onrender.com"],
+    // Required to allow browsers to send cookies
+    credentials: true,
   })
 );
 app.use(
