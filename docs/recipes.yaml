@@ -172,6 +172,22 @@ paths:
             A token used to paginate results.
             If no query is passed, this is the ObjectId of the recipe to search after.
             If a query is passed, this is the token returned from a previous query.
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum:
+              - calories
+              - health-score
+              - rating
+              - views
+          description: The field to sort by
+        - in: query
+          name: asc
+          schema:
+            type: boolean
+          allowEmptyValue: true
+          description: If provided, sort the sort field in ascending order. Otherwise, sort in descending order.
       responses:
         "200":
           description: Successfully filtered recipes

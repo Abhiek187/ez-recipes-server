@@ -23,7 +23,10 @@ import {
   updateChef,
   updateRecipeStats,
 } from "../utils/db";
-import RecipeFilter from "../types/client/RecipeFilter";
+import RecipeFilter, {
+  isValidSortField,
+  RECIPE_SORT_MAP,
+} from "../types/client/RecipeFilter";
 import {
   isValidSpiceLevel,
   isValidMealType,
@@ -57,6 +60,8 @@ router.get("/", async (req, res) => {
     type,
     culture,
     token,
+    sort,
+    asc,
   } = req.query;
   const filter: Partial<RecipeFilter> = {};
 
@@ -99,6 +104,10 @@ router.get("/", async (req, res) => {
     filter.sustainable = true;
   }
 
+  if (asc !== undefined) {
+    filter.asc = true;
+  }
+
   try {
     // If the query parameter appears once, it's a string
     // Otherwise, it's an array of strings
@@ -123,14 +132,35 @@ router.get("/", async (req, res) => {
     } else if (Array.isArray(culture)) {
       filter.cultures = sanitizeEnumArray(culture, "cuisine", isValidCuisine);
     }
+
+    if (typeof sort === "string") {
+      filter.sort = sanitizeEnum(sort, "sort", isValidSortField);
+    }
   } catch (error) {
     badRequestError(res, error as string);
     return;
   }
 
   if (typeof token === "string") {
+    // If sorting & paginating, check if the compound token is valid
+    // Compound token format: sort_field:last_value:object_id
+    if (
+      filter.sort !== undefined &&
+      (filter.query === undefined || filter.sort === "calories")
+    ) {
+      const [sortField, lastValue, objectId] = token.split(":");
+
+      if (
+        sortField !== RECIPE_SORT_MAP[filter.sort] ||
+        lastValue === undefined ||
+        !isValidObjectId(objectId)
+      ) {
+        badRequestError(res, `Token "${token}" is not a valid compound token`);
+        return;
+      }
+    }
     // An ObjectId must be passed if a find query should be performed
-    if (filter.query === undefined && !isValidObjectId(token)) {
+    else if (filter.query === undefined && !isValidObjectId(token)) {
       badRequestError(res, `Token "${token}" is not a valid ObjectId`);
       return;
     }
