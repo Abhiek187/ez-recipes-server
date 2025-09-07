@@ -9,6 +9,7 @@ import RecipeFilter, {
 } from "../../types/client/RecipeFilter";
 import { isEmptyObject } from "../object";
 import RecipePatch from "../../types/client/RecipePatch";
+import { isNumeric } from "../string";
 
 /**
  * Write a recipe to MongoDB
@@ -143,19 +144,24 @@ const createQuery = (
   }
 
   if (token !== undefined) {
-    if (sort !== undefined) {
+    if (sort !== undefined && (isFindQuery || sort === "calories")) {
       // Token is compound
-      const [sortField, lastValue, objectId] = token.split(":");
+      const [sortField, lastValueStr, objectId] = token.split(":");
+      let lastValue: number | null = null;
+
+      if (isNumeric(lastValueStr)) {
+        lastValue = Number(lastValueStr);
+      }
+
       query.$or = [
         { [sortField]: asc === true ? { $gt: lastValue } : { $lt: lastValue } },
         { [sortField]: lastValue, _id: { $gt: new Types.ObjectId(objectId) } },
       ];
 
-      // If null & ascending, change $gt to 0. If descending, remove the first query
-      if (lastValue === "null") {
+      // If null & ascending, change $gt to 0. If descending, remove the first query.
+      if (lastValue === null) {
         if (asc === true) {
           query.$or[0][sortField]["$gt"] = 0;
-          query.$or[1][sortField] = null;
         } else {
           query.$or = query.$or.slice(1);
         }
@@ -214,6 +220,7 @@ const recipeAggregateQuery = async (
   console.log("MongoDB match query:", JSON.stringify(matchQuery));
   const sortQuery = createSortQuery(filter.sort, filter.asc);
   console.log("MongoDB sort query:", JSON.stringify(sortQuery));
+  const sortByCalories = filter.sort === "calories";
 
   /*
    * Search must be the first stage in the pipeline before $match.
@@ -228,13 +235,17 @@ const recipeAggregateQuery = async (
         wildcard: "*",
       },
     },
-    searchAfter: filter.token,
     // $search.sort doesn't support positional arguments, need to add a separate $sort stage
-    sort: sortQuery,
+    searchAfter: sortByCalories ? undefined : filter.token,
+    sort: sortByCalories ? undefined : sortQuery,
   });
 
   if (!isEmptyObject(matchQuery)) {
     pipeline = pipeline.match(matchQuery);
+  }
+
+  if (sortByCalories) {
+    pipeline = pipeline.sort(sortQuery);
   }
 
   try {
@@ -269,43 +280,50 @@ const recipeAggregateQuery = async (
 export const filterRecipes = async (
   filter: Partial<RecipeFilter>
 ): Promise<Recipe[] | string | null> => {
+  let recipes: Recipe[] | string | null = null;
+
   if (filter.query !== undefined) {
     // If a full-text search is required, use an aggregation pipeline
-    return await recipeAggregateQuery(filter);
+    recipes = await recipeAggregateQuery(filter);
   } else {
     // Otherwise, use a simple find query
-    const recipes = await recipeFindQuery(filter);
+    recipes = await recipeFindQuery(filter);
+  }
 
-    if (recipes !== null && recipes.length > 0 && filter.sort !== undefined) {
-      // Append a compound token to the last recipe
-      const lastRecipe = recipes[recipes.length - 1];
-      const sortField = RECIPE_SORT_MAP[filter.sort];
-      const objectId = lastRecipe._id;
-      let lastValue = "";
+  if (
+    Array.isArray(recipes) &&
+    recipes.length > 0 &&
+    filter.sort !== undefined &&
+    (filter.query === undefined || filter.sort === "calories")
+  ) {
+    // Append a compound token to the last recipe
+    const lastRecipe = recipes[recipes.length - 1];
+    const sortField = RECIPE_SORT_MAP[filter.sort];
+    const objectId = lastRecipe._id;
+    let lastValue = "";
 
-      switch (filter.sort) {
-        case "calories":
-          lastValue = lastRecipe.nutrients[0].amount.toString();
-          break;
-        case "health-score":
-          lastValue = lastRecipe.healthScore.toString();
-          break;
-        case "rating":
-          // undefined fields are excluded from sorted results
-          lastValue = lastRecipe.averageRating?.toString() ?? "null";
-          break;
-        case "views":
-          lastValue = lastRecipe.views.toString();
-      }
-
-      recipes[recipes.length - 1] = {
-        ...lastRecipe,
-        token: [sortField, lastValue, objectId].join(":"),
-      };
+    switch (filter.sort) {
+      case "calories":
+        lastValue = lastRecipe.nutrients[0].amount.toString();
+        break;
+      case "health-score":
+        lastValue = lastRecipe.healthScore.toString();
+        break;
+      case "rating":
+        // undefined fields are excluded from sorted results
+        lastValue = lastRecipe.averageRating?.toString() ?? "null";
+        break;
+      case "views":
+        lastValue = lastRecipe.views.toString();
     }
 
-    return recipes;
+    recipes[recipes.length - 1] = {
+      ...lastRecipe,
+      token: [sortField, lastValue, objectId].join(":"),
+    };
   }
+
+  return recipes;
 };
 
 /**

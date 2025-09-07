@@ -144,7 +144,10 @@ router.get("/", async (req, res) => {
   if (typeof token === "string") {
     // If sorting & paginating, check if the compound token is valid
     // Compound token format: sort_field:last_value:object_id
-    if (filter.sort !== undefined) {
+    if (
+      filter.sort !== undefined &&
+      (filter.query === undefined || filter.sort === "calories")
+    ) {
       const [sortField, lastValue, objectId] = token.split(":");
 
       if (

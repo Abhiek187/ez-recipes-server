@@ -1,12 +1,5 @@
 import { Cuisine, MealType, SpiceLevel } from "./Recipe";
 
-export const RECIPE_SORT_MAP = {
-  // Calories will always be the first element in nutrients
-  calories: "nutrients.0.amount",
-  "health-score": "healthScore",
-  rating: "averageRating",
-  views: "views",
-};
 export const RECIPE_SORT_FIELDS = [
   "calories",
   "health-score",
@@ -16,6 +9,13 @@ export const RECIPE_SORT_FIELDS = [
 export type RecipeSortField = (typeof RECIPE_SORT_FIELDS)[number];
 export const isValidSortField = (str: string): str is RecipeSortField => {
   return RECIPE_SORT_FIELDS.includes(str as RecipeSortField);
+};
+export const RECIPE_SORT_MAP: Record<RecipeSortField, string> = {
+  // Calories will always be the first element in nutrients
+  calories: "nutrients.0.amount",
+  "health-score": "healthScore",
+  rating: "averageRating",
+  views: "views",
 };
 
 type RecipeFilter = {
