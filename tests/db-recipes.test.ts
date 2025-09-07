@@ -312,15 +312,22 @@ describe("recipeAggregateQuery", () => {
   const mockExec = jest.fn();
   const mockAddFields = jest.fn().mockReturnValue({ exec: mockExec });
   const mockLimit = jest.fn().mockReturnValue({ addFields: mockAddFields });
-  const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+  const mockProject = jest.fn().mockReturnValue({ limit: mockLimit });
+  const mockSort = jest.fn().mockReturnValue({ project: mockProject });
+  const mockAddFields2 = jest.fn().mockReturnValue({ sort: mockSort });
   const mockMatch = jest
     .fn()
-    .mockReturnValue({ limit: mockLimit, sort: mockSort });
-  const mockSearch = jest
-    .fn()
-    .mockReturnValue({ match: mockMatch, sort: mockSort, limit: mockLimit });
+    .mockReturnValue({ limit: mockLimit, addFields: mockAddFields2 });
+  const mockSearch = jest.fn().mockReturnValue({
+    match: mockMatch,
+    addFields: mockAddFields2,
+    limit: mockLimit,
+  });
   const mockAggregate = jest.fn().mockReturnValue({ search: mockSearch });
   jest.spyOn(RecipeModel, "aggregate").mockImplementation(mockAggregate);
+
+  const searchSort = { score: { $meta: "searchScore" }, ...defaultSort };
+  const searchSortCalories = { score: -1, ...defaultSort };
 
   it("excludes $match with only a query filter", async () => {
     // Given a recipe filter with a query
@@ -340,7 +347,7 @@ describe("recipeAggregateQuery", () => {
           wildcard: "*",
         },
       },
-      sort: defaultSort,
+      sort: searchSort,
     });
     expect(mockMatch).not.toHaveBeenCalled();
     expect(mockSort).not.toHaveBeenCalled();
@@ -372,7 +379,7 @@ describe("recipeAggregateQuery", () => {
         },
       },
       searchAfter: filter.token,
-      sort: defaultSort,
+      sort: searchSort,
     });
     expect(mockMatch).not.toHaveBeenCalled();
     expect(mockSort).not.toHaveBeenCalled();
@@ -403,7 +410,7 @@ describe("recipeAggregateQuery", () => {
           wildcard: "*",
         },
       },
-      sort: defaultSort,
+      sort: searchSort,
     });
     expect(mockMatch).toHaveBeenCalledWith({
       isVegetarian: filter.vegetarian,
@@ -440,7 +447,7 @@ describe("recipeAggregateQuery", () => {
           wildcard: "*",
         },
       },
-      sort: defaultSort,
+      sort: searchSort,
     });
     expect(mockMatch).toHaveBeenCalledWith({
       nutrients: {
@@ -487,7 +494,7 @@ describe("recipeAggregateQuery", () => {
     });
     expect(mockSort).toHaveBeenCalledWith({
       [RECIPE_SORT_MAP["calories"]]: -1,
-      ...defaultSort,
+      ...searchSortCalories,
     });
     expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
     expect(mockAddFields).toHaveBeenCalledWith({
@@ -536,7 +543,7 @@ describe("recipeAggregateQuery", () => {
     });
     expect(mockSort).toHaveBeenCalledWith({
       [RECIPE_SORT_MAP["calories"]]: 1,
-      ...defaultSort,
+      ...searchSortCalories,
     });
     expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
     expect(mockAddFields).toHaveBeenCalledWith({
@@ -567,7 +574,7 @@ describe("recipeAggregateQuery", () => {
       },
       sort: {
         [RECIPE_SORT_MAP["health-score"]]: -1,
-        ...defaultSort,
+        ...searchSort,
       },
     });
     expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);

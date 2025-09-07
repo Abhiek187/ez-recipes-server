@@ -179,16 +179,30 @@ const createQuery = (
 
 const createSortQuery = (
   sort?: RecipeSortField,
-  asc?: boolean
-): Record<string, SortValues> => {
+  asc?: boolean,
+  isFindQuery = false
+): Record<string, SortValues | { $meta: string }> => {
   const sortValue: SortValues = asc === true ? 1 : -1;
   // Guarantees stable results since _id is always unique
   const id: Record<string, SortValues> = { _id: 1 };
+  const searchScore: Record<string, SortValues | { $meta: string }> =
+    sort === "calories" ? { score: -1 } : { score: { $meta: "searchScore" } };
 
   if (sort === undefined) {
-    return id;
+    return isFindQuery
+      ? id
+      : {
+          ...searchScore,
+          ...id,
+        };
   } else {
-    return { [RECIPE_SORT_MAP[sort]]: sortValue, ...id };
+    return isFindQuery
+      ? { [RECIPE_SORT_MAP[sort]]: sortValue, ...id }
+      : {
+          [RECIPE_SORT_MAP[sort]]: sortValue,
+          ...searchScore,
+          ...id,
+        };
   }
 };
 
@@ -197,7 +211,7 @@ const recipeFindQuery = async (
 ): Promise<Recipe[] | null> => {
   const findQuery = createQuery(filter, true);
   console.log("MongoDB find query:", JSON.stringify(findQuery));
-  const sortQuery = createSortQuery(filter.sort, filter.asc);
+  const sortQuery = createSortQuery(filter.sort, filter.asc, true);
   console.log("MongoDB sort query:", JSON.stringify(sortQuery));
 
   try {
@@ -245,7 +259,15 @@ const recipeAggregateQuery = async (
   }
 
   if (sortByCalories) {
-    pipeline = pipeline.sort(sortQuery);
+    // searchScore can't be sorted in the $sort stage without projecting it first
+    pipeline = pipeline
+      .addFields({
+        score: { $meta: "searchScore" },
+      })
+      .sort(sortQuery as Record<string, SortValues>)
+      .project({
+        score: 0,
+      });
   }
 
   try {
