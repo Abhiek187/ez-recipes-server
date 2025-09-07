@@ -153,7 +153,7 @@ router.get("/", async (req, res) => {
       if (
         sortField !== RECIPE_SORT_MAP[filter.sort] ||
         lastValue === undefined ||
-        objectId === undefined
+        !isValidObjectId(objectId)
       ) {
         badRequestError(res, `Token "${token}" is not a valid compound token`);
         return;
