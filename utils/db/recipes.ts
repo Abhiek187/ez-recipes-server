@@ -1,9 +1,12 @@
-import { FilterQuery, Types } from "mongoose";
+import { FilterQuery, SortValues, Types } from "mongoose";
 
 import { MAX_DOCS, Indexes } from ".";
 import RecipeModel from "../../models/RecipeModel";
 import Recipe from "../../types/client/Recipe";
-import RecipeFilter from "../../types/client/RecipeFilter";
+import RecipeFilter, {
+  RECIPE_SORT_MAP,
+  RecipeSortField,
+} from "../../types/client/RecipeFilter";
 import { isEmptyObject } from "../object";
 import RecipePatch from "../../types/client/RecipePatch";
 
@@ -75,6 +78,8 @@ const createQuery = (
     types,
     cultures,
     token,
+    sort,
+    asc,
   }: Partial<RecipeFilter>,
   isFindQuery = false
 ): FilterQuery<Recipe> => {
@@ -137,13 +142,48 @@ const createQuery = (
     query.culture = { $in: cultures };
   }
 
-  if (isFindQuery && token !== undefined) {
-    query._id = {
-      $gt: new Types.ObjectId(token),
-    };
+  if (token !== undefined) {
+    if (sort !== undefined) {
+      // Token is compound
+      const [sortField, lastValue, objectId] = token.split(":");
+      query.$or = [
+        { [sortField]: asc === true ? { $gt: lastValue } : { $lt: lastValue } },
+        { [sortField]: lastValue, _id: { $gt: new Types.ObjectId(objectId) } },
+      ];
+
+      // If null & ascending, change $gt to 0. If descending, remove the first query
+      if (lastValue === "null") {
+        if (asc === true) {
+          query.$or[0][sortField]["$gt"] = 0;
+          query.$or[1][sortField] = null;
+        } else {
+          query.$or = query.$or.slice(1);
+        }
+      }
+    } else if (isFindQuery) {
+      // Token is ObjectId
+      query._id = {
+        $gt: new Types.ObjectId(token),
+      };
+    }
   }
 
   return query;
+};
+
+const createSortQuery = (
+  sort?: RecipeSortField,
+  asc?: boolean
+): Record<string, SortValues> => {
+  const sortValue: SortValues = asc === true ? 1 : -1;
+  // Guarantees stable results since _id is always unique
+  const id: Record<string, SortValues> = { _id: 1 };
+
+  if (sort === undefined) {
+    return id;
+  } else {
+    return { [RECIPE_SORT_MAP[sort]]: sortValue, ...id };
+  }
 };
 
 const recipeFindQuery = async (
@@ -151,9 +191,15 @@ const recipeFindQuery = async (
 ): Promise<Recipe[] | null> => {
   const findQuery = createQuery(filter, true);
   console.log("MongoDB find query:", JSON.stringify(findQuery));
+  const sortQuery = createSortQuery(filter.sort, filter.asc);
+  console.log("MongoDB sort query:", JSON.stringify(sortQuery));
 
   try {
-    return await RecipeModel.find(findQuery).limit(MAX_DOCS).exec();
+    return await RecipeModel.find(findQuery)
+      .sort(sortQuery)
+      .limit(MAX_DOCS)
+      .lean()
+      .exec();
   } catch (error) {
     console.error("Failed to filter recipes:", error);
     return null;
@@ -166,6 +212,8 @@ const recipeAggregateQuery = async (
 ): Promise<Recipe[] | string | null> => {
   const matchQuery = createQuery(filter);
   console.log("MongoDB match query:", JSON.stringify(matchQuery));
+  const sortQuery = createSortQuery(filter.sort, filter.asc);
+  console.log("MongoDB sort query:", JSON.stringify(sortQuery));
 
   /*
    * Search must be the first stage in the pipeline before $match.
@@ -181,6 +229,8 @@ const recipeAggregateQuery = async (
       },
     },
     searchAfter: filter.token,
+    // $search.sort doesn't support positional arguments, need to add a separate $sort stage
+    sort: sortQuery,
   });
 
   if (!isEmptyObject(matchQuery)) {
@@ -224,7 +274,37 @@ export const filterRecipes = async (
     return await recipeAggregateQuery(filter);
   } else {
     // Otherwise, use a simple find query
-    return await recipeFindQuery(filter);
+    const recipes = await recipeFindQuery(filter);
+
+    if (recipes !== null && recipes.length > 0 && filter.sort !== undefined) {
+      // Append a compound token to the last recipe
+      const lastRecipe = recipes[recipes.length - 1];
+      const sortField = RECIPE_SORT_MAP[filter.sort];
+      const objectId = lastRecipe._id;
+      let lastValue = "";
+
+      switch (filter.sort) {
+        case "calories":
+          lastValue = lastRecipe.nutrients[0].amount.toString();
+          break;
+        case "health-score":
+          lastValue = lastRecipe.healthScore.toString();
+          break;
+        case "rating":
+          // undefined fields are excluded from sorted results
+          lastValue = lastRecipe.averageRating?.toString() ?? "null";
+          break;
+        case "views":
+          lastValue = lastRecipe.views.toString();
+      }
+
+      recipes[recipes.length - 1] = {
+        ...lastRecipe,
+        token: [sortField, lastValue, objectId].join(":"),
+      };
+    }
+
+    return recipes;
   }
 };
 
