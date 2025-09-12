@@ -332,11 +332,10 @@ export const filterRecipes = async (
         lastValue = lastRecipe.healthScore.toString();
         break;
       case "rating":
-        // undefined fields are excluded from sorted results
         lastValue = lastRecipe.averageRating?.toString() ?? "null";
         break;
       case "views":
-        lastValue = lastRecipe.views.toString();
+        lastValue = lastRecipe.views?.toString() ?? "null";
     }
 
     recipes[recipes.length - 1] = {
@@ -375,11 +374,12 @@ export const updateRecipeStats = async (
 
     if (rating !== undefined && isAuthenticated) {
       const currentAverage = doc.averageRating;
-      const currentTotal = doc.totalRatings;
+      const currentTotal = doc.totalRatings ?? 0;
 
       if (
         oldRating !== undefined &&
         currentAverage !== null &&
+        currentAverage !== undefined &&
         currentTotal > 0
       ) {
         // totalRatings stays the same
@@ -388,7 +388,7 @@ export const updateRecipeStats = async (
       } else {
         const newTotal = currentTotal + 1;
         const newAverage =
-          currentAverage === null
+          currentAverage === null || currentAverage === undefined
             ? rating
             : (currentAverage * currentTotal + rating) / newTotal;
 
@@ -399,7 +399,7 @@ export const updateRecipeStats = async (
     }
     // View counts can be updated anonymously
     if (view === true) {
-      doc.views += 1;
+      doc.views = (doc.views ?? 0) + 1;
     }
 
     await doc.save();

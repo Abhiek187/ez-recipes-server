@@ -138,9 +138,9 @@ type Recipe = {
     }[];
   }[];
   token?: string; // searchSequenceToken for pagination
-  averageRating: number | null;
-  totalRatings: number;
-  views: number;
+  averageRating?: number | null;
+  totalRatings?: number;
+  views?: number;
 };
 
 export default Recipe;
