@@ -9,9 +9,10 @@ router.get("/", async (_req, res) => {
     // exec() returns a promise for better stack traces
     const terms = await TermModel.find().exec();
     res.json(terms);
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     console.error("Failed to get all terms:", error);
-    res.status(500).json(error);
+    res.status(500).json({ error: `${error.name}: ${error.message}` });
   }
 });
 
