@@ -117,7 +117,7 @@ class EmbeddingJobs {
       // Update documents with the new embedding field
       // Order doesn't matter, can improve performance slightly
       const result = await RecipeModel.bulkSave(recipes, { ordered: false });
-      console.log("Bulk write result:" + result);
+      console.log("Bulk write result:", result);
     } catch (error) {
       console.error("Error creating embeddings:", error);
     }
@@ -125,9 +125,32 @@ class EmbeddingJobs {
 
   semanticSearch = async (text: string) => {
     try {
+      if (connection.readyState !== ConnectionStates.connected) {
+        await connectToMongoDB();
+      }
+
       await this.initializeEmbeddingPipeline();
       const queryVector = await this.getEmbedding(text);
-      console.time("Vector search");
+      const granitaRecipe = await RecipeModel.findOne({ id: "663849" }).exec();
+      const granitaBinaryVector = granitaRecipe?.summaryEmbedding;
+      if (!granitaBinaryVector) {
+        console.warn("Granita vector doesn't exist, exiting");
+        return;
+      }
+      const granitaBuffer = granitaBinaryVector as Buffer;
+      const granitaVector = new Float32Array(
+        granitaBuffer.buffer,
+        granitaBuffer.byteOffset,
+        granitaBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT
+      );
+      console.log(`queryVector length: ${queryVector.length}`);
+      console.log(`granitaVector length: ${granitaVector.length}`);
+      const cosineSimilarity = queryVector.reduce(
+        (acc, curr, index) => acc + curr * granitaVector[index],
+        0
+      );
+      console.log(`cosine similarity = ${cosineSimilarity}`);
+
       const result = await RecipeModel.aggregate([
         {
           $vectorSearch: {
@@ -148,7 +171,6 @@ class EmbeddingJobs {
           },
         },
       ]).exec();
-      console.timeEnd("Vector search");
 
       console.log(`Search results for ${text}:`, result);
     } catch (error) {
