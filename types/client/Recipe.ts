@@ -143,7 +143,7 @@ type Recipe = {
   averageRating?: number | null;
   totalRatings?: number;
   views?: number;
-  summaryEmbedding?: mongo.Binary | Buffer;
+  summaryEmbedding?: mongo.Binary;
 };
 
 export default Recipe;

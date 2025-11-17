@@ -1,6 +1,6 @@
 import "dotenv/config"; // fetch secrets from .env
 import { FeatureExtractionPipeline, pipeline } from "@huggingface/transformers";
-import { connection, ConnectionStates } from "mongoose";
+import { connection, ConnectionStates, mongo } from "mongoose";
 import os from "os";
 
 import { connectToMongoDB, disconnectFromMongoDB, Indexes } from "../utils/db";
@@ -81,8 +81,9 @@ class EmbeddingJobs {
       const embeddings = await this.getEmbeddings(summaries);
 
       recipeSlice.forEach((recipe, index) => {
-        // Compress the embedding to BSON for faster performance and less storage
-        const bsonEmbedding = Buffer.from(embeddings[index].buffer);
+        // Compress the embedding to BSON (subtype 9) for faster performance and less storage
+        // https://www.mongodb.com/docs/manual/reference/bson-types/#binary-data
+        const bsonEmbedding = mongo.Binary.fromFloat32Array(embeddings[index]);
 
         // Add the embedding to an array of update operations
         recipe.summaryEmbedding = bsonEmbedding;
@@ -131,26 +132,6 @@ class EmbeddingJobs {
 
       await this.initializeEmbeddingPipeline();
       const queryVector = await this.getEmbedding(text);
-      const granitaRecipe = await RecipeModel.findOne({ id: "663849" }).exec();
-      const granitaBinaryVector = granitaRecipe?.summaryEmbedding;
-      if (!granitaBinaryVector) {
-        console.warn("Granita vector doesn't exist, exiting");
-        return;
-      }
-      const granitaBuffer = granitaBinaryVector as Buffer;
-      const granitaVector = new Float32Array(
-        granitaBuffer.buffer,
-        granitaBuffer.byteOffset,
-        granitaBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT
-      );
-      console.log(`queryVector length: ${queryVector.length}`);
-      console.log(`granitaVector length: ${granitaVector.length}`);
-      const cosineSimilarity = queryVector.reduce(
-        (acc, curr, index) => acc + curr * granitaVector[index],
-        0
-      );
-      console.log(`cosine similarity = ${cosineSimilarity}`);
-
       const result = await RecipeModel.aggregate([
         {
           $vectorSearch: {
