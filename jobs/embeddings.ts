@@ -1,26 +1,51 @@
 import "dotenv/config"; // fetch secrets from .env
-import { FeatureExtractionPipeline, pipeline } from "@xenova/transformers";
+import { FeatureExtractionPipeline, pipeline } from "@huggingface/transformers";
 import { connection, ConnectionStates } from "mongoose";
 import os from "os";
 
-import { connectToMongoDB, disconnectFromMongoDB } from "../utils/db";
+import { connectToMongoDB, disconnectFromMongoDB, Indexes } from "../utils/db";
 import RecipeModel from "../models/RecipeModel";
 import Recipe from "../types/client/Recipe";
+
+/* Workaround to fix type bug:
+ * https://github.com/huggingface/transformers.js/issues/1337
+ * https://github.com/huggingface/transformers.js/issues/1448
+ */
+declare module "@huggingface/transformers" {
+  export interface MgpstrProcessor {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    batch_decode(...args: any[]): any;
+  }
+}
 
 class EmbeddingJobs {
   embedder?: FeatureExtractionPipeline;
 
   private initializeEmbeddingPipeline = async () => {
     console.time("Initializing pipeline");
-    this.embedder = await pipeline(
+    // Need to specify type to fix bug: https://github.com/huggingface/transformers.js/issues/1299
+    this.embedder = await pipeline<"feature-extraction">(
       "feature-extraction",
-      // https://huggingface.co/Xenova/nomic-embed-text-v1 (access token not required)
-      "Xenova/nomic-embed-text-v1"
+      // https://huggingface.co/nomic-ai/nomic-embed-text-v1.5 (access token not required)
+      "nomic-ai/nomic-embed-text-v1.5",
+      { dtype: "fp32" }
     );
     console.timeEnd("Initializing pipeline");
   };
 
   // Generate embeddings (768-dimension vector) using the provided text
+  getEmbedding = async (data: string): Promise<number[]> => {
+    console.time("Performing feature extraction");
+    const results = await this.embedder!(data, {
+      pooling: "mean",
+      normalize: true,
+    });
+    console.timeEnd("Performing feature extraction");
+
+    return Array.from(results.data);
+  };
+
+  // Generate multiple embeddings
   getEmbeddings = async (data: string[]): Promise<Float32Array[]> => {
     console.time("Performing feature extraction");
     const results = await this.embedder!(data, {
@@ -75,7 +100,9 @@ class EmbeddingJobs {
         await connectToMongoDB();
       }
 
-      const recipes = await RecipeModel.find({}).sort({ _id: 1 }).exec();
+      const recipes = await RecipeModel.find({ id: "663849" })
+        .sort({ _id: 1 })
+        .exec();
       console.log(
         `Generating embeddings and updating ${recipes.length} recipes...`
       );
@@ -89,17 +116,55 @@ class EmbeddingJobs {
 
       // Update documents with the new embedding field
       // Order doesn't matter, can improve performance slightly
-      // const result = await RecipeModel.bulkSave(recipes, { ordered: false });
-      // console.log("Count of documents updated: " + result.modifiedCount);
+      const result = await RecipeModel.bulkSave(recipes, { ordered: false });
+      console.log("Bulk write result:" + result);
     } catch (error) {
       console.error("Error creating embeddings:", error);
-    } finally {
-      disconnectFromMongoDB();
+    }
+  };
+
+  semanticSearch = async (text: string) => {
+    try {
+      await this.initializeEmbeddingPipeline();
+      const queryVector = await this.getEmbedding(text);
+      console.time("Vector search");
+      const result = await RecipeModel.aggregate([
+        {
+          $vectorSearch: {
+            index: Indexes.RecipeSummary,
+            queryVector,
+            path: "summaryEmbedding",
+            exact: true, // Nearest Neighbor search: false = ANN (approx.), true = ENN (exact)
+            limit: 5,
+          },
+        },
+        {
+          $project: {
+            name: 1,
+            summary: 1,
+            score: {
+              $meta: "vectorSearchScore",
+            },
+          },
+        },
+      ]).exec();
+      console.timeEnd("Vector search");
+
+      console.log(`Search results for ${text}:`, result);
+    } catch (error) {
+      console.error("Error during semantic search:", error);
     }
   };
 }
 
 if (require.main === module) {
   const embeddingJobs = new EmbeddingJobs();
-  embeddingJobs.addEmbeddings().catch(console.error);
+  // embeddingJobs
+  //   .addEmbeddings()
+  //   .catch(console.error)
+  //   .finally(disconnectFromMongoDB);
+  embeddingJobs
+    .semanticSearch("fruity italian dessert")
+    .catch(console.error)
+    .finally(disconnectFromMongoDB);
 }

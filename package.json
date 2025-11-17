@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/Abhiek187/ez-recipes-server#readme",
   "dependencies": {
-    "@xenova/transformers": "^2.17.2",
+    "@huggingface/transformers": "^3.7.6",
     "axios": "^1.13.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

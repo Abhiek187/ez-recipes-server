@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 // MongoDB indexes
 export const Indexes = {
   RecipeName: "recipe-name",
+  RecipeSummary: "recipe-summary",
 } as const;
 
 export const MAX_DOCS = 100;
