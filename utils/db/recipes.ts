@@ -402,7 +402,7 @@ export const updateRecipeStats = async (
       doc.views = (doc.views ?? 0) + 1;
     }
 
-    await doc.save();
+    await doc.save(); // save fails if the schema is invalid
   } catch (error) {
     const message = "Failed to update the recipe's stats";
     console.error(`${message}:`, error);
