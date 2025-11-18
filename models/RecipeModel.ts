@@ -66,7 +66,7 @@ const InstructionSchema = new Schema<Recipe["instructions"][number]>(
 const RecipeSchema = new Schema<Recipe>({
   id: { type: Number, required: true },
   name: { type: String, required: true },
-  url: { type: String, required: true },
+  url: { type: String },
   image: { type: String, required: true },
   credit: { type: String, required: true },
   sourceUrl: { type: String, required: true },
