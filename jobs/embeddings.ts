@@ -101,24 +101,21 @@ class EmbeddingJobs {
         await connectToMongoDB();
       }
 
-      const recipes = await RecipeModel.find({ id: "663849" })
-        .sort({ _id: 1 })
-        .exec();
+      const recipes = await RecipeModel.find().sort({ _id: 1 }).exec();
       console.log(
         `Generating embeddings and updating ${recipes.length} recipes...`
       );
 
       await this.initializeEmbeddingPipeline();
 
-      // const batchSize = os.cpus().length * 2; // 2 threads per core
       const batchSize = os.availableParallelism();
       console.log(`Creating embeddings in batches of ${batchSize} (CPU-bound)`);
-      await this.getEmbeddingsInParallelWithBatching([...recipes], batchSize);
+      await this.getEmbeddingsInParallelWithBatching(recipes, batchSize);
 
       // Update documents with the new embedding field
       // Order doesn't matter, can improve performance slightly
-      const result = await RecipeModel.bulkSave(recipes, { ordered: false });
-      console.log("Bulk write result:", result);
+      // const result = await RecipeModel.bulkSave(recipes, { ordered: false });
+      // console.log("Bulk write result:", result);
     } catch (error) {
       console.error("Error creating embeddings:", error);
     }
@@ -162,12 +159,12 @@ class EmbeddingJobs {
 
 if (require.main === module) {
   const embeddingJobs = new EmbeddingJobs();
-  // embeddingJobs
-  //   .addEmbeddings()
-  //   .catch(console.error)
-  //   .finally(disconnectFromMongoDB);
   embeddingJobs
-    .semanticSearch("fruity italian dessert")
+    .addEmbeddings()
     .catch(console.error)
     .finally(disconnectFromMongoDB);
+  // embeddingJobs
+  //   .semanticSearch("fruity italian dessert")
+  //   .catch(console.error)
+  //   .finally(disconnectFromMongoDB);
 }
