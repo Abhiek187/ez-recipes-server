@@ -159,8 +159,8 @@ export default class Embedding {
 
       // Update documents with the new embedding field
       // Order doesn't matter, can improve performance slightly
-      // const result = await RecipeModel.bulkSave(recipes, { ordered: false });
-      // console.log("Bulk write result:", result);
+      const result = await RecipeModel.bulkSave(recipes, { ordered: false });
+      console.log("Bulk write result:", result);
     } catch (error) {
       console.error("Error creating embeddings:", error);
     }
