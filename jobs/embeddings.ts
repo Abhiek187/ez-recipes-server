@@ -166,6 +166,10 @@ export default class Embedding {
     }
   };
 
+  /**
+   * Do vector search for the given string against all the recipe summaries
+   * @param text the string to search for semantically
+   */
   semanticSearch = async (text: string) => {
     try {
       if (connection.readyState !== ConnectionStates.connected) {
@@ -207,7 +211,8 @@ if (require.main === module) {
       const embedding = await Embedding.getInstance();
       const updateAll = process.argv[2] === "all";
       await embedding.generateEmbeddings(updateAll);
-      // await embedding.semanticSearch("fruity italian dessert");
+      // const query = process.argv[2];
+      // await embedding.semanticSearch(query ?? "fruity italian dessert");
     } catch (error) {
       console.error("Error running embedding job:", error);
     } finally {
