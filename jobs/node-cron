@@ -7,3 +7,4 @@
 # | | | | |
 # * * * * * command to be executed
   0 0 * * * npm run cron --prefix /usr/src/server > /proc/1/fd/1 2> /proc/1/fd/2
+  1 0 * * * npm run embeddings --prefix /usr/src/server > /proc/1/fd/1 2> /proc/1/fd/2

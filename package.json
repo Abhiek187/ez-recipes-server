@@ -11,7 +11,9 @@
     "postbuild": "copyfiles docs/* dist",
     "lint": "eslint . --max-warnings 0",
     "server": "pm2-runtime start dist/index.js",
-    "cron": "node dist/jobs/cron.js"
+    "cron": "node dist/jobs/cron.js",
+    "embeddings": "node dist/jobs/embeddings.js",
+    "embeddings:all": "node dist/jobs/embeddings.js all"
   },
   "repository": {
     "type": "git",
