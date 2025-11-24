@@ -1,5 +1,6 @@
 # Fetch the latest LTS version of node
-FROM node:24-alpine
+# slim is required over alpine for glibc support in the 🤗 transformers ONNX runtime
+FROM node:24-slim
 
 # Create server directory
 WORKDIR /usr/src/server
@@ -7,11 +8,15 @@ WORKDIR /usr/src/server
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
 COPY package*.json ./
-# Copy cron job for the root user (busybox uses /etc/crontabs plural)
-# No need to set execution permissions or run crontab on that file
-COPY jobs/node-cron /etc/crontabs/root
+# No need to run crontab on that file
+COPY jobs/node-cron /etc/cron.d/node-cron
 # Typescript is the only dev dependency needed in production
-RUN npm ci --omit=dev && npm ci typescript && npm cache clean --force
+RUN apt-get update && \
+    apt-get install -y cron && \
+    rm -rf /var/lib/apt/lists/* && \
+    npm ci --omit=dev && \
+    npm ci typescript && \
+    npm cache clean --force
 
 # Bundle app source
 COPY . .
@@ -21,6 +26,5 @@ RUN npm run build
 
 # Run the node server on port 5000 and open the connection
 # Start cron job in the foreground, output to stdout/stderr
-# (busybox has crond, not cron)
 EXPOSE $PORT
-CMD [ "/bin/sh", "-c", "crond -f -d 8 & npm run server" ]
+CMD [ "/bin/sh", "-c", "cron -f & npm run server" ]
