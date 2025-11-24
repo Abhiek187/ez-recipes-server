@@ -11,6 +11,7 @@ import terms from "./routes/terms";
 import chefs from "./routes/chefs";
 import { connectToMongoDB } from "./utils/db";
 import logger from "./middleware/logger";
+import Embedding from "./jobs/embeddings";
 
 const app = express();
 app.disable("x-powered-by"); // disable fingerprinting
@@ -63,6 +64,7 @@ app.use("/api/terms", terms);
 app.use("/api/chefs", chefs);
 
 connectToMongoDB();
+Embedding.getInstance();
 
 // parseInt() requires a string, not undefined
 const port = parseInt(`${process.env.PORT}`) || 5000;

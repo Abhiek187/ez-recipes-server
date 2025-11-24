@@ -90,6 +90,7 @@ const RecipeSchema = new Schema<Recipe>({
   averageRating: { type: Number, default: null },
   totalRatings: { type: Number, default: 0 },
   views: { type: Number, default: 0 },
+  summaryEmbedding: { type: Buffer },
 });
 
 export default model("recipe", RecipeSchema);

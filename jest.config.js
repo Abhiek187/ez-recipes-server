@@ -4,4 +4,5 @@ module.exports = {
   testEnvironment: "node",
   setupFiles: ["dotenv/config"],
   modulePathIgnorePatterns: ["<rootDir>/dist/"],
+  randomize: true,
 };

@@ -1,3 +1,5 @@
+import { mongo } from "mongoose";
+
 // Properties for the client to consume (literally)
 export const SPICE_LEVELS = ["none", "mild", "spicy", "unknown"] as const;
 export type SpiceLevel = (typeof SPICE_LEVELS)[number];
@@ -88,7 +90,7 @@ export const isValidCuisine = (str: string): str is Cuisine => {
 };
 
 type Recipe = {
-  _id: string;
+  _id: mongo.ObjectId;
   id: number;
   name: string;
   url?: string;
@@ -141,6 +143,7 @@ type Recipe = {
   averageRating?: number | null;
   totalRatings?: number;
   views?: number;
+  summaryEmbedding?: mongo.Binary;
 };
 
 export default Recipe;

@@ -27,7 +27,7 @@ export const saveRecipe = async (
       upsert: true,
     }).exec();
 
-    return doc._id;
+    return doc._id.toString();
   } catch (error) {
     console.error(`Failed to save recipe ${recipe.name}:`, error);
     return undefined;

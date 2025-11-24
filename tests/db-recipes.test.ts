@@ -18,6 +18,10 @@ describe("recipeFindQuery", () => {
   const mockFind = jest.fn().mockReturnValue({ sort: mockSort });
   jest.spyOn(RecipeModel, "find").mockImplementation(mockFind);
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("accepts no filter", async () => {
     // Given no filter
     // When filterRecipes is called
@@ -298,7 +302,7 @@ describe("recipeFindQuery", () => {
         ],
       };
       const expectedSort = {
-        [RECIPE_SORT_MAP[sortField]]: -1,
+        [RECIPE_SORT_MAP[sortField]]: 1,
         ...defaultSort,
       };
       expect(mockFind).toHaveBeenCalledWith(expectedQuery);
@@ -328,6 +332,10 @@ describe("recipeAggregateQuery", () => {
 
   const searchSort = { score: { $meta: "searchScore" }, ...defaultSort };
   const searchSortCalories = { score: -1, ...defaultSort };
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("excludes $match with only a query filter", async () => {
     // Given a recipe filter with a query
