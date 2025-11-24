@@ -48,7 +48,8 @@ export default class Embedding {
       "feature-extraction",
       // https://huggingface.co/nomic-ai/nomic-embed-text-v1.5 (access token not required)
       "nomic-ai/nomic-embed-text-v1.5",
-      { dtype: "fp32" }
+      // Render's free tier has a memory limit of 512 MB
+      { dtype: "fp16" }
     );
     console.timeEnd("Initializing pipeline");
   };
