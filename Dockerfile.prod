@@ -1,6 +1,6 @@
 # Fetch the latest LTS version of node
 # slim is required over alpine for glibc support in the 🤗 transformers ONNX runtime
-FROM node:24-slim
+FROM node:25-slim
 
 # Create server directory
 WORKDIR /usr/src/server
