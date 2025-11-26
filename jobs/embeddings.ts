@@ -209,6 +209,7 @@ export default class Embedding {
 if (require.main === module) {
   (async () => {
     try {
+      console.log("[Cron] Starting embedding job...");
       const embedding = await Embedding.getInstance();
       const updateAll = process.argv[2] === "all";
       await embedding.generateEmbeddings(updateAll);
@@ -218,6 +219,7 @@ if (require.main === module) {
       console.error("Error running embedding job:", error);
     } finally {
       disconnectFromMongoDB();
+      console.log("[Cron] Finished running embedding job");
     }
   })();
 }
