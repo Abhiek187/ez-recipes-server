@@ -213,8 +213,8 @@ if (require.main === module) {
       const embedding = await Embedding.getInstance();
       const updateAll = process.argv[2] === "all";
       await embedding.generateEmbeddings(updateAll);
-      // const query = process.argv[2];
-      // await embedding.semanticSearch(query ?? "fruity italian dessert");
+      const query = process.argv[2];
+      await embedding.semanticSearch(query ?? "fruity italian dessert");
     } catch (error) {
       console.error("Error running embedding job:", error);
     } finally {
