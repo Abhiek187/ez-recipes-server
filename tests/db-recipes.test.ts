@@ -1,4 +1,4 @@
-import { FilterQuery, Types } from "mongoose";
+import { QueryFilter, Types } from "mongoose";
 
 import RecipeModel from "../models/RecipeModel";
 import RecipeFilter, {
@@ -42,7 +42,7 @@ describe("recipeFindQuery", () => {
     await filterRecipes(filter);
 
     // Then the query uses a number operator
-    const expectedQuery: FilterQuery<Recipe> = {
+    const expectedQuery: QueryFilter<Recipe> = {
       nutrients: {
         $elemMatch: {
           name: "Calories",
@@ -67,7 +67,7 @@ describe("recipeFindQuery", () => {
     await filterRecipes(filter);
 
     // Then the query uses a boolean operator
-    const expectedQuery: FilterQuery<Recipe> = {
+    const expectedQuery: QueryFilter<Recipe> = {
       isSustainable: filter.sustainable,
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
@@ -85,7 +85,7 @@ describe("recipeFindQuery", () => {
     await filterRecipes(filter);
 
     // Then the query uses an array operator
-    const expectedQuery: FilterQuery<Recipe> = {
+    const expectedQuery: QueryFilter<Recipe> = {
       culture: { $in: filter.cultures },
     };
     expect(mockFind).toHaveBeenCalledWith(expectedQuery);
@@ -106,7 +106,7 @@ describe("recipeFindQuery", () => {
     await filterRecipes(filter);
 
     // Then the query includes all those filters
-    const expectedQuery: FilterQuery<Recipe> = {
+    const expectedQuery: QueryFilter<Recipe> = {
       nutrients: {
         $elemMatch: {
           name: "Calories",
@@ -145,7 +145,7 @@ describe("recipeFindQuery", () => {
     await filterRecipes(filter);
 
     // Then the query combines all the filters
-    const expectedQuery: FilterQuery<Recipe> = {
+    const expectedQuery: QueryFilter<Recipe> = {
       nutrients: {
         $elemMatch: {
           name: "Calories",
@@ -181,7 +181,7 @@ describe("recipeFindQuery", () => {
     await filterRecipes(filter);
 
     // Then the query checks the _id field
-    const expectedQuery: FilterQuery<Recipe> = {
+    const expectedQuery: QueryFilter<Recipe> = {
       _id: {
         $gt: new Types.ObjectId(filter.token),
       },
@@ -251,7 +251,7 @@ describe("recipeFindQuery", () => {
 
       // Then the query uses the compound token and is sorted in descending order
       const [expectedSortField, , expectedObjectId] = mockToken.split(":");
-      const expectedQuery: FilterQuery<Recipe> = {
+      const expectedQuery: QueryFilter<Recipe> = {
         $or: [
           {
             [expectedSortField]: null,
@@ -288,7 +288,7 @@ describe("recipeFindQuery", () => {
       // Then the query uses the compound token and is sorted in ascending order
       const [expectedSortField, expectedLastValue, expectedObjectId] =
         mockToken.split(":");
-      const expectedQuery: FilterQuery<Recipe> = {
+      const expectedQuery: QueryFilter<Recipe> = {
         $or: [
           {
             [expectedSortField]: { $gt: Number(expectedLastValue) },

@@ -1,4 +1,4 @@
-import { FilterQuery, SortValues, Types } from "mongoose";
+import { QueryFilter, SortValues, Types } from "mongoose";
 
 import { MAX_DOCS, Indexes } from ".";
 import RecipeModel from "../../models/RecipeModel";
@@ -83,25 +83,32 @@ const createQuery = (
     asc,
   }: Partial<RecipeFilter>,
   isFindQuery = false
-): FilterQuery<Recipe> => {
+): QueryFilter<Recipe> => {
   // Create a find/match query for MongoDB
-  const query: FilterQuery<Recipe> = {};
+  const query: QueryFilter<Recipe> = {};
 
-  if (minCals !== undefined) {
+  if (minCals !== undefined && maxCals !== undefined) {
     query.nutrients = {
       $elemMatch: {
         name: "Calories",
         amount: {
           $gte: minCals,
+          $lte: maxCals,
         },
       },
     };
-  }
-  if (maxCals !== undefined) {
-    // Append the condition if minCals is defined as well
-    if (Object.hasOwn(query, "nutrients")) {
-      query.nutrients.$elemMatch.amount.$lte = maxCals;
-    } else {
+  } else {
+    if (minCals !== undefined) {
+      query.nutrients = {
+        $elemMatch: {
+          name: "Calories",
+          amount: {
+            $gte: minCals,
+          },
+        },
+      };
+    }
+    if (maxCals !== undefined) {
       query.nutrients = {
         $elemMatch: {
           name: "Calories",
@@ -254,8 +261,10 @@ const recipeAggregateQuery = async (
     sort: sortByCalories ? undefined : sortQuery,
   });
 
-  if (!isEmptyObject(matchQuery)) {
-    pipeline = pipeline.match(matchQuery);
+  if (!isEmptyObject(matchQuery as Record<string, unknown>)) {
+    pipeline = pipeline.match(
+      matchQuery as QueryFilter<Record<string, unknown>>
+    );
   }
 
   if (sortByCalories) {
