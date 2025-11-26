@@ -1,6 +1,6 @@
 import "dotenv/config"; // fetch secrets from .env
 import { FeatureExtractionPipeline, pipeline } from "@huggingface/transformers";
-import { connection, ConnectionStates, FilterQuery, mongo } from "mongoose";
+import { connection, ConnectionStates, QueryFilter, mongo } from "mongoose";
 import os from "os";
 
 import { connectToMongoDB, disconnectFromMongoDB, Indexes } from "../utils/db";
@@ -146,7 +146,7 @@ export default class Embedding {
         await connectToMongoDB();
       }
 
-      const findQuery: FilterQuery<Recipe> = updateAll
+      const findQuery: QueryFilter<Recipe> = updateAll
         ? {}
         : {
             summaryEmbedding: { $exists: false },

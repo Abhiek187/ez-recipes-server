@@ -1,4 +1,4 @@
-import { FilterQuery, FlattenMaps, UpdateQuery } from "mongoose";
+import { QueryFilter, UpdateQuery } from "mongoose";
 
 import ChefModel from "../../models/ChefModel";
 import Chef from "../../types/client/Chef";
@@ -31,9 +31,7 @@ export const createChef = async (uid: string) => {
  * @param uid the UID of the chef
  * @returns the chef's document, or `null` if the chef couldn't be found
  */
-export const getChef = async (
-  uid: string
-): Promise<FlattenMaps<Chef> | null> => {
+export const getChef = async (uid: string): Promise<Chef | null> => {
   try {
     // Return a POJO instead of a Document so filterObject works
     return await ChefModel.findOne({ _id: uid }).lean().exec();
@@ -122,7 +120,7 @@ export const deleteChef = async (uid: string) => {
  * @param refreshToken the chef's refresh token
  */
 export const saveRefreshToken = async (uid: string, refreshToken: string) => {
-  const filter: FilterQuery<Chef> = {
+  const filter: QueryFilter<Chef> = {
     _id: uid,
   };
   const encryptor = new Encryptor();
