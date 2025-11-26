@@ -46,18 +46,18 @@ export default class Embedding {
     // If Protobuf parsing fails, try rm -rf node_modules/@huggingface/transformers/.cache
     this._embedder = await pipeline<"feature-extraction">(
       "feature-extraction",
-      // https://huggingface.co/nomic-ai/nomic-embed-text-v1.5 (access token not required)
-      "nomic-ai/nomic-embed-text-v1.5",
+      // https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2 (access token not required)
+      "sentence-transformers/all-MiniLM-L6-v2",
       // Render's free tier has a memory limit of 512 MB
-      { dtype: "fp16" }
+      { dtype: "fp32" }
     );
     console.timeEnd("Initializing pipeline");
   };
 
   /**
-   * Generate embeddings (768-dimension vector) using the provided text
+   * Generate embeddings (384-dimension vector) using the provided text
    * @param data the string to embed
-   * @returns an array of 768 numbers that numerically represents the string
+   * @returns an array of 384 numbers that numerically represents the string
    */
   getEmbedding = async (data: string): Promise<number[]> => {
     if (this._embedder === undefined) return [];
@@ -88,7 +88,7 @@ export default class Embedding {
     console.timeEnd("Performing feature extraction");
 
     // The raw output is flattened, convert to a 2D array
-    const dimensions = results.dims[results.dims.length - 1]; // batches x 768
+    const dimensions = results.dims[results.dims.length - 1]; // batches x 384
     const flatVector = results.data as Float32Array;
 
     const embeddings: Float32Array[] = [];
