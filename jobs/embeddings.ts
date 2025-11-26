@@ -6,6 +6,7 @@ import os from "os";
 import { connectToMongoDB, disconnectFromMongoDB, Indexes } from "../utils/db";
 import RecipeModel from "../models/RecipeModel";
 import Recipe from "../types/client/Recipe";
+import { taskManager } from "../utils/number";
 
 /* Workaround to fix type bug:
  * https://github.com/huggingface/transformers.js/issues/1337
@@ -47,6 +48,7 @@ export default class Embedding {
     this._embedder = await pipeline<"feature-extraction">(
       "feature-extraction",
       // https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2 (access token not required)
+      // View memory requirements: https://huggingface.co/spaces/hf-accelerate/model-memory-usage
       "sentence-transformers/all-MiniLM-L6-v2",
       // Render's free tier has a memory limit of 512 MB
       { dtype: "fp32" }
@@ -210,6 +212,7 @@ if (require.main === module) {
   (async () => {
     try {
       console.log("[Cron] Starting embedding job...");
+      taskManager();
       const embedding = await Embedding.getInstance();
       const updateAll = process.argv[2] === "all";
       await embedding.generateEmbeddings(updateAll);
@@ -219,6 +222,7 @@ if (require.main === module) {
       console.error("Error running embedding job:", error);
     } finally {
       disconnectFromMongoDB();
+      taskManager();
       console.log("[Cron] Finished running embedding job");
     }
   })();
