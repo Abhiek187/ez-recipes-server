@@ -23,8 +23,8 @@ const formatBytes = (bytes: number, format: "MB" | "GB") => {
 export const taskManager = () => {
   console.log("====Task Manager====");
 
-  const totalMemory = formatBytes(os.totalmem(), "MB");
-  const freeMemory = formatBytes(os.freemem(), "MB");
+  const totalMemory = formatBytes(os.totalmem(), "GB");
+  const freeMemory = formatBytes(os.freemem(), "GB");
   const cpuCount = os.cpus().length;
   const systemUptime = round(os.uptime(), 0);
   console.log("System Information:");
