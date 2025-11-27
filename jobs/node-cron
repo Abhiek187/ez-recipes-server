@@ -8,4 +8,3 @@ PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 # | | | | |
 # * * * * * command to be executed
   0 0 * * * root cd /usr/src/server && npm run cron > /proc/1/fd/1 2> /proc/1/fd/2
-  1 0 * * * root cd /usr/src/server && npm run embeddings > /proc/1/fd/1 2> /proc/1/fd/2
