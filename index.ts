@@ -13,6 +13,7 @@ import { connectToMongoDB } from "./utils/db";
 import logger from "./middleware/logger";
 import Embedding from "./jobs/embeddings";
 import { taskManager } from "./utils/number";
+import CronJobs from "./jobs/cron";
 
 const app = express();
 app.disable("x-powered-by"); // disable fingerprinting
@@ -64,8 +65,10 @@ app.use("/api/recipes", recipes);
 app.use("/api/terms", terms);
 app.use("/api/chefs", chefs);
 
+// Warm-up tasks
 connectToMongoDB();
 Embedding.getInstance();
+new CronJobs();
 taskManager();
 
 // parseInt() requires a string, not undefined

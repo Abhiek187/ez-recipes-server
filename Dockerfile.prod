@@ -8,13 +8,9 @@ WORKDIR /usr/src/server
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
 COPY package*.json ./
-# No need to run crontab on that file
-COPY jobs/node-cron /etc/cron.d/node-cron
+
 # Typescript is the only dev dependency needed in production
-RUN apt-get update && \
-    apt-get install -y cron && \
-    rm -rf /var/lib/apt/lists/* && \
-    npm ci --omit=dev && \
+RUN npm ci --omit=dev && \
     npm ci typescript && \
     npm cache clean --force
 
@@ -25,6 +21,5 @@ COPY . .
 RUN npm run build
 
 # Run the node server on port 5000 and open the connection
-# Start cron job in the foreground, output to stdout/stderr
 EXPOSE $PORT
-CMD [ "/bin/sh", "-c", "cron -f & npm run server" ]
+CMD [ "npm", "run", "server" ]

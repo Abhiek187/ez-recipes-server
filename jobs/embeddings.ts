@@ -1,7 +1,6 @@
 import "dotenv/config"; // fetch secrets from .env
 import { FeatureExtractionPipeline, pipeline } from "@huggingface/transformers";
 import { connection, ConnectionStates, QueryFilter, mongo } from "mongoose";
-import cron from "node-cron";
 import os from "os";
 
 import { connectToMongoDB, disconnectFromMongoDB, Indexes } from "../utils/db";
@@ -209,7 +208,7 @@ export default class Embedding {
   };
 }
 
-const main = () => {
+export const generateSummaryEmbeddings = () => {
   (async () => {
     try {
       console.log("[Cron] Starting embedding job...");
@@ -232,11 +231,6 @@ const main = () => {
   })();
 };
 
-// Run a cron job within the Node process so the embedder stays in memory
-cron.schedule("1 0 * * *", main, {
-  name: "Generate embeddings job",
-});
-
 if (require.main === module) {
-  main();
+  generateSummaryEmbeddings();
 }
