@@ -1,4 +1,9 @@
-import "dotenv/config"; // fetch secrets from .env
+// Specify the path to fetch secrets from .env
+import dotenv from "dotenv";
+import path from "path";
+// JS path: dist/jobs/cron.js
+dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
+
 import { FirebaseAuthError } from "firebase-admin/auth";
 import { connection, ConnectionStates } from "mongoose";
 
