@@ -222,7 +222,10 @@ const main = () => {
     } catch (error) {
       console.error("Error running embedding job:", error);
     } finally {
-      disconnectFromMongoDB();
+      if (require.main === module) {
+        // Keep the MongoDB connection if running from node-cron
+        disconnectFromMongoDB();
+      }
       taskManager();
       console.log("[Cron] Finished running embedding job");
     }
