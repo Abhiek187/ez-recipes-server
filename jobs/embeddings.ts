@@ -156,8 +156,13 @@ export default class Embedding {
         `Generating embeddings and updating ${recipes.length} recipes...`
       );
 
-      const batchSize = os.availableParallelism();
-      console.log(`Creating embeddings in batches of ${batchSize} (CPU-bound)`);
+      // Save on memory when running from Render
+      const batchSize = updateAll ? os.availableParallelism() : 1;
+      console.log(
+        `Creating embeddings in batches of ${batchSize} (${
+          updateAll ? "CPU" : "memory"
+        }-bound)`
+      );
       await this.batchGenerateSummaryEmbeddings(recipes, batchSize);
 
       // Update documents with the new embedding field
