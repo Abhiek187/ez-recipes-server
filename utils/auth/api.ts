@@ -6,6 +6,9 @@ import FirebaseTokenExchangeResponse from "../../types/firebase/FirebaseTokenExc
 import FirebaseLoginResponse from "../../types/firebase/FirebaseLoginResponse";
 import ContinueAction from "../../types/firebase/ContinueAction";
 import createAxios from "../axios";
+import OAuthProvider from "../../types/client/OAuthProvider";
+import FirebaseAuthUrlResponse from "../../types/firebase/FirebaseAuthUrlResponse";
+import OAuthUrl from "../../types/client/OAuthUrl";
 
 export default class FirebaseApi {
   private static _instance: FirebaseApi;
@@ -153,5 +156,26 @@ export default class FirebaseApi {
       }
     );
     return response.data;
+  }
+
+  /**
+   * Get all OAuth authorization URLs for the supported providers
+   * @param redirectUrl the URL to redirect to after completing the OAuth flow
+   * @returns an array of auth URLs for each provider
+   */
+  async getOAuthUrls(redirectUrl: string): Promise<OAuthUrl[]> {
+    const authUrlResponses = await Promise.all(
+      Object.values(OAuthProvider).map((provider) =>
+        this.idApi.post<FirebaseAuthUrlResponse>("/accounts:createAuthUri", {
+          continueUri: redirectUrl,
+          providerId: provider,
+        })
+      )
+    );
+
+    return authUrlResponses.map((authUrlResponse) => ({
+      providerId: authUrlResponse.data.providerId,
+      authUrl: authUrlResponse.data.authUri,
+    }));
   }
 }

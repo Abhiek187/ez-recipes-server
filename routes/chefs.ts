@@ -1,6 +1,6 @@
 import { isAxiosError } from "axios";
 import express from "express";
-import { body, validationResult } from "express-validator";
+import { body, query, validationResult } from "express-validator";
 import { Request } from "express-validator/lib/base";
 import { FirebaseAuthError } from "firebase-admin/auth";
 
@@ -251,5 +251,27 @@ router.post("/logout", auth, async (_req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+router.get(
+  "/oauth",
+  query("redirectUrl")
+    .isString()
+    .withMessage("Redirect URL is not a string")
+    .notEmpty()
+    .withMessage("Redirect URL is required"),
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const redirectUrl = req.query?.redirectUrl;
+
+    try {
+      const authUrls = await FirebaseApi.instance.getOAuthUrls(redirectUrl);
+      res.json(authUrls);
+    } catch (error) {
+      handleFirebaseRestError("Failed to get all the OAuth URLs", error, res);
+    }
+  }
+);
 
 export default router;
