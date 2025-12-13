@@ -37,6 +37,8 @@ paths:
     $ref: "./docs/chefs.yaml#/paths/~1login"
   /api/chefs/logout:
     $ref: "./docs/chefs.yaml#/paths/~1logout"
+  /api/chefs/oauth:
+    $ref: "./docs/chefs.yaml#/paths/~1oauth"
 
 # Components to be shown on the main page
 components:
@@ -79,3 +81,13 @@ components:
       $ref: "./docs/chefs.yaml#/components/schemas/changeRequest"
     email:
       $ref: "./docs/chefs.yaml#/components/schemas/email"
+    idTokenCookie:
+      $ref: "./docs/chefs.yaml#/components/schemas/idTokenCookie"
+    idTokenClearCookie:
+      $ref: "./docs/chefs.yaml#/components/schemas/idTokenClearCookie"
+    providerId:
+      $ref: "./docs/chefs.yaml#/components/schemas/providerId"
+    authUrls:
+      $ref: "./docs/chefs.yaml#/components/schemas/authUrls"
+    oauthCredential:
+      $ref: "./docs/chefs.yaml#/components/schemas/oauthCredential"
