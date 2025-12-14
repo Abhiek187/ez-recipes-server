@@ -7,11 +7,14 @@ import { FirebaseAuthError } from "firebase-admin/auth";
 import FirebaseAdmin from "../utils/auth/admin";
 import auth from "../middleware/auth";
 import FirebaseApi from "../utils/auth/api";
-import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
+import FirebaseRestError, {
+  isFirebaseRestError,
+} from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
 import { getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
+import OAuthProvider from "../types/client/OAuthProvider";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -270,6 +273,108 @@ router.get(
       res.json(authUrls);
     } catch (error) {
       handleFirebaseRestError("Failed to get all the OAuth URLs", error, res);
+    }
+  }
+);
+
+router.post(
+  "/oauth",
+  body().isObject().withMessage("Body is missing or not an object"),
+  body("code").isString().withMessage("Invalid/missing code"),
+  body("providerId").isString().withMessage("Invalid/missing providerId"),
+  auth,
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const { code, providerId } = req.body;
+    const { token } = res.locals;
+    let oauthToken: string;
+
+    try {
+      // Call the OAuth provider to exchange the authorization code for an OAuth token
+      oauthToken = await FirebaseApi.instance.getOAuthToken(providerId, code);
+    } catch (error) {
+      if (!isAxiosError(error)) {
+        handleFirebaseRestError(
+          `Failed to login to OAuth provider ${providerId}`,
+          error,
+          res
+        );
+        return;
+      }
+
+      // Convert the OAuth error to a Firebase error
+      const unknownError = "An unknown error occurred";
+      const oauthError: FirebaseRestError["error"] = {
+        code: error.response?.status ?? 500,
+        message: unknownError,
+      };
+      switch (providerId) {
+        case OAuthProvider.GOOGLE:
+        case OAuthProvider.MICROSOFT:
+          oauthError.message =
+            error.response?.data?.error_description ?? unknownError;
+          break;
+        case OAuthProvider.FACEBOOK:
+          oauthError.message =
+            error.response?.data?.error?.message ?? unknownError;
+          break;
+        case OAuthProvider.GITHUB:
+          // GitHub returns 200 on error
+          oauthError.code = 500;
+          oauthError.message =
+            error.response?.data?.error_description ?? unknownError;
+      }
+
+      res.status(oauthError.code).json({
+        error: `Failed to login to OAuth provider ${providerId}: ${oauthError.message}`,
+      });
+      return;
+    }
+
+    try {
+      // Call Firebase to exchange the OAuth token for a Firebase token
+      const response = await FirebaseApi.instance.linkOAuthProvider(
+        providerId,
+        oauthToken,
+        token
+      );
+      res.json(response);
+    } catch (error) {
+      handleFirebaseRestError(
+        `Failed to link OAuth provider ${providerId}`,
+        error,
+        res
+      );
+    }
+  }
+);
+
+router.delete(
+  "/oauth",
+  query("providerId")
+    .isString()
+    .withMessage("Provider ID is not a string")
+    .notEmpty()
+    .withMessage("Provider ID is required"),
+  auth,
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const providerId = req.query?.providerId as OAuthProvider;
+    const { token } = res.locals;
+
+    try {
+      await FirebaseApi.instance.unlinkOAuthProvider(providerId, token);
+      res.sendStatus(204);
+    } catch (error) {
+      handleFirebaseRestError(
+        `Failed to unlink OAuth provider ${providerId}`,
+        error,
+        res
+      );
     }
   }
 );

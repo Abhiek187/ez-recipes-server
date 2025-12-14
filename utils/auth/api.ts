@@ -1,4 +1,5 @@
-import { AxiosInstance } from "axios";
+import { AxiosError, AxiosInstance } from "axios";
+import querystring from "querystring";
 
 import OobCodeResponse from "../../types/firebase/OobCodeResponse";
 import FirebaseTokenResponse from "../../types/firebase/FirebaseTokenResponse";
@@ -9,6 +10,7 @@ import createAxios from "../axios";
 import OAuthProvider from "../../types/client/OAuthProvider";
 import FirebaseAuthUrlResponse from "../../types/firebase/FirebaseAuthUrlResponse";
 import OAuthUrl from "../../types/client/OAuthUrl";
+import { OAuthConfig } from "./oauth";
 
 export default class FirebaseApi {
   private static _instance: FirebaseApi;
@@ -177,5 +179,89 @@ export default class FirebaseApi {
       providerId: authUrlResponse.data.providerId,
       authUrl: authUrlResponse.data.authUri,
     }));
+  }
+
+  /**
+   * Exchange the authorization code for an ID or access token from the OAuth provider
+   * @param providerId the provider ID
+   * @param code the authorization code after signing in with the provider
+   * @returns
+   */
+  async getOAuthToken(providerId: OAuthProvider, code: string) {
+    const { clientId, clientSecret, tokenUrl } = OAuthConfig[providerId];
+    // Pass x-www-form-urlencoded parameters
+    const params = querystring.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: "http://localhost",
+      grant_type: "authorization_code",
+    });
+
+    const oauthApi = createAxios({
+      headers:
+        providerId === OAuthProvider.GITHUB
+          ? {
+              Accept: "application/vnd.github+json",
+            }
+          : undefined,
+      signal: new AbortController().signal,
+    });
+    const oauthResponse = await oauthApi.post(tokenUrl, params);
+
+    // GitHub returns 200 on failure, so manually check the response body for any errors
+    if (
+      providerId === OAuthProvider.GITHUB &&
+      Object.hasOwn(oauthResponse.data, "error")
+    ) {
+      console.error(`[GitHub Error] ${JSON.stringify(oauthResponse.data)}`);
+      // Based on https://github.com/axios/axios/blob/v1.x/lib/core/settle.js
+      throw new AxiosError(
+        "Request failed with status code 400",
+        AxiosError.ERR_BAD_REQUEST,
+        oauthResponse.config,
+        oauthResponse.request,
+        oauthResponse
+      );
+    }
+    return oauthResponse.data;
+  }
+
+  /**
+   * Exchange an OAuth token for a Firebase token
+   * @param providerId the provider ID
+   * @param oauthToken the token gotten from an OAuth provider
+   * @param firebaseToken the Firebase ID token, if logged in
+   * @returns
+   */
+  async linkOAuthProvider(
+    providerId: OAuthProvider,
+    oauthToken: string,
+    firebaseToken?: string
+  ) {
+    const response = await this.idApi.post("/accounts:signInWithIdp", {
+      idToken: firebaseToken,
+      requestUri: "http://localhost", // since the token exchange is occurring server-side
+      postBody: `id_token=${oauthToken}&providerId=${providerId}`,
+      returnRefreshToken: true,
+      returnSecureToken: true,
+      returnIdpCredential: true,
+    });
+    return response.data;
+  }
+
+  /**
+   * Unlink an OAuth provider from the chef's account
+   * @param providerId the provider ID
+   * @param token the Firebase ID token
+   * @returns
+   */
+  async unlinkOAuthProvider(providerId: OAuthProvider, token: string) {
+    const response = await this.idApi.post("/accounts:update", {
+      idToken: token,
+      returnSecureToken: true,
+      deleteProvider: [providerId],
+    });
+    return response.data;
   }
 }
