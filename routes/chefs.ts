@@ -357,7 +357,9 @@ router.delete(
     .isString()
     .withMessage("Provider ID is not a string")
     .notEmpty()
-    .withMessage("Provider ID is required"),
+    .withMessage("Provider ID is required")
+    .isIn(Object.values(OAuthProvider))
+    .withMessage("Invalid provider ID"),
   auth,
   async (req, res) => {
     checkValidations(req, res);
