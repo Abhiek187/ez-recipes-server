@@ -30,3 +30,6 @@ export const OAuthConfig: Record<
     tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
   },
 };
+
+export const ERROR_USER_ALREADY_EXISTS = "FEDERATED_USER_ID_ALREADY_LINKED";
+export const ERROR_EMAIL_EXISTS = "EMAIL_EXISTS";

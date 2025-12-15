@@ -288,13 +288,6 @@ paths:
               schema:
                 $ref: "..#/components/schemas/error"
 
-        "500":
-          description: An error occurred while fetching all the auth URLs
-          content:
-            application/json:
-              schema:
-                $ref: "..#/components/schemas/error"
-
     post:
       summary: >-
         Login to the provided OAuth provider.

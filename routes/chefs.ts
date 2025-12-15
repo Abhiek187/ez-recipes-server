@@ -11,7 +11,7 @@ import FirebaseRestError, {
   isFirebaseRestError,
 } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
-import { getChef, saveRefreshToken } from "../utils/db";
+import { createChef, getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
 import OAuthProvider from "../types/client/OAuthProvider";
@@ -281,7 +281,11 @@ router.post(
   "/oauth",
   body().isObject().withMessage("Body is missing or not an object"),
   body("code").isString().withMessage("Invalid/missing code"),
-  body("providerId").isString().withMessage("Invalid/missing providerId"),
+  body("providerId")
+    .isString()
+    .withMessage("Invalid/missing providerId")
+    .isIn(Object.values(OAuthProvider))
+    .withMessage("Invalid provider ID"),
   auth,
   async (req, res) => {
     checkValidations(req, res);
@@ -290,63 +294,94 @@ router.post(
     const { code, providerId } = req.body;
     const { token } = res.locals;
     let oauthToken: string;
+    let errorPrefix = `Failed to login to OAuth provider ${providerId}`;
 
-    try {
-      // Call the OAuth provider to exchange the authorization code for an OAuth token
-      oauthToken = await FirebaseApi.instance.getOAuthToken(providerId, code);
-    } catch (error) {
-      if (!isAxiosError(error)) {
-        handleFirebaseRestError(
-          `Failed to login to OAuth provider ${providerId}`,
-          error,
-          res
-        );
+    if (providerId === OAuthProvider.GOOGLE) {
+      // Google provides the ID token directly
+      oauthToken = code;
+    } else {
+      try {
+        // Call the OAuth provider to exchange the authorization code for an OAuth token
+        oauthToken = await FirebaseApi.instance.getOAuthToken(providerId, code);
+      } catch (error) {
+        if (!isAxiosError(error)) {
+          handleFirebaseRestError(errorPrefix, error, res);
+          return;
+        }
+
+        // Convert the OAuth error to a Firebase error
+        const unknownError = "An unknown error occurred";
+        const oauthError: FirebaseRestError["error"] = {
+          code: error.response?.status ?? 500,
+          message: unknownError,
+        };
+        switch (providerId) {
+          case OAuthProvider.GOOGLE:
+          case OAuthProvider.MICROSOFT:
+            oauthError.message =
+              error.response?.data?.error_description ?? unknownError;
+            break;
+          case OAuthProvider.FACEBOOK:
+            oauthError.message =
+              error.response?.data?.error?.message ?? unknownError;
+            break;
+          case OAuthProvider.GITHUB:
+            // GitHub returns 200 on error
+            oauthError.code = 500;
+            oauthError.message =
+              error.response?.data?.error_description ?? unknownError;
+        }
+
+        res.status(oauthError.code).json({
+          error: `${errorPrefix}: ${oauthError.message}`,
+        });
         return;
       }
-
-      // Convert the OAuth error to a Firebase error
-      const unknownError = "An unknown error occurred";
-      const oauthError: FirebaseRestError["error"] = {
-        code: error.response?.status ?? 500,
-        message: unknownError,
-      };
-      switch (providerId) {
-        case OAuthProvider.GOOGLE:
-        case OAuthProvider.MICROSOFT:
-          oauthError.message =
-            error.response?.data?.error_description ?? unknownError;
-          break;
-        case OAuthProvider.FACEBOOK:
-          oauthError.message =
-            error.response?.data?.error?.message ?? unknownError;
-          break;
-        case OAuthProvider.GITHUB:
-          // GitHub returns 200 on error
-          oauthError.code = 500;
-          oauthError.message =
-            error.response?.data?.error_description ?? unknownError;
-      }
-
-      res.status(oauthError.code).json({
-        error: `Failed to login to OAuth provider ${providerId}: ${oauthError.message}`,
-      });
-      return;
     }
+
+    errorPrefix = `Failed to link OAuth provider ${providerId}`;
 
     try {
       // Call Firebase to exchange the OAuth token for a Firebase token
-      const response = await FirebaseApi.instance.linkOAuthProvider(
-        providerId,
-        oauthToken,
-        token
-      );
-      res.json(response);
+      const { emailVerified, localId, idToken, refreshToken, errorMessage } =
+        await FirebaseApi.instance.linkOAuthProvider(
+          providerId,
+          oauthToken,
+          token
+        );
+
+      if (errorMessage !== undefined) {
+        // The request succeeded, but the account may have already been linked
+        res.status(400).json({
+          error: `${errorPrefix}: ${errorMessage}`,
+        });
+        return;
+      } else if (
+        localId === undefined ||
+        idToken === undefined ||
+        refreshToken === undefined
+      ) {
+        res.status(500).json({
+          error: `${errorPrefix}: Missing required chef credentials`,
+        });
+        return;
+      }
+
+      // Create/update the chef alongside their refresh token
+      const existingChef = await getChef(localId);
+      if (existingChef === null) {
+        await createChef(localId);
+      }
+      await saveRefreshToken(localId, refreshToken);
+
+      res.cookie(COOKIES.ID_TOKEN, idToken, COOKIE_2_WEEKS);
+      res.json({
+        uid: localId,
+        token: idToken,
+        emailVerified,
+      });
     } catch (error) {
-      handleFirebaseRestError(
-        `Failed to link OAuth provider ${providerId}`,
-        error,
-        res
-      );
+      handleFirebaseRestError(errorPrefix, error, res);
     }
   }
 );

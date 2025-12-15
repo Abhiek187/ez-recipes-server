@@ -11,6 +11,7 @@ import OAuthProvider from "../../types/client/OAuthProvider";
 import FirebaseAuthUrlResponse from "../../types/firebase/FirebaseAuthUrlResponse";
 import OAuthUrl from "../../types/client/OAuthUrl";
 import { OAuthConfig } from "./oauth";
+import FirebaseIdpResponse from "../../types/firebase/FirebaseIdpResponse";
 
 export default class FirebaseApi {
   private static _instance: FirebaseApi;
@@ -185,9 +186,12 @@ export default class FirebaseApi {
    * Exchange the authorization code for an ID or access token from the OAuth provider
    * @param providerId the provider ID
    * @param code the authorization code after signing in with the provider
-   * @returns
+   * @returns the ID or access token from the OAuth provider
    */
-  async getOAuthToken(providerId: OAuthProvider, code: string) {
+  async getOAuthToken(
+    providerId: OAuthProvider,
+    code: string
+  ): Promise<string> {
     const { clientId, clientSecret, tokenUrl } = OAuthConfig[providerId];
     // Pass x-www-form-urlencoded parameters
     const params = querystring.stringify({
@@ -224,7 +228,17 @@ export default class FirebaseApi {
         oauthResponse
       );
     }
-    return oauthResponse.data;
+
+    switch (providerId) {
+      case OAuthProvider.GOOGLE:
+        return oauthResponse.data;
+      case OAuthProvider.FACEBOOK:
+        return oauthResponse.data;
+      case OAuthProvider.GITHUB:
+        return oauthResponse.data;
+      case OAuthProvider.MICROSOFT:
+        return oauthResponse.data;
+    }
   }
 
   /**
@@ -232,21 +246,26 @@ export default class FirebaseApi {
    * @param providerId the provider ID
    * @param oauthToken the token gotten from an OAuth provider
    * @param firebaseToken the Firebase ID token, if logged in
-   * @returns
+   * @returns the user's UID, tokens, and other information
    */
   async linkOAuthProvider(
     providerId: OAuthProvider,
     oauthToken: string,
     firebaseToken?: string
-  ) {
-    const response = await this.idApi.post("/accounts:signInWithIdp", {
-      idToken: firebaseToken,
-      requestUri: "http://localhost", // since the token exchange is occurring server-side
-      postBody: `id_token=${oauthToken}&providerId=${providerId}`,
-      returnRefreshToken: true,
-      returnSecureToken: true,
-      returnIdpCredential: true,
-    });
+  ): Promise<FirebaseIdpResponse> {
+    const response = await this.idApi.post<FirebaseIdpResponse>(
+      "/accounts:signInWithIdp",
+      {
+        idToken: firebaseToken,
+        requestUri: "http://localhost", // since the token exchange is occurring server-side
+        postBody: `id_token=${oauthToken}&providerId=${providerId}`,
+        returnRefreshToken: true,
+        returnSecureToken: true,
+        returnIdpCredential: true,
+      }
+    );
+    // TODO: remove once all IDPs have been tested
+    console.log("signInWithIdp response:", response.data);
     return response.data;
   }
 
@@ -254,14 +273,12 @@ export default class FirebaseApi {
    * Unlink an OAuth provider from the chef's account
    * @param providerId the provider ID
    * @param token the Firebase ID token
-   * @returns
    */
   async unlinkOAuthProvider(providerId: OAuthProvider, token: string) {
-    const response = await this.idApi.post("/accounts:update", {
+    await this.idApi.post("/accounts:update", {
       idToken: token,
       returnSecureToken: true,
       deleteProvider: [providerId],
     });
-    return response.data;
   }
 }
