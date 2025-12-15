@@ -348,12 +348,19 @@ router.post(
 
     try {
       // Call Firebase to exchange the OAuth token for a Firebase token
-      const { emailVerified, localId, idToken, refreshToken, errorMessage } =
-        await FirebaseApi.instance.linkOAuthProvider(
-          providerId,
-          oauthToken,
-          token
-        );
+      const {
+        emailVerified,
+        localId,
+        idToken,
+        refreshToken,
+        errorMessage,
+        needConfirmation,
+        verifiedProvider,
+      } = await FirebaseApi.instance.linkOAuthProvider(
+        providerId,
+        oauthToken,
+        token
+      );
 
       if (errorMessage !== undefined) {
         // The request succeeded, but the account may have already been linked
@@ -361,11 +368,20 @@ router.post(
           error: `${errorPrefix}: ${errorMessage}`,
         });
         return;
+      } else if (needConfirmation === true && verifiedProvider !== undefined) {
+        // The email must be verified using certain providers
+        res.status(400).json({
+          error: `${errorPrefix}: Email not verified, please sign in using the following providers: ${verifiedProvider.join(
+            ", "
+          )}`,
+        });
+        return;
       } else if (
         localId === undefined ||
         idToken === undefined ||
         refreshToken === undefined
       ) {
+        // Catch-all for any other errors
         res.status(500).json({
           error: `${errorPrefix}: Missing required chef credentials`,
         });

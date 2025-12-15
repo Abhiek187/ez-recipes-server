@@ -233,13 +233,11 @@ export default class FirebaseApi {
 
     switch (providerId) {
       case OAuthProvider.GOOGLE:
-        return oauthResponse.data;
-      case OAuthProvider.FACEBOOK:
-        return oauthResponse.data.access_token;
-      case OAuthProvider.GITHUB:
-        return oauthResponse.data;
       case OAuthProvider.MICROSOFT:
-        return oauthResponse.data;
+        return oauthResponse.data.id_token;
+      case OAuthProvider.FACEBOOK:
+      case OAuthProvider.GITHUB:
+        return oauthResponse.data.access_token;
     }
   }
 
