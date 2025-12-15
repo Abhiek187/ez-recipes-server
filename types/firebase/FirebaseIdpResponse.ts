@@ -5,12 +5,17 @@ type FirebaseIdpResponse = {
   providerId: OAuthProvider;
   email: string;
   emailVerified: boolean;
-  photoUrl: string;
+  firstName?: string;
+  fullName?: string;
+  lastName?: string;
+  photoUrl?: string;
   localId?: string; // UID
+  displayName?: string;
   idToken?: string; // the Firebase token
   refreshToken?: string;
   expiresIn?: string;
-  oauthIdToken: string; // the original OAuth token
+  oauthAccessToken?: string; // the original OAuth access token
+  oauthIdToken?: string; // the original OAuth ID token
   rawUserInfo: string;
   isNewUser?: boolean;
   // Only present if FEDERATED_USER_ID_ALREADY_LINKED or EMAIL_EXISTS occurred

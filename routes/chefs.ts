@@ -286,12 +286,13 @@ router.post(
     .withMessage("Invalid/missing providerId")
     .isIn(Object.values(OAuthProvider))
     .withMessage("Invalid provider ID"),
+  body("redirectUrl").isString().withMessage("Invalid/missing redirectUrl"),
   auth,
   async (req, res) => {
     checkValidations(req, res);
     if (res.writableEnded) return;
 
-    const { code, providerId } = req.body;
+    const { code, providerId, redirectUrl } = req.body;
     const { token } = res.locals;
     let oauthToken: string;
     let errorPrefix = `Failed to login to OAuth provider ${providerId}`;
@@ -302,7 +303,11 @@ router.post(
     } else {
       try {
         // Call the OAuth provider to exchange the authorization code for an OAuth token
-        oauthToken = await FirebaseApi.instance.getOAuthToken(providerId, code);
+        oauthToken = await FirebaseApi.instance.getOAuthToken(
+          providerId,
+          code,
+          redirectUrl
+        );
       } catch (error) {
         if (!isAxiosError(error)) {
           handleFirebaseRestError(errorPrefix, error, res);

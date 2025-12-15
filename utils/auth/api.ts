@@ -186,11 +186,13 @@ export default class FirebaseApi {
    * Exchange the authorization code for an ID or access token from the OAuth provider
    * @param providerId the provider ID
    * @param code the authorization code after signing in with the provider
+   * @param redirectUrl the same redirect URL used in the authorization endpoint
    * @returns the ID or access token from the OAuth provider
    */
   async getOAuthToken(
     providerId: OAuthProvider,
-    code: string
+    code: string,
+    redirectUrl: string
   ): Promise<string> {
     const { clientId, clientSecret, tokenUrl } = OAuthConfig[providerId];
     // Pass x-www-form-urlencoded parameters
@@ -198,7 +200,7 @@ export default class FirebaseApi {
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      redirect_uri: "http://localhost",
+      redirect_uri: redirectUrl,
       grant_type: "authorization_code",
     });
 
@@ -233,7 +235,7 @@ export default class FirebaseApi {
       case OAuthProvider.GOOGLE:
         return oauthResponse.data;
       case OAuthProvider.FACEBOOK:
-        return oauthResponse.data;
+        return oauthResponse.data.access_token;
       case OAuthProvider.GITHUB:
         return oauthResponse.data;
       case OAuthProvider.MICROSOFT:
@@ -253,12 +255,17 @@ export default class FirebaseApi {
     oauthToken: string,
     firebaseToken?: string
   ): Promise<FirebaseIdpResponse> {
+    const tokenType = [OAuthProvider.GOOGLE, OAuthProvider.MICROSOFT].includes(
+      providerId
+    )
+      ? "id_token"
+      : "access_token";
     const response = await this.idApi.post<FirebaseIdpResponse>(
       "/accounts:signInWithIdp",
       {
         idToken: firebaseToken,
         requestUri: "http://localhost", // since the token exchange is occurring server-side
-        postBody: `id_token=${oauthToken}&providerId=${providerId}`,
+        postBody: `${tokenType}=${oauthToken}&providerId=${providerId}`,
         returnRefreshToken: true,
         returnSecureToken: true,
         returnIdpCredential: true,

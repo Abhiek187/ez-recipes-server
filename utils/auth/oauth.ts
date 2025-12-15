@@ -17,7 +17,7 @@ export const OAuthConfig: Record<
   [OAuthProvider.FACEBOOK]: {
     clientId: "1924319198430849",
     clientSecret: `${process.env.CLIENT_SECRET_FACEBOOK}`,
-    tokenUrl: "https://graph.facebook.com/v18.0/oauth/access_token",
+    tokenUrl: "https://graph.facebook.com/v24.0/oauth/access_token",
   },
   [OAuthProvider.GITHUB]: {
     clientId: "Iv23liAfZdufhzrYKyf6",

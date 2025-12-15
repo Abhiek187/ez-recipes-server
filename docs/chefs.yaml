@@ -491,6 +491,9 @@ components:
           description: The authorization code received after signing in with an OAuth provider
         providerId:
           $ref: "#/components/schemas/providerId"
+        redirectUrl:
+          type: string
+          description: The same redirect URL specified when retrieving all the auth URLs
 
   examples:
     invalidEmail:
