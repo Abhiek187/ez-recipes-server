@@ -64,7 +64,7 @@ router.get("/", auth, async (_req, res) => {
     const userRecord = await FirebaseAdmin.instance.getUser(uid);
     res.status(200).json({
       uid,
-      ...filterObject(userRecord, ["email", "emailVerified"]),
+      ...filterObject(userRecord, ["email", "emailVerified", "providerData"]),
       ...filterObject(chef, ["ratings", "recentRecipes", "favoriteRecipes"]),
       token,
     });
