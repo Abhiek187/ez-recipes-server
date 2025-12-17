@@ -266,8 +266,6 @@ export default class FirebaseApi {
         returnIdpCredential: true,
       }
     );
-    // TODO: remove once all IDPs have been tested
-    console.log("signInWithIdp response:", response.data);
     return response.data;
   }
 
@@ -277,10 +275,11 @@ export default class FirebaseApi {
    * @param token the Firebase ID token
    */
   async unlinkOAuthProvider(providerId: OAuthProvider, token: string) {
-    await this.idApi.post("/accounts:update", {
+    const response = await this.idApi.post("/accounts:update", {
       idToken: token,
       returnSecureToken: true,
       deleteProvider: [providerId],
     });
+    console.log(`Unlink ${providerId} response:`, response.data);
   }
 }
