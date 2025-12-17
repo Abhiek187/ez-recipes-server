@@ -297,51 +297,45 @@ router.post(
     let oauthToken: string;
     let errorPrefix = `Failed to login to OAuth provider ${providerId}`;
 
-    if (providerId === OAuthProvider.GOOGLE) {
-      // Google provides the ID token directly
-      oauthToken = code;
-    } else {
-      try {
-        // Call the OAuth provider to exchange the authorization code for an OAuth token
-        oauthToken = await FirebaseApi.instance.getOAuthToken(
-          providerId,
-          code,
-          redirectUrl
-        );
-      } catch (error) {
-        if (!isAxiosError(error)) {
-          handleFirebaseRestError(errorPrefix, error, res);
-          return;
-        }
-
-        // Convert the OAuth error to a Firebase error
-        const unknownError = "An unknown error occurred";
-        const oauthError: FirebaseRestError["error"] = {
-          code: error.response?.status ?? 500,
-          message: unknownError,
-        };
-        switch (providerId) {
-          case OAuthProvider.GOOGLE:
-          case OAuthProvider.MICROSOFT:
-            oauthError.message =
-              error.response?.data?.error_description ?? unknownError;
-            break;
-          case OAuthProvider.FACEBOOK:
-            oauthError.message =
-              error.response?.data?.error?.message ?? unknownError;
-            break;
-          case OAuthProvider.GITHUB:
-            // GitHub returns 200 on error
-            oauthError.code = 500;
-            oauthError.message =
-              error.response?.data?.error_description ?? unknownError;
-        }
-
-        res.status(oauthError.code).json({
-          error: `${errorPrefix}: ${oauthError.message}`,
-        });
+    try {
+      // Call the OAuth provider to exchange the authorization code for an OAuth token
+      oauthToken = await FirebaseApi.instance.getOAuthToken(
+        providerId,
+        code,
+        redirectUrl
+      );
+    } catch (error) {
+      if (!isAxiosError(error)) {
+        handleFirebaseRestError(errorPrefix, error, res);
         return;
       }
+
+      // Convert the OAuth error to a Firebase error
+      const unknownError = "An unknown error occurred";
+      const oauthError: FirebaseRestError["error"] = {
+        code: error.response?.status ?? 500,
+        message: unknownError,
+      };
+      switch (providerId) {
+        case OAuthProvider.GOOGLE:
+          oauthError.message =
+            error.response?.data?.error_description ?? unknownError;
+          break;
+        case OAuthProvider.FACEBOOK:
+          oauthError.message =
+            error.response?.data?.error?.message ?? unknownError;
+          break;
+        case OAuthProvider.GITHUB:
+          // GitHub returns 200 on error
+          oauthError.code = 500;
+          oauthError.message =
+            error.response?.data?.error_description ?? unknownError;
+      }
+
+      res.status(oauthError.code).json({
+        error: `${errorPrefix}: ${oauthError.message}`,
+      });
+      return;
     }
 
     errorPrefix = `Failed to link OAuth provider ${providerId}`;

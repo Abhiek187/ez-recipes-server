@@ -7,7 +7,7 @@ enum OAuthProvider {
   // https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps
   GITHUB = "github.com",
   // https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow
-  MICROSOFT = "microsoft.com",
+  // MICROSOFT = "microsoft.com", // unsupported due to limitations with Firebase
 }
 
 export default OAuthProvider;

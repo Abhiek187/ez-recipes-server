@@ -471,7 +471,6 @@ components:
         - google.com
         - facebook.com
         - github.com
-        - microsoft.com
       description: A unique identifier for the OAuth provider
     authUrls:
       type: array

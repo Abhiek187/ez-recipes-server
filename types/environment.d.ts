@@ -13,7 +13,6 @@ declare global {
       CLIENT_SECRET_GOOGLE: string;
       CLIENT_SECRET_FACEBOOK: string;
       CLIENT_SECRET_GITHUB: string;
-      CLIENT_SECRET_MICROSOFT: string;
       DENYLIST: string;
     }
   }

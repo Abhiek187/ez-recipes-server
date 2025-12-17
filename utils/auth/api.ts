@@ -172,6 +172,7 @@ export default class FirebaseApi {
         this.idApi.post<FirebaseAuthUrlResponse>("/accounts:createAuthUri", {
           continueUri: redirectUrl,
           providerId: provider,
+          authFlowType: "CODE_FLOW",
         })
       )
     );
@@ -233,7 +234,6 @@ export default class FirebaseApi {
 
     switch (providerId) {
       case OAuthProvider.GOOGLE:
-      case OAuthProvider.MICROSOFT:
         return oauthResponse.data.id_token;
       case OAuthProvider.FACEBOOK:
       case OAuthProvider.GITHUB:
@@ -253,11 +253,8 @@ export default class FirebaseApi {
     oauthToken: string,
     firebaseToken?: string
   ): Promise<FirebaseIdpResponse> {
-    const tokenType = [OAuthProvider.GOOGLE, OAuthProvider.MICROSOFT].includes(
-      providerId
-    )
-      ? "id_token"
-      : "access_token";
+    const tokenType =
+      providerId === OAuthProvider.GOOGLE ? "id_token" : "access_token";
     const response = await this.idApi.post<FirebaseIdpResponse>(
       "/accounts:signInWithIdp",
       {
