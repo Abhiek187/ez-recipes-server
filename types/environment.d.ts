@@ -10,6 +10,9 @@ declare global {
       GOOGLE_APPLICATION_CREDENTIALS: string;
       WEB_API_KEY: string;
       SECRET_KEY: string;
+      CLIENT_SECRET_GOOGLE: string;
+      CLIENT_SECRET_FACEBOOK: string;
+      CLIENT_SECRET_GITHUB: string;
       DENYLIST: string;
     }
   }

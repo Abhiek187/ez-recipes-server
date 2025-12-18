@@ -261,6 +261,111 @@ paths:
               schema:
                 $ref: "..#/components/schemas/error"
 
+  /oauth:
+    get:
+      summary: Get all the OAuth authorization URLs
+      tags:
+        - chefs
+      parameters:
+        - in: query
+          name: redirectUrl
+          required: true
+          description: The URL to redirect to after signing in with an OAuth provider
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully retrieved all the auth URLs for each provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/authUrls"
+
+        "400":
+          description: An invalid redirect URL is passed
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
+    post:
+      summary: >-
+        Login to the provided OAuth provider.
+        If an ID token is passed, the provider will be linked to the chef's account.
+      tags:
+        - chefs
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/oauthCredential"
+      responses:
+        "200":
+          description: Successfully exchanged the OAuth code for an ID token
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: "#/components/schemas/idTokenCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userInfo"
+
+        "400":
+          description: The request body is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                missingToken:
+                  $ref: "#/components/examples/missingToken"
+
+    delete:
+      summary: Unlink an OAuth provider from the chef's account
+      tags:
+        - chefs
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: providerId
+          required: true
+          description: The provider to unlink
+          schema:
+            $ref: "#/components/schemas/providerId"
+      responses:
+        "204":
+          description: Successfully unlinked the OAuth provider
+
+        "400":
+          description: The provider ID is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                missingToken:
+                  $ref: "#/components/examples/missingToken"
+
 components:
   schemas:
     userProfile:
@@ -276,6 +381,31 @@ components:
         emailVerified:
           type: boolean
           description: Whether or not the email address is verified
+        providerData:
+          type: object
+          properties:
+            displayName:
+              type: string
+              description: The display name for the linked provider
+            email:
+              type: string
+              description: The email for the linked provider
+            phoneNumber:
+              type: string
+              description: The phone number for the linked provider
+            photoURL:
+              type: string
+              description: The photo URL for the linked provider
+            providerId:
+              type: string
+              description: The linked provider ID
+            uid:
+              type: string
+              description: The user identifier for the linked provider
+          required:
+            - email
+            - providerId
+            - uid
         ratings:
           type: object
           description: >-
@@ -360,6 +490,34 @@ components:
     idTokenClearCookie:
       type: string
       example: idToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict
+    providerId:
+      type: string
+      enum:
+        - google.com
+        - facebook.com
+        - github.com
+      description: A unique identifier for the OAuth provider
+    authUrls:
+      type: array
+      items:
+        type: object
+        properties:
+          providerId:
+            $ref: "#/components/schemas/providerId"
+          authUrl:
+            type: string
+            description: The URL to the OAuth provider's authorization endpoint
+    oauthCredential:
+      type: object
+      properties:
+        code:
+          type: string
+          description: The authorization code received after signing in with an OAuth provider
+        providerId:
+          $ref: "#/components/schemas/providerId"
+        redirectUrl:
+          type: string
+          description: The same redirect URL specified when retrieving all the auth URLs
 
   examples:
     invalidEmail:

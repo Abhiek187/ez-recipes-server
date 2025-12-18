@@ -25,7 +25,7 @@ By delegating Firebase to the server-side, these settings can be synced across a
 - RESTful APIs
 - MongoDB to store data, query data, and do full-text search
 - Pagination to reduce bandwidth and optimize query performance
-- Firebase for user authentication
+- Firebase for user authentication with OAuth providers
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
@@ -122,6 +122,31 @@ App->>Server: GET /api/chefs
 Server->>Server: Validate/refresh token
 Server->>MongoDB: Get chef document
 Server->>Firebase: Get user record
+Server-->>App: 200 OK
+App->>App: Encrypt/save ID token
+App-->>User: Show authenticated profile page
+```
+
+### Login with OAuth Provider
+
+```mermaid
+sequenceDiagram
+
+actor User
+User->>App: Open login form
+App->>Server: GET /api/chefs/oauth
+Server->>Firebase: Create auth URLs
+Server-->>App: 200 OK
+User->>App: Select OAuth provider
+App->>OAuth Provider: Sign in
+OAuth Provider-->>App: Authorization code
+App->>Server: POST /api/chefs/oauth
+Server->>OAuth Provider: Exchange code for OAuth token
+Server->>Firebase: Exchange OAuth token for Firebase token
+opt New account
+  Server->>MongoDB: Create chef document
+end
+Server->>MongoDB: Save refresh token
 Server-->>App: 200 OK
 App->>App: Encrypt/save ID token
 App-->>User: Show authenticated profile page

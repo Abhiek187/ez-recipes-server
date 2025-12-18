@@ -1,4 +1,5 @@
-import { AxiosInstance } from "axios";
+import { AxiosError, AxiosInstance } from "axios";
+import querystring from "querystring";
 
 import OobCodeResponse from "../../types/firebase/OobCodeResponse";
 import FirebaseTokenResponse from "../../types/firebase/FirebaseTokenResponse";
@@ -6,6 +7,11 @@ import FirebaseTokenExchangeResponse from "../../types/firebase/FirebaseTokenExc
 import FirebaseLoginResponse from "../../types/firebase/FirebaseLoginResponse";
 import ContinueAction from "../../types/firebase/ContinueAction";
 import createAxios from "../axios";
+import OAuthProvider from "../../types/client/OAuthProvider";
+import FirebaseAuthUrlResponse from "../../types/firebase/FirebaseAuthUrlResponse";
+import OAuthUrl from "../../types/client/OAuthUrl";
+import { OAuthConfig } from "./oauth";
+import FirebaseIdpResponse from "../../types/firebase/FirebaseIdpResponse";
 
 export default class FirebaseApi {
   private static _instance: FirebaseApi;
@@ -153,5 +159,127 @@ export default class FirebaseApi {
       }
     );
     return response.data;
+  }
+
+  /**
+   * Get all OAuth authorization URLs for the supported providers
+   * @param redirectUrl the URL to redirect to after completing the OAuth flow
+   * @returns an array of auth URLs for each provider
+   */
+  async getOAuthUrls(redirectUrl: string): Promise<OAuthUrl[]> {
+    const authUrlResponses = await Promise.all(
+      Object.values(OAuthProvider).map((provider) =>
+        this.idApi.post<FirebaseAuthUrlResponse>("/accounts:createAuthUri", {
+          continueUri: redirectUrl,
+          providerId: provider,
+          authFlowType: "CODE_FLOW",
+        })
+      )
+    );
+
+    return authUrlResponses.map((authUrlResponse) => ({
+      providerId: authUrlResponse.data.providerId,
+      authUrl: authUrlResponse.data.authUri,
+    }));
+  }
+
+  /**
+   * Exchange the authorization code for an ID or access token from the OAuth provider
+   * @param providerId the provider ID
+   * @param code the authorization code after signing in with the provider
+   * @param redirectUrl the same redirect URL used in the authorization endpoint
+   * @returns the ID or access token from the OAuth provider
+   */
+  async getOAuthToken(
+    providerId: OAuthProvider,
+    code: string,
+    redirectUrl: string
+  ): Promise<string> {
+    const { clientId, clientSecret, tokenUrl } = OAuthConfig[providerId];
+    // Pass x-www-form-urlencoded parameters
+    const params = querystring.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: redirectUrl,
+      grant_type: "authorization_code",
+    });
+
+    const oauthApi = createAxios({
+      headers:
+        providerId === OAuthProvider.GITHUB
+          ? {
+              Accept: "application/vnd.github+json",
+            }
+          : undefined,
+      signal: new AbortController().signal,
+    });
+    const oauthResponse = await oauthApi.post(tokenUrl, params);
+
+    // GitHub returns 200 on failure, so manually check the response body for any errors
+    if (
+      providerId === OAuthProvider.GITHUB &&
+      Object.hasOwn(oauthResponse.data, "error")
+    ) {
+      console.error(`[GitHub Error] ${JSON.stringify(oauthResponse.data)}`);
+      // Based on https://github.com/axios/axios/blob/v1.x/lib/core/settle.js
+      throw new AxiosError(
+        "Request failed with status code 400",
+        AxiosError.ERR_BAD_REQUEST,
+        oauthResponse.config,
+        oauthResponse.request,
+        oauthResponse
+      );
+    }
+
+    switch (providerId) {
+      case OAuthProvider.GOOGLE:
+        return oauthResponse.data.id_token;
+      case OAuthProvider.FACEBOOK:
+      case OAuthProvider.GITHUB:
+        return oauthResponse.data.access_token;
+    }
+  }
+
+  /**
+   * Exchange an OAuth token for a Firebase token
+   * @param providerId the provider ID
+   * @param oauthToken the token gotten from an OAuth provider
+   * @param firebaseToken the Firebase ID token, if logged in
+   * @returns the user's UID, tokens, and other information
+   */
+  async linkOAuthProvider(
+    providerId: OAuthProvider,
+    oauthToken: string,
+    firebaseToken?: string
+  ): Promise<FirebaseIdpResponse> {
+    const tokenType =
+      providerId === OAuthProvider.GOOGLE ? "id_token" : "access_token";
+    const response = await this.idApi.post<FirebaseIdpResponse>(
+      "/accounts:signInWithIdp",
+      {
+        idToken: firebaseToken,
+        requestUri: "http://localhost", // since the token exchange is occurring server-side
+        postBody: `${tokenType}=${oauthToken}&providerId=${providerId}`,
+        returnRefreshToken: true,
+        returnSecureToken: true,
+        returnIdpCredential: true,
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Unlink an OAuth provider from the chef's account
+   * @param providerId the provider ID
+   * @param token the Firebase ID token
+   */
+  async unlinkOAuthProvider(providerId: OAuthProvider, token: string) {
+    const response = await this.idApi.post("/accounts:update", {
+      idToken: token,
+      returnSecureToken: true,
+      deleteProvider: [providerId],
+    });
+    console.log(`Unlink ${providerId} response:`, response.data);
   }
 }

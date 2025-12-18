@@ -6,11 +6,12 @@ import axios, {
   RawAxiosRequestHeaders,
   RawAxiosResponseHeaders,
 } from "axios";
+import querystring from "querystring";
 import { isObject } from "./object";
 
 const MASK = "██";
 const HEADERS_TO_REDACT = ["authorization", "cookie", "x-api-key"];
-const FIELDS_TO_REDACT = ["password", "refresh_token"];
+const FIELDS_TO_REDACT = ["password", "refresh_token", "client_secret"];
 
 /**
  * Redact sensitive headers and body fields from the logs
@@ -43,6 +44,16 @@ export const redactHeadersAndFields = (
 
   if (isObject(data)) {
     const dataObj = data as Record<string, unknown>;
+    dataForLogging = { ...dataObj };
+
+    for (const field of FIELDS_TO_REDACT) {
+      if (Object.hasOwn(dataObj, field)) {
+        dataForLogging[field] = MASK;
+      }
+    }
+  } else if (typeof data === "string") {
+    // Redact url-encoded fields
+    const dataObj = querystring.parse(data);
     dataForLogging = { ...dataObj };
 
     for (const field of FIELDS_TO_REDACT) {

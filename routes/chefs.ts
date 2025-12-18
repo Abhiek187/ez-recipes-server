@@ -1,17 +1,20 @@
 import { isAxiosError } from "axios";
 import express from "express";
-import { body, validationResult } from "express-validator";
+import { body, query, validationResult } from "express-validator";
 import { Request } from "express-validator/lib/base";
 import { FirebaseAuthError } from "firebase-admin/auth";
 
 import FirebaseAdmin from "../utils/auth/admin";
 import auth from "../middleware/auth";
 import FirebaseApi from "../utils/auth/api";
-import { isFirebaseRestError } from "../types/firebase/FirebaseRestError";
+import FirebaseRestError, {
+  isFirebaseRestError,
+} from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
-import { getChef, saveRefreshToken } from "../utils/db";
+import { createChef, getChef, saveRefreshToken } from "../utils/db";
 import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
+import OAuthProvider from "../types/client/OAuthProvider";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -61,7 +64,7 @@ router.get("/", auth, async (_req, res) => {
     const userRecord = await FirebaseAdmin.instance.getUser(uid);
     res.status(200).json({
       uid,
-      ...filterObject(userRecord, ["email", "emailVerified"]),
+      ...filterObject(userRecord, ["email", "emailVerified", "providerData"]),
       ...filterObject(chef, ["ratings", "recentRecipes", "favoriteRecipes"]),
       token,
     });
@@ -251,5 +254,181 @@ router.post("/logout", auth, async (_req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+router.get(
+  "/oauth",
+  query("redirectUrl")
+    .isString()
+    .withMessage("Redirect URL is not a string")
+    .notEmpty()
+    .withMessage("Redirect URL is required"),
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const redirectUrl = req.query?.redirectUrl;
+
+    try {
+      const authUrls = await FirebaseApi.instance.getOAuthUrls(redirectUrl);
+      res.json(authUrls);
+    } catch (error) {
+      handleFirebaseRestError("Failed to get all the OAuth URLs", error, res);
+    }
+  }
+);
+
+router.post(
+  "/oauth",
+  body().isObject().withMessage("Body is missing or not an object"),
+  body("code").isString().withMessage("Invalid/missing code"),
+  body("providerId")
+    .isString()
+    .withMessage("Invalid/missing providerId")
+    .isIn(Object.values(OAuthProvider))
+    .withMessage("Invalid provider ID"),
+  body("redirectUrl").isString().withMessage("Invalid/missing redirectUrl"),
+  auth,
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const { code, providerId, redirectUrl } = req.body;
+    const { token } = res.locals;
+    let oauthToken: string;
+    let errorPrefix = `Failed to login to OAuth provider ${providerId}`;
+
+    try {
+      // Call the OAuth provider to exchange the authorization code for an OAuth token
+      oauthToken = await FirebaseApi.instance.getOAuthToken(
+        providerId,
+        code,
+        redirectUrl
+      );
+    } catch (error) {
+      if (!isAxiosError(error)) {
+        handleFirebaseRestError(errorPrefix, error, res);
+        return;
+      }
+
+      // Convert the OAuth error to a Firebase error
+      const unknownError = "An unknown error occurred";
+      const oauthError: FirebaseRestError["error"] = {
+        code: error.response?.status ?? 500,
+        message: unknownError,
+      };
+      switch (providerId) {
+        case OAuthProvider.GOOGLE:
+          oauthError.message =
+            error.response?.data?.error_description ?? unknownError;
+          break;
+        case OAuthProvider.FACEBOOK:
+          oauthError.message =
+            error.response?.data?.error?.message ?? unknownError;
+          break;
+        case OAuthProvider.GITHUB:
+          // GitHub returns 200 on error
+          oauthError.code = 500;
+          oauthError.message =
+            error.response?.data?.error_description ?? unknownError;
+      }
+
+      res.status(oauthError.code).json({
+        error: `${errorPrefix}: ${oauthError.message}`,
+      });
+      return;
+    }
+
+    errorPrefix = `Failed to link OAuth provider ${providerId}`;
+
+    try {
+      // Call Firebase to exchange the OAuth token for a Firebase token
+      const {
+        emailVerified,
+        localId,
+        idToken,
+        refreshToken,
+        errorMessage,
+        needConfirmation,
+        verifiedProvider,
+      } = await FirebaseApi.instance.linkOAuthProvider(
+        providerId,
+        oauthToken,
+        token
+      );
+
+      if (errorMessage !== undefined) {
+        // The request succeeded, but the account may have already been linked
+        res.status(400).json({
+          error: `${errorPrefix}: ${errorMessage}`,
+        });
+        return;
+      } else if (needConfirmation === true && verifiedProvider !== undefined) {
+        // The email must be verified using certain providers
+        res.status(400).json({
+          error: `${errorPrefix}: Email not verified, please sign in using the following providers: ${verifiedProvider.join(
+            ", "
+          )}`,
+        });
+        return;
+      } else if (
+        localId === undefined ||
+        idToken === undefined ||
+        refreshToken === undefined
+      ) {
+        // Catch-all for any other errors
+        res.status(500).json({
+          error: `${errorPrefix}: Missing required chef credentials`,
+        });
+        return;
+      }
+
+      // Create/update the chef alongside their refresh token
+      const existingChef = await getChef(localId);
+      if (existingChef === null) {
+        await createChef(localId);
+      }
+      await saveRefreshToken(localId, refreshToken);
+
+      res.cookie(COOKIES.ID_TOKEN, idToken, COOKIE_2_WEEKS);
+      res.json({
+        uid: localId,
+        token: idToken,
+        emailVerified,
+      });
+    } catch (error) {
+      handleFirebaseRestError(errorPrefix, error, res);
+    }
+  }
+);
+
+router.delete(
+  "/oauth",
+  query("providerId")
+    .isString()
+    .withMessage("Provider ID is not a string")
+    .notEmpty()
+    .withMessage("Provider ID is required")
+    .isIn(Object.values(OAuthProvider))
+    .withMessage("Invalid provider ID"),
+  auth,
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const providerId = req.query?.providerId as OAuthProvider;
+    const { token } = res.locals;
+
+    try {
+      await FirebaseApi.instance.unlinkOAuthProvider(providerId, token);
+      res.sendStatus(204);
+    } catch (error) {
+      handleFirebaseRestError(
+        `Failed to unlink OAuth provider ${providerId}`,
+        error,
+        res
+      );
+    }
+  }
+);
 
 export default router;

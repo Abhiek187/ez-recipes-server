@@ -41,10 +41,12 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     req.params.id !== undefined &&
     req.method === "PATCH" &&
     typeof req.body?.view === "boolean";
+  const isOauthLogin =
+    req.originalUrl === "/api/chefs/oauth" && req.method === "POST";
 
   if (token === undefined) {
     // Skip validation for certain requests
-    if (isResettingPassword || isViewingRecipe) {
+    if (isResettingPassword || isViewingRecipe || isOauthLogin) {
       next();
     } else {
       res
