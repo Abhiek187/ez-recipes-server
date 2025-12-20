@@ -60,7 +60,11 @@ components:
     recipePatch:
       $ref: "./docs/recipes.yaml#/components/schemas/recipePatch"
     token:
-      $ref: "./docs/recipes.yaml#/components/schemas/token"
+      type: object
+      properties:
+        token:
+          type: string
+          description: The ID token for the chef, if one was passed
     error:
       type: object
       properties:

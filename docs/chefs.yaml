@@ -346,8 +346,12 @@ paths:
           schema:
             $ref: "#/components/schemas/providerId"
       responses:
-        "204":
+        "200":
           description: Successfully unlinked the OAuth provider
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/token"
 
         "400":
           description: The provider ID is invalid

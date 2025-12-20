@@ -420,7 +420,7 @@ router.delete(
 
     try {
       await FirebaseApi.instance.unlinkOAuthProvider(providerId, token);
-      res.sendStatus(204);
+      res.status(200).json({ token });
     } catch (error) {
       handleFirebaseRestError(
         `Failed to unlink OAuth provider ${providerId}`,

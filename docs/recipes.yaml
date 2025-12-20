@@ -318,7 +318,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/token"
+                $ref: "..#/components/schemas/token"
 
         "400":
           description: The request body is invalid
@@ -594,12 +594,6 @@ components:
           description: >-
             true if the recipe should be added to favorites,
             false if it should be removed, requires auth
-    token:
-      type: object
-      properties:
-        token:
-          type: string
-          description: The ID token for the chef, if one was passed
 
   examples:
     invalidFilter:
