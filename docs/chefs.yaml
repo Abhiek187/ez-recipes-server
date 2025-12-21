@@ -386,30 +386,32 @@ components:
           type: boolean
           description: Whether or not the email address is verified
         providerData:
-          type: object
-          properties:
-            displayName:
-              type: string
-              description: The display name for the linked provider
-            email:
-              type: string
-              description: The email for the linked provider
-            phoneNumber:
-              type: string
-              description: The phone number for the linked provider
-            photoURL:
-              type: string
-              description: The photo URL for the linked provider
-            providerId:
-              type: string
-              description: The linked provider ID
-            uid:
-              type: string
-              description: The user identifier for the linked provider
-          required:
-            - email
-            - providerId
-            - uid
+          type: array
+          items:
+            type: object
+            properties:
+              displayName:
+                type: string
+                description: The display name for the linked provider
+              email:
+                type: string
+                description: The email for the linked provider
+              phoneNumber:
+                type: string
+                description: The phone number for the linked provider
+              photoURL:
+                type: string
+                description: The photo URL for the linked provider
+              providerId:
+                type: string
+                description: The linked provider ID
+              uid:
+                type: string
+                description: The user identifier for the linked provider
+            required:
+              - email
+              - providerId
+              - uid
         ratings:
           type: object
           description: >-
