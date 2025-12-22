@@ -404,7 +404,7 @@ components:
                 description: The photo URL for the linked provider
               providerId:
                 type: string
-                description: The linked provider ID
+                description: The linked provider ID (this includes non-OAuth providers like password)
               uid:
                 type: string
                 description: The user identifier for the linked provider
