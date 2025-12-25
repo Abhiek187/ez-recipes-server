@@ -261,14 +261,28 @@ GOOGLE_APPLICATION_CREDENTIALS=PATH_TO_PRIVATE_KEY
 WEB_API_KEY=YOUR_WEB_API_KEY
 ```
 
-5. Generate a SECRET_KEY for encryption and save it in `.env`:
+5. Connect the following sign-in providers in the Firebase project. This also requires creating an app in their respective developer site with a client ID, client secret, and redirect URL:
+
+- [Google](https://console.cloud.google.com/apis/credentials)
+- [Facebook](https://developers.facebook.com/apps/)
+- [GitHub](https://github.com/settings/apps)
+
+Add all the client secrets in `.env`:
+
+```
+CLIENT_SECRET_GOOGLE=YOUR_GOOGLE_CLIENT_SECRET
+CLIENT_SECRET_FACEBOOK=YOUR_FACEBOOK_CLIENT_SECRET
+CLIENT_SECRET_GITHUB=YOUR_GITHUB_CLIENT_SECRET
+```
+
+6. Generate a SECRET_KEY for encryption and save it in `.env`:
 
 ```bash
 openssl rand -base64 64 # YOUR_SECRET_KEY
 SECRET_KEY=YOUR_SECRET_KEY
 ```
 
-6. Run `npm install` to install all the dependencies.
+7. Run `npm install` to install all the dependencies.
 
 **Dev:** Run `npm start`.
 
