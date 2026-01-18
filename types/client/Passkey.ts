@@ -14,6 +14,21 @@ type Passkey = {
   transports?: AuthenticatorTransportFuture[];
   deviceType: CredentialDeviceType;
   backedUp: boolean;
+  // Helpful user-friendly attributes
+  name: string;
+  lastUsed: Date;
+  // Image sources
+  iconLight?: string;
+  iconDark?: string;
 };
+
+export type PasskeyAAGUIDResponse = Record<
+  string,
+  {
+    name: string;
+    icon_light: string | null;
+    icon_dark: string | null;
+  }
+>;
 
 export default Passkey;

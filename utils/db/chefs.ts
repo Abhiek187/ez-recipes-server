@@ -222,6 +222,7 @@ export const updatePasskeyCounter = async (
     }
 
     doc.passkeys[passkeyIndex].counter = newCount;
+    doc.passkeys[passkeyIndex].lastUsed = new Date();
     await doc?.save();
 
     console.log(

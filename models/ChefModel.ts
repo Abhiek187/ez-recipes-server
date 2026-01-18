@@ -17,6 +17,10 @@ const PasskeySchema = new Schema<Chef["passkeys"][number]>(
     transports: { type: [String] },
     deviceType: { type: String, required: true },
     backedUp: { type: Boolean, required: true },
+    name: { type: String, required: true },
+    lastUsed: { type: Date, required: true },
+    iconLight: { type: String },
+    iconDark: { type: String },
   },
   { _id: false },
 );

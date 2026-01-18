@@ -32,7 +32,7 @@ import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
 import OAuthProvider from "../types/client/OAuthProvider";
 import Passkey from "../types/client/Passkey";
-import { RelyingParty } from "../utils/auth/passkey";
+import { getPasskeyInfo, RelyingParty } from "../utils/auth/passkey";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -464,7 +464,10 @@ router.get("/passkey/create", auth, async (_req, res) => {
     // No need to get specific information about the authenticator (protects users' privacy)
     attestationType: "none",
     // Prevent users from re-registering existing authenticators
-    excludeCredentials: chef?.passkeys,
+    excludeCredentials: chef?.passkeys?.map((passkey) => ({
+      id: passkey.id,
+      transports: passkey.transports,
+    })),
     authenticatorSelection: {
       userVerification: "required", // the user must authenticate with their passkey
     },
@@ -489,7 +492,10 @@ router.get("/passkey/auth", auth, async (_req, res) => {
   const requestOptions = await generateAuthenticationOptions({
     rpID: RelyingParty.ID,
     // Require users to use a previously-registered authenticator
-    allowCredentials: chef?.passkeys,
+    allowCredentials: chef?.passkeys?.map((passkey) => ({
+      id: passkey.id,
+      transports: passkey.transports,
+    })),
     userVerification: "required",
   });
 
@@ -531,15 +537,14 @@ router.post("/passkey/verify", auth, async (req, res) => {
         expectedRPID: RelyingParty.ID,
       });
 
-      console.log("verified:", verified, "registrationInfo:", registrationInfo);
-
       if (!verified) {
         res.status(401).json({ error: "Unable to verify the passkey" });
         return;
       }
 
-      const { credential, credentialDeviceType, credentialBackedUp } =
+      const { aaguid, credential, credentialDeviceType, credentialBackedUp } =
         registrationInfo;
+      const passkeyInfo = await getPasskeyInfo(aaguid);
       const newPasskey: Passkey = {
         webAuthnUserID: challengeData.webAuthnUserID,
         id: credential.id,
@@ -548,6 +553,10 @@ router.post("/passkey/verify", auth, async (req, res) => {
         transports: credential.transports,
         deviceType: credentialDeviceType,
         backedUp: credentialBackedUp,
+        name: passkeyInfo?.name ?? "Unknown",
+        lastUsed: new Date(),
+        iconLight: passkeyInfo?.iconLight,
+        iconDark: passkeyInfo?.iconDark,
       };
       await savePasskey(uid, newPasskey);
 
@@ -579,13 +588,6 @@ router.post("/passkey/verify", auth, async (req, res) => {
           },
         });
 
-      console.log(
-        "verified:",
-        verified,
-        "authenticationInfo:",
-        authenticationInfo,
-      );
-
       if (!verified) {
         res.status(401).json({ error: "Unable to verify the passkey" });
         return;
@@ -598,8 +600,10 @@ router.post("/passkey/verify", auth, async (req, res) => {
     }
   } catch (err) {
     const error = err as Error;
-    console.error("Failed to verify passkey registration:", error);
-    res.status(400).json({ error: error.message });
+    console.error("Failed to verify passkey:", error);
+    res
+      .status(400)
+      .json({ error: `Failed to verify passkey: ${error.message}` });
   }
 });
 
