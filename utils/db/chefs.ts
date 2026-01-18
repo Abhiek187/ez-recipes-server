@@ -4,6 +4,7 @@ import ChefModel from "../../models/ChefModel";
 import Chef from "../../types/client/Chef";
 import Encryptor from "../crypto";
 import RecipePatch from "../../types/client/RecipePatch";
+import Passkey from "../../types/client/Passkey";
 
 /**
  * Create a new chef in the DB
@@ -13,6 +14,7 @@ export const createChef = async (uid: string) => {
   const chef: Chef = {
     _id: uid,
     refreshToken: null,
+    passkeys: [],
     ratings: new Map(),
     recentRecipes: new Map(),
     favoriteRecipes: [],
@@ -53,7 +55,7 @@ export const getChef = async (uid: string): Promise<Chef | null> => {
 export const updateChef = async (
   uid: string,
   id: string,
-  body: RecipePatch
+  body: RecipePatch,
 ): Promise<
   [number | undefined, { code: number; message: string } | undefined]
 > => {
@@ -154,5 +156,109 @@ export const getRefreshToken = async (uid: string): Promise<string | null> => {
   } catch (error) {
     console.error(`Failed to get the refresh token for chef ${uid}:`, error);
     return null;
+  }
+};
+
+/**
+ * Store the chef's passkey in the DB
+ * @param uid the UID of the chef
+ * @param passkey the chef's passkey
+ */
+export const savePasskey = async (uid: string, passkey: Passkey) => {
+  const filter: QueryFilter<Chef> = {
+    _id: uid,
+  };
+  const update: UpdateQuery<Chef> = {
+    $push: {
+      passkeys: passkey,
+    },
+  };
+
+  try {
+    const result = await ChefModel.updateOne(filter, update).exec();
+    console.log(
+      `Successfully added passkey ${passkey.id} for chef ${uid}:`,
+      result,
+    );
+  } catch (error) {
+    console.error(
+      `Failed to save the passkey ${passkey.id} for chef ${uid}:`,
+      error,
+    );
+  }
+};
+
+/**
+ * Get all the chef's passkeys
+ * @param uid the UID of the chef
+ * @returns an array of passkeys
+ */
+export const getPasskeys = async (uid: string): Promise<Passkey[]> => {
+  try {
+    const doc = await ChefModel.findOne({ _id: uid }).exec();
+    return doc?.passkeys ?? [];
+  } catch (error) {
+    console.error(`Failed to get the passkeys for chef ${uid}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Increment the number of times a passkey was used
+ * @param uid the UID of the chef
+ * @param passkeyId the ID of the passkey
+ * @param newCount the new passkey counter
+ */
+export const updatePasskeyCounter = async (
+  uid: string,
+  passkeyId: string,
+  newCount: number,
+) => {
+  const filter: QueryFilter<Chef> = {
+    _id: uid,
+  };
+
+  try {
+    const doc = await ChefModel.findOne(filter).exec();
+    const passkeyIndex = doc?.passkeys?.findIndex((pk) => pk.id === passkeyId);
+    if (doc === null || passkeyIndex === undefined || passkeyIndex === -1) {
+      throw new Error(`Couldn't find passkey ${passkeyId} for chef ${uid}`);
+    }
+
+    doc.passkeys[passkeyIndex].counter = newCount;
+    await doc?.save();
+
+    console.log(
+      `Successfully updated the passkey counter for chef ${uid}, ${passkeyId} --> ${newCount}`,
+    );
+  } catch (error) {
+    console.error(
+      `Failed to update the passkey counter for chef ${uid}, ${passkeyId}`,
+      error,
+    );
+  }
+};
+
+export const deletePasskey = async (uid: string, passkeyId: string) => {
+  const filter: QueryFilter<Chef> = {
+    _id: uid,
+  };
+
+  try {
+    const doc = await ChefModel.findOne(filter).exec();
+    const passkeyIndex = doc?.passkeys?.findIndex((pk) => pk.id === passkeyId);
+    if (doc === null || passkeyIndex === undefined || passkeyIndex === -1) {
+      throw new Error(`Couldn't find passkey ${passkeyId} for chef ${uid}`);
+    }
+
+    doc.passkeys.splice(passkeyIndex, 1);
+    await doc?.save();
+
+    console.log(`Successfully deleted passkey ${passkeyId} for chef ${uid}`);
+  } catch (error) {
+    console.error(
+      `Failed to delete passkey ${passkeyId} for chef ${uid}`,
+      error,
+    );
   }
 };

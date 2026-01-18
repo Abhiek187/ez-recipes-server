@@ -1,3 +1,9 @@
+import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from "@simplewebauthn/server";
 import { isAxiosError } from "axios";
 import express from "express";
 import { body, query, validationResult } from "express-validator";
@@ -11,10 +17,22 @@ import FirebaseRestError, {
   isFirebaseRestError,
 } from "../types/firebase/FirebaseRestError";
 import { handleAxiosError } from "../utils/api";
-import { createChef, getChef, saveRefreshToken } from "../utils/db";
+import {
+  createChef,
+  deletePasskey,
+  getChef,
+  getPasskeyChallenge,
+  getPasskeys,
+  savePaskeyChallenge,
+  savePasskey,
+  saveRefreshToken,
+  updatePasskeyCounter,
+} from "../utils/db";
 import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
 import OAuthProvider from "../types/client/OAuthProvider";
+import Passkey from "../types/client/Passkey";
+import { RelyingParty } from "../utils/auth/passkey";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -29,7 +47,7 @@ const checkValidations = (req: Request, res: express.Response) => {
 const handleFirebaseRestError = (
   prefix: string,
   error: unknown,
-  res: express.Response
+  res: express.Response,
 ) => {
   if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
     const { code, message } = error.response.data.error;
@@ -41,7 +59,7 @@ const handleFirebaseRestError = (
     res.status(500).json({
       error: `${prefix}: ${JSON.stringify(
         error,
-        Object.getOwnPropertyNames(error)
+        Object.getOwnPropertyNames(error),
       )}`,
     });
   }
@@ -100,7 +118,7 @@ router.post(
       console.error("Error creating a new user:", error);
       res.status(500).json({ error: error.message });
     }
-  }
+  },
 );
 
 router.patch(
@@ -130,7 +148,7 @@ router.patch(
       try {
         const emailResponse = await FirebaseApi.instance.changeEmail(
           email,
-          token
+          token,
         );
         console.log(`Sending verification email to ${emailResponse.email}...`);
         res.json({
@@ -164,7 +182,7 @@ router.patch(
       try {
         const emailResponse = await FirebaseApi.instance.resetPassword(email);
         console.log(
-          `Sending password reset email to ${emailResponse.email}...`
+          `Sending password reset email to ${emailResponse.email}...`,
         );
         res.json({
           ...emailResponse,
@@ -174,7 +192,7 @@ router.patch(
         handleFirebaseRestError("Failed to reset the password", error, res);
       }
     }
-  }
+  },
 );
 
 router.delete("/", auth, async (_req, res) => {
@@ -238,7 +256,7 @@ router.post(
     } catch (error) {
       handleFirebaseRestError("Failed to login", error, res);
     }
-  }
+  },
 );
 
 router.post("/logout", auth, async (_req, res) => {
@@ -274,7 +292,7 @@ router.get(
     } catch (error) {
       handleFirebaseRestError("Failed to get all the OAuth URLs", error, res);
     }
-  }
+  },
 );
 
 router.post(
@@ -302,7 +320,7 @@ router.post(
       oauthToken = await FirebaseApi.instance.getOAuthToken(
         providerId,
         code,
-        redirectUrl
+        redirectUrl,
       );
     } catch (error) {
       if (!isAxiosError(error)) {
@@ -353,7 +371,7 @@ router.post(
       } = await FirebaseApi.instance.linkOAuthProvider(
         providerId,
         oauthToken,
-        token
+        token,
       );
 
       if (errorMessage !== undefined) {
@@ -366,7 +384,7 @@ router.post(
         // The email must be verified using certain providers
         res.status(400).json({
           error: `${errorPrefix}: Email not verified, please sign in using the following providers: ${verifiedProvider.join(
-            ", "
+            ", ",
           )}`,
         });
         return;
@@ -398,7 +416,7 @@ router.post(
     } catch (error) {
       handleFirebaseRestError(errorPrefix, error, res);
     }
-  }
+  },
 );
 
 router.delete(
@@ -425,10 +443,190 @@ router.delete(
       handleFirebaseRestError(
         `Failed to unlink OAuth provider ${providerId}`,
         error,
-        res
+        res,
       );
     }
+  },
+);
+
+router.get("/passkey/create", auth, async (_req, res) => {
+  // Get all the options needed to create a new passkey
+  const { uid } = res.locals;
+  const chef = await getChef(uid);
+
+  // Used in navigator.credentials.create:
+  // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
+  const createOptions = await generateRegistrationOptions({
+    // RP = Relying Party (the server)
+    rpName: RelyingParty.NAME,
+    rpID: RelyingParty.ID,
+    userName: uid,
+    // No need to get specific information about the authenticator (protects users' privacy)
+    attestationType: "none",
+    // Prevent users from re-registering existing authenticators
+    excludeCredentials: chef?.passkeys,
+    authenticatorSelection: {
+      userVerification: "required", // the user must authenticate with their passkey
+    },
+  });
+
+  // Save the challenge and user ID for verification
+  await savePaskeyChallenge(
+    uid,
+    createOptions.challenge,
+    createOptions.user.id,
+  );
+  res.json(createOptions);
+});
+
+router.get("/passkey/auth", auth, async (_req, res) => {
+  // Get all the options needed to use an existing passkey
+  const { uid } = res.locals;
+  const chef = await getChef(uid);
+
+  // Used in navigator.credentials.get:
+  // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions
+  const requestOptions = await generateAuthenticationOptions({
+    rpID: RelyingParty.ID,
+    // Require users to use a previously-registered authenticator
+    allowCredentials: chef?.passkeys,
+    userVerification: "required",
+  });
+
+  await savePaskeyChallenge(uid, requestOptions.challenge);
+  res.json(requestOptions);
+});
+
+router.post("/passkey/verify", auth, async (req, res) => {
+  const { uid } = res.locals;
+  const passkeys = await getPasskeys(uid);
+  const passkey = passkeys.find((pk) => pk.id === req.body.id);
+  const challengeData = await getPasskeyChallenge(uid);
+
+  if (challengeData === null || challengeData.challenge === undefined) {
+    res.status(404).json({
+      error: "Passkey challenge has expired. Please try signing in again.",
+    });
+    return;
   }
+
+  try {
+    if (passkey === undefined) {
+      // If this is a new passkey, verify the registration signature
+      const { registrationInfo, verified } = await verifyRegistrationResponse({
+        /**
+         * req.body:
+         * {
+         *   id: Base64URLString;
+         *   rawId: Base64URLString;
+         *   response: AuthenticatorAttestationResponseJSON;
+         *   authenticatorAttachment?: AuthenticatorAttachment;
+         *   clientExtensionResults: AuthenticationExtensionsClientOutputs;
+         *   type: PublicKeyCredentialType;
+         * }
+         */
+        response: req.body,
+        expectedChallenge: challengeData.challenge,
+        expectedOrigin: RelyingParty.ORIGIN,
+        expectedRPID: RelyingParty.ID,
+      });
+
+      console.log("verified:", verified, "registrationInfo:", registrationInfo);
+
+      if (!verified) {
+        res.status(401).json({ error: "Unable to verify the passkey" });
+        return;
+      }
+
+      const { credential, credentialDeviceType, credentialBackedUp } =
+        registrationInfo;
+      const newPasskey: Passkey = {
+        webAuthnUserID: challengeData.webAuthnUserID,
+        id: credential.id,
+        publicKey: credential.publicKey,
+        counter: credential.counter,
+        transports: credential.transports,
+        deviceType: credentialDeviceType,
+        backedUp: credentialBackedUp,
+      };
+      await savePasskey(uid, newPasskey);
+
+      res.sendStatus(201);
+    } else {
+      // If the passkey exists, verify the authentication signature
+      const { authenticationInfo, verified } =
+        await verifyAuthenticationResponse({
+          /**
+           * req.body:
+           * {
+           *   id: Base64URLString;
+           *   rawId: Base64URLString;
+           *   response: AuthenticatorAssertionResponseJSON; // main difference
+           *   authenticatorAttachment?: AuthenticatorAttachment;
+           *   clientExtensionResults: AuthenticationExtensionsClientOutputs;
+           *   type: PublicKeyCredentialType;
+           * }
+           */
+          response: req.body,
+          expectedChallenge: challengeData.challenge,
+          expectedOrigin: RelyingParty.ORIGIN,
+          expectedRPID: RelyingParty.ID,
+          credential: {
+            id: passkey.id,
+            publicKey: passkey.publicKey,
+            counter: passkey.counter,
+            transports: passkey.transports,
+          },
+        });
+
+      console.log(
+        "verified:",
+        verified,
+        "authenticationInfo:",
+        authenticationInfo,
+      );
+
+      if (!verified) {
+        res.status(401).json({ error: "Unable to verify the passkey" });
+        return;
+      }
+
+      const { newCounter } = authenticationInfo;
+      await updatePasskeyCounter(uid, req.body.id, newCounter);
+
+      res.sendStatus(204);
+    }
+  } catch (err) {
+    const error = err as Error;
+    console.error("Failed to verify passkey registration:", error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete(
+  "/passkey",
+  query("id")
+    .isString()
+    .withMessage("Passkey ID is not a string")
+    .notEmpty()
+    .withMessage("Passkey ID is required"),
+  auth,
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const passkeyId = req.query?.id as string;
+    const { uid } = res.locals;
+
+    try {
+      await deletePasskey(uid, passkeyId);
+      res.sendStatus(204);
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error deleting passkey:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
 );
 
 export default router;
