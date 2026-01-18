@@ -616,15 +616,22 @@ router.delete(
     if (res.writableEnded) return;
 
     const passkeyId = req.query?.id as string;
-    const { uid } = res.locals;
+    const { token, uid } = res.locals;
 
     try {
-      await deletePasskey(uid, passkeyId);
-      res.sendStatus(204);
+      const isSuccess = await deletePasskey(uid, passkeyId);
+
+      if (isSuccess) {
+        res.json({ token });
+      } else {
+        res.status(404).json({ error: "Passkey not found" });
+      }
     } catch (err) {
       const error = err as Error;
       console.error("Error deleting passkey:", error);
-      res.status(500).json({ error: error.message });
+      res
+        .status(500)
+        .json({ error: `Error deleting passkey: ${error.message}` });
     }
   },
 );

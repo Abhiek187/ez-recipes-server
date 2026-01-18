@@ -214,12 +214,8 @@ export const updatePasskeyCounter = async (
   passkeyId: string,
   newCount: number,
 ) => {
-  const filter: QueryFilter<Chef> = {
-    _id: uid,
-  };
-
   try {
-    const doc = await ChefModel.findOne(filter).exec();
+    const doc = await ChefModel.findById(uid).exec();
     const passkeyIndex = doc?.passkeys?.findIndex((pk) => pk.id === passkeyId);
     if (doc === null || passkeyIndex === undefined || passkeyIndex === -1) {
       throw new Error(`Couldn't find passkey ${passkeyId} for chef ${uid}`);
@@ -239,13 +235,18 @@ export const updatePasskeyCounter = async (
   }
 };
 
-export const deletePasskey = async (uid: string, passkeyId: string) => {
-  const filter: QueryFilter<Chef> = {
-    _id: uid,
-  };
-
+/**
+ * Delete the chef's passkey
+ * @param uid the UID of the chef
+ * @param passkeyId the ID of the passkey
+ * @returns `true` if the passkey was deleted successfully
+ */
+export const deletePasskey = async (
+  uid: string,
+  passkeyId: string,
+): Promise<boolean> => {
   try {
-    const doc = await ChefModel.findOne(filter).exec();
+    const doc = await ChefModel.findById(uid).exec();
     const passkeyIndex = doc?.passkeys?.findIndex((pk) => pk.id === passkeyId);
     if (doc === null || passkeyIndex === undefined || passkeyIndex === -1) {
       throw new Error(`Couldn't find passkey ${passkeyId} for chef ${uid}`);
@@ -255,10 +256,12 @@ export const deletePasskey = async (uid: string, passkeyId: string) => {
     await doc?.save();
 
     console.log(`Successfully deleted passkey ${passkeyId} for chef ${uid}`);
+    return true;
   } catch (error) {
     console.error(
       `Failed to delete passkey ${passkeyId} for chef ${uid}`,
       error,
     );
+    return false;
   }
 };

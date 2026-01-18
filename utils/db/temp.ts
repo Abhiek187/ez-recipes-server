@@ -40,7 +40,7 @@ export const getPasskeyChallenge = async (
   uid: string,
 ): Promise<Temp | null> => {
   try {
-    return await TempModel.findById(uid);
+    return await TempModel.findById(uid).exec();
   } catch (error) {
     console.error(`Failed to get passkey challenge for chef ${uid}`, error);
     return null;
