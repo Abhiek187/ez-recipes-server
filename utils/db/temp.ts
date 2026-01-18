@@ -11,7 +11,7 @@ import Temp from "../../types/client/Temp";
 export const savePaskeyChallenge = async (
   uid: string,
   challenge: string,
-  webAuthnUserID?: string,
+  webAuthnUserID?: string
 ) => {
   const challengeData: Partial<Temp> = {
     _id: uid,
@@ -22,7 +22,7 @@ export const savePaskeyChallenge = async (
   try {
     const doc = await TempModel.create(challengeData);
     console.log(
-      `Successfully saved passkey challenge for chef ${doc._id} to the DB`,
+      `Successfully saved passkey challenge for chef ${doc._id} to the DB`
     );
   } catch (error) {
     console.error(`Failed to save passkey challenge for chef ${uid}:`, error);
@@ -37,7 +37,7 @@ export const savePaskeyChallenge = async (
  * @returns all the challenge data associated with the chef, or `null` if it couldn't be found
  */
 export const getPasskeyChallenge = async (
-  uid: string,
+  uid: string
 ): Promise<Temp | null> => {
   try {
     return await TempModel.findById(uid).exec();

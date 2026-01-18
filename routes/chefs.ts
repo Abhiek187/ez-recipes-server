@@ -47,7 +47,7 @@ const checkValidations = (req: Request, res: express.Response) => {
 const handleFirebaseRestError = (
   prefix: string,
   error: unknown,
-  res: express.Response,
+  res: express.Response
 ) => {
   if (isAxiosError(error) && isFirebaseRestError(error.response?.data)) {
     const { code, message } = error.response.data.error;
@@ -59,7 +59,7 @@ const handleFirebaseRestError = (
     res.status(500).json({
       error: `${prefix}: ${JSON.stringify(
         error,
-        Object.getOwnPropertyNames(error),
+        Object.getOwnPropertyNames(error)
       )}`,
     });
   }
@@ -118,7 +118,7 @@ router.post(
       console.error("Error creating a new user:", error);
       res.status(500).json({ error: error.message });
     }
-  },
+  }
 );
 
 router.patch(
@@ -148,7 +148,7 @@ router.patch(
       try {
         const emailResponse = await FirebaseApi.instance.changeEmail(
           email,
-          token,
+          token
         );
         console.log(`Sending verification email to ${emailResponse.email}...`);
         res.json({
@@ -182,7 +182,7 @@ router.patch(
       try {
         const emailResponse = await FirebaseApi.instance.resetPassword(email);
         console.log(
-          `Sending password reset email to ${emailResponse.email}...`,
+          `Sending password reset email to ${emailResponse.email}...`
         );
         res.json({
           ...emailResponse,
@@ -192,7 +192,7 @@ router.patch(
         handleFirebaseRestError("Failed to reset the password", error, res);
       }
     }
-  },
+  }
 );
 
 router.delete("/", auth, async (_req, res) => {
@@ -256,7 +256,7 @@ router.post(
     } catch (error) {
       handleFirebaseRestError("Failed to login", error, res);
     }
-  },
+  }
 );
 
 router.post("/logout", auth, async (_req, res) => {
@@ -292,7 +292,7 @@ router.get(
     } catch (error) {
       handleFirebaseRestError("Failed to get all the OAuth URLs", error, res);
     }
-  },
+  }
 );
 
 router.post(
@@ -320,7 +320,7 @@ router.post(
       oauthToken = await FirebaseApi.instance.getOAuthToken(
         providerId,
         code,
-        redirectUrl,
+        redirectUrl
       );
     } catch (error) {
       if (!isAxiosError(error)) {
@@ -371,7 +371,7 @@ router.post(
       } = await FirebaseApi.instance.linkOAuthProvider(
         providerId,
         oauthToken,
-        token,
+        token
       );
 
       if (errorMessage !== undefined) {
@@ -384,7 +384,7 @@ router.post(
         // The email must be verified using certain providers
         res.status(400).json({
           error: `${errorPrefix}: Email not verified, please sign in using the following providers: ${verifiedProvider.join(
-            ", ",
+            ", "
           )}`,
         });
         return;
@@ -416,7 +416,7 @@ router.post(
     } catch (error) {
       handleFirebaseRestError(errorPrefix, error, res);
     }
-  },
+  }
 );
 
 router.delete(
@@ -443,10 +443,10 @@ router.delete(
       handleFirebaseRestError(
         `Failed to unlink OAuth provider ${providerId}`,
         error,
-        res,
+        res
       );
     }
-  },
+  }
 );
 
 router.get("/passkey/create", auth, async (_req, res) => {
@@ -477,7 +477,7 @@ router.get("/passkey/create", auth, async (_req, res) => {
   await savePaskeyChallenge(
     uid,
     createOptions.challenge,
-    createOptions.user.id,
+    createOptions.user.id
   );
   res.json(createOptions);
 });
@@ -637,7 +637,7 @@ router.delete(
         .status(500)
         .json({ error: `Error deleting passkey: ${error.message}` });
     }
-  },
+  }
 );
 
 export default router;

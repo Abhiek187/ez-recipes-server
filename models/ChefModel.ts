@@ -22,7 +22,7 @@ const PasskeySchema = new Schema<Chef["passkeys"][number]>(
     iconLight: { type: String },
     iconDark: { type: String },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const ChefSchema = new Schema<Chef>({

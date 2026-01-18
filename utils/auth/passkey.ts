@@ -25,7 +25,7 @@ let aaguidCache: PasskeyAAGUIDResponse = {};
  * @returns user-friendly data about the passkey, or `undefined` if no info could be found
  */
 export const getPasskeyInfo = async (
-  aaguid: string,
+  aaguid: string
 ): Promise<
   | {
       name: string;

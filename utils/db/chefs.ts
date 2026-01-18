@@ -55,7 +55,7 @@ export const getChef = async (uid: string): Promise<Chef | null> => {
 export const updateChef = async (
   uid: string,
   id: string,
-  body: RecipePatch,
+  body: RecipePatch
 ): Promise<
   [number | undefined, { code: number; message: string } | undefined]
 > => {
@@ -178,12 +178,12 @@ export const savePasskey = async (uid: string, passkey: Passkey) => {
     const result = await ChefModel.updateOne(filter, update).exec();
     console.log(
       `Successfully added passkey ${passkey.id} for chef ${uid}:`,
-      result,
+      result
     );
   } catch (error) {
     console.error(
       `Failed to save the passkey ${passkey.id} for chef ${uid}:`,
-      error,
+      error
     );
   }
 };
@@ -212,7 +212,7 @@ export const getPasskeys = async (uid: string): Promise<Passkey[]> => {
 export const updatePasskeyCounter = async (
   uid: string,
   passkeyId: string,
-  newCount: number,
+  newCount: number
 ) => {
   try {
     const doc = await ChefModel.findById(uid).exec();
@@ -226,12 +226,12 @@ export const updatePasskeyCounter = async (
     await doc?.save();
 
     console.log(
-      `Successfully updated the passkey counter for chef ${uid}, ${passkeyId} --> ${newCount}`,
+      `Successfully updated the passkey counter for chef ${uid}, ${passkeyId} --> ${newCount}`
     );
   } catch (error) {
     console.error(
       `Failed to update the passkey counter for chef ${uid}, ${passkeyId}`,
-      error,
+      error
     );
   }
 };
@@ -244,7 +244,7 @@ export const updatePasskeyCounter = async (
  */
 export const deletePasskey = async (
   uid: string,
-  passkeyId: string,
+  passkeyId: string
 ): Promise<boolean> => {
   try {
     const doc = await ChefModel.findById(uid).exec();
@@ -261,7 +261,7 @@ export const deletePasskey = async (
   } catch (error) {
     console.error(
       `Failed to delete passkey ${passkeyId} for chef ${uid}`,
-      error,
+      error
     );
     return false;
   }
