@@ -5,7 +5,14 @@ const PasskeySchema = new Schema<Chef["passkeys"][number]>(
   {
     webAuthnUserID: { type: String },
     id: { type: String, required: true },
-    publicKey: { type: Buffer, required: true },
+    publicKey: {
+      type: Buffer,
+      required: true,
+      // Automatically convert between Uint8Arrays and Buffers in MongoDB
+      set: (value: Uint8Array | Buffer) =>
+        value instanceof Uint8Array ? Buffer.from(value) : value,
+      get: (value: Buffer) => new Uint8Array(value),
+    },
     counter: { type: Number, required: true },
     transports: { type: [String] },
     deviceType: { type: String, required: true },
