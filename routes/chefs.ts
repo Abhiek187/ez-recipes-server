@@ -457,7 +457,7 @@ router.get("/passkey/create", auth, async (_req, res) => {
   // Used in navigator.credentials.create:
   // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
   const createOptions = await generateRegistrationOptions({
-    // RP = Relying Party (the server)
+    // RP = Relying Party (the web app)
     rpName: RelyingParty.NAME,
     rpID: RelyingParty.ID,
     userName: uid,
