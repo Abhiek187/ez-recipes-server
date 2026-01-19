@@ -83,7 +83,12 @@ router.get("/", auth, async (_req, res) => {
     res.status(200).json({
       uid,
       ...filterObject(userRecord, ["email", "emailVerified", "providerData"]),
-      ...filterObject(chef, ["ratings", "recentRecipes", "favoriteRecipes"]),
+      ...filterObject(chef, [
+        "ratings",
+        "recentRecipes",
+        "favoriteRecipes",
+        "passkeys",
+      ]),
       token,
     });
   } catch (err) {
