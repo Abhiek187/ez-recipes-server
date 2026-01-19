@@ -549,7 +549,6 @@ router.post(
     .withMessage("Invalid email"),
   auth,
   async (req, res) => {
-    // A token is required when registering a new passkey
     checkValidations(req, res);
     if (res.writableEnded) return;
 
@@ -558,7 +557,8 @@ router.post(
     const isNewPasskey = inputUid !== undefined;
     let uid: string;
 
-    if (!isNewPasskey) {
+    // A token is required when registering a new passkey
+    if (isNewPasskey) {
       uid = inputUid;
     } else if (email === undefined) {
       res.status(400).json({ error: "Missing email" });
@@ -669,6 +669,7 @@ router.post(
 
         // Create a custom token that can be exchanged for a Firebase token
         const idToken = await FirebaseAdmin.instance.getIdToken(uid);
+        res.cookie(COOKIES.ID_TOKEN, idToken, COOKIE_2_WEEKS);
         res.json({ token: idToken });
       }
     } catch (err) {

@@ -44,7 +44,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
   const isOauthLogin =
     req.originalUrl === "/api/chefs/oauth" && req.method === "POST";
   const isPasskeyLogin =
-    req.originalUrl === "/api/chefs/passkey/verify" &&
+    req.originalUrl.startsWith("/api/chefs/passkey/verify") &&
     req.method === "POST" &&
     typeof req.query?.email === "string";
 
