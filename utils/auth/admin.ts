@@ -86,14 +86,25 @@ export default class FirebaseAdmin {
   }
 
   /**
-   * Get the user's profile
+   * Get the user's profile by their UID
    * @param uid the unique ID of the user
    * @throws `FirebaseAuthError` if an error occurred
    * @returns an object containing user data
    */
-  async getUser(uid: string): Promise<UserRecord> {
+  async getUserByUID(uid: string): Promise<UserRecord> {
     const auth = getAuth();
     return await auth.getUser(uid);
+  }
+
+  /**
+   * Get the user's profile by their email
+   * @param email the user's email
+   * @throws `FirebaseAuthError` if an error occurred
+   * @returns an object containing user data
+   */
+  async getUserByEmail(email: string): Promise<UserRecord> {
+    const auth = getAuth();
+    return await auth.getUserByEmail(email);
   }
 
   /**

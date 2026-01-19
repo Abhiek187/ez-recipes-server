@@ -79,7 +79,7 @@ router.get("/", auth, async (_req, res) => {
   }
 
   try {
-    const userRecord = await FirebaseAdmin.instance.getUser(uid);
+    const userRecord = await FirebaseAdmin.instance.getUserByUID(uid);
     res.status(200).json({
       uid,
       ...filterObject(userRecord, ["email", "emailVerified", "providerData"]),
@@ -245,7 +245,8 @@ router.post(
       const { localId, idToken, refreshToken } =
         await FirebaseApi.instance.login(email, password);
       await saveRefreshToken(localId, refreshToken);
-      const { emailVerified } = await FirebaseAdmin.instance.getUser(localId);
+      const { emailVerified } =
+        await FirebaseAdmin.instance.getUserByUID(localId);
 
       res.cookie(COOKIES.ID_TOKEN, idToken, COOKIE_2_WEEKS);
       res.json({
@@ -453,6 +454,24 @@ router.get("/passkey/create", auth, async (_req, res) => {
   // Get all the options needed to create a new passkey
   const { uid } = res.locals;
   const chef = await getChef(uid);
+  let email: string;
+
+  // Passkeys are identified by email, not by UID
+  try {
+    const userRecord = await FirebaseAdmin.instance.getUserByUID(uid);
+
+    if (userRecord.email === undefined) {
+      res.status(404).json({ error: "No email associated with this account" });
+      return;
+    } else {
+      email = userRecord.email;
+    }
+  } catch (err) {
+    const error = err as FirebaseAuthError;
+    console.error(`Error getting the user's email for UID ${uid}:`, error);
+    res.status(500).json({ error: error.message });
+    return;
+  }
 
   // Used in navigator.credentials.create:
   // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
@@ -460,7 +479,7 @@ router.get("/passkey/create", auth, async (_req, res) => {
     // RP = Relying Party (the web app)
     rpName: RelyingParty.NAME,
     rpID: RelyingParty.ID,
-    userName: uid,
+    userName: email,
     // No need to get specific information about the authenticator (protects users' privacy)
     attestationType: "none",
     // Prevent users from re-registering existing authenticators
@@ -482,29 +501,47 @@ router.get("/passkey/create", auth, async (_req, res) => {
   res.json(createOptions);
 });
 
-router.get("/passkey/auth", auth, async (_req, res) => {
-  // Get all the options needed to use an existing passkey
-  const { uid } = res.locals;
-  const chef = await getChef(uid);
+router.get(
+  "/passkey/auth",
+  query("email").isEmail().withMessage("Invalid email"),
+  async (req, res) => {
+    // Get all the options needed to sign in using an existing passkey
+    checkValidations(req, res);
+    if (res.writableEnded) return;
 
-  // Used in navigator.credentials.get:
-  // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions
-  const requestOptions = await generateAuthenticationOptions({
-    rpID: RelyingParty.ID,
-    // Require users to use a previously-registered authenticator
-    allowCredentials: chef?.passkeys?.map((passkey) => ({
-      id: passkey.id,
-      transports: passkey.transports,
-    })),
-    userVerification: "required",
-  });
+    const email = req.query?.email as string;
+    let uid: string;
 
-  await savePasskeyChallenge(uid, requestOptions.challenge);
-  res.json(requestOptions);
-});
+    try {
+      ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
+    } catch (err) {
+      const error = err as FirebaseAuthError;
+      console.error(`Error getting the user's UID:`, error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    const chef = await getChef(uid);
+
+    // Used in navigator.credentials.get:
+    // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions
+    const requestOptions = await generateAuthenticationOptions({
+      rpID: RelyingParty.ID,
+      // Require users to use a previously-registered authenticator
+      allowCredentials: chef?.passkeys?.map((passkey) => ({
+        id: passkey.id,
+        transports: passkey.transports,
+      })),
+      userVerification: "required",
+    });
+
+    await savePasskeyChallenge(uid, requestOptions.challenge);
+    res.json(requestOptions);
+  }
+);
 
 router.post("/passkey/verify", auth, async (req, res) => {
-  const { uid } = res.locals;
+  const { token, uid } = res.locals;
   const passkeys = await getPasskeys(uid);
   const passkey = passkeys.find((pk) => pk.id === req.body.id);
   const challengeData = await getPasskeyChallenge(uid);
@@ -560,7 +597,7 @@ router.post("/passkey/verify", auth, async (req, res) => {
       };
       await savePasskey(uid, newPasskey);
 
-      res.sendStatus(201);
+      res.json({ token });
     } else {
       // If the passkey exists, verify the authentication signature
       const { authenticationInfo, verified } =
@@ -596,7 +633,9 @@ router.post("/passkey/verify", auth, async (req, res) => {
       const { newCounter } = authenticationInfo;
       await updatePasskeyCounter(uid, req.body.id, newCounter);
 
-      res.sendStatus(204);
+      // Create a custom token that can be exchanged for a Firebase token
+      const idToken = await FirebaseAdmin.instance.getIdToken(uid);
+      res.json({ token: idToken });
     }
   } catch (err) {
     const error = err as Error;
