@@ -8,7 +8,7 @@ import Temp from "../../types/client/Temp";
  * @param webAuthnUserID the randomly generated user ID for the passkey,
  * only required for registration
  */
-export const savePaskeyChallenge = async (
+export const savePasskeyChallenge = async (
   uid: string,
   challenge: string,
   webAuthnUserID?: string

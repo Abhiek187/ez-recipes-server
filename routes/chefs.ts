@@ -23,7 +23,7 @@ import {
   getChef,
   getPasskeyChallenge,
   getPasskeys,
-  savePaskeyChallenge,
+  savePasskeyChallenge,
   savePasskey,
   saveRefreshToken,
   updatePasskeyCounter,
@@ -474,7 +474,7 @@ router.get("/passkey/create", auth, async (_req, res) => {
   });
 
   // Save the challenge and user ID for verification
-  await savePaskeyChallenge(
+  await savePasskeyChallenge(
     uid,
     createOptions.challenge,
     createOptions.user.id
@@ -499,7 +499,7 @@ router.get("/passkey/auth", auth, async (_req, res) => {
     userVerification: "required",
   });
 
-  await savePaskeyChallenge(uid, requestOptions.challenge);
+  await savePasskeyChallenge(uid, requestOptions.challenge);
   res.json(requestOptions);
 });
 
