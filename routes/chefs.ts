@@ -540,111 +540,146 @@ router.get(
   }
 );
 
-router.post("/passkey/verify", auth, async (req, res) => {
-  const { token, uid } = res.locals;
-  const passkeys = await getPasskeys(uid);
-  const passkey = passkeys.find((pk) => pk.id === req.body.id);
-  const challengeData = await getPasskeyChallenge(uid);
+router.post(
+  "/passkey/verify",
+  // The body is reserved for the credential data
+  query("email")
+    .optional({ values: "falsy" })
+    .isEmail()
+    .withMessage("Invalid email"),
+  auth,
+  async (req, res) => {
+    // A token is required when registering a new passkey
+    checkValidations(req, res);
+    if (res.writableEnded) return;
 
-  if (challengeData === null || challengeData.challenge === undefined) {
-    res.status(404).json({
-      error: "Passkey challenge has expired. Please try signing in again.",
-    });
-    return;
-  }
+    const email = req.query?.email as string | undefined;
+    const { token, uid: inputUid } = res.locals;
+    const isNewPasskey = inputUid !== undefined;
+    let uid: string;
 
-  try {
-    if (passkey === undefined) {
-      // If this is a new passkey, verify the registration signature
-      const { registrationInfo, verified } = await verifyRegistrationResponse({
-        /**
-         * req.body:
-         * {
-         *   id: Base64URLString;
-         *   rawId: Base64URLString;
-         *   response: AuthenticatorAttestationResponseJSON;
-         *   authenticatorAttachment?: AuthenticatorAttachment;
-         *   clientExtensionResults: AuthenticationExtensionsClientOutputs;
-         *   type: PublicKeyCredentialType;
-         * }
-         */
-        response: req.body,
-        expectedChallenge: challengeData.challenge,
-        expectedOrigin: RelyingParty.ORIGIN,
-        expectedRPID: RelyingParty.ID,
-      });
-
-      if (!verified) {
-        res.status(401).json({ error: "Unable to verify the passkey" });
-        return;
-      }
-
-      const { aaguid, credential, credentialDeviceType, credentialBackedUp } =
-        registrationInfo;
-      const passkeyInfo = await getPasskeyInfo(aaguid);
-      const newPasskey: Passkey = {
-        webAuthnUserID: challengeData.webAuthnUserID,
-        id: credential.id,
-        publicKey: credential.publicKey,
-        counter: credential.counter,
-        transports: credential.transports,
-        deviceType: credentialDeviceType,
-        backedUp: credentialBackedUp,
-        name: passkeyInfo?.name ?? "Unknown",
-        lastUsed: new Date(),
-        iconLight: passkeyInfo?.iconLight,
-        iconDark: passkeyInfo?.iconDark,
-      };
-      await savePasskey(uid, newPasskey);
-
-      res.json({ token });
+    if (!isNewPasskey) {
+      uid = inputUid;
+    } else if (email === undefined) {
+      res.status(400).json({ error: "Missing email" });
+      return;
     } else {
-      // If the passkey exists, verify the authentication signature
-      const { authenticationInfo, verified } =
-        await verifyAuthenticationResponse({
-          /**
-           * req.body:
-           * {
-           *   id: Base64URLString;
-           *   rawId: Base64URLString;
-           *   response: AuthenticatorAssertionResponseJSON; // main difference
-           *   authenticatorAttachment?: AuthenticatorAttachment;
-           *   clientExtensionResults: AuthenticationExtensionsClientOutputs;
-           *   type: PublicKeyCredentialType;
-           * }
-           */
-          response: req.body,
-          expectedChallenge: challengeData.challenge,
-          expectedOrigin: RelyingParty.ORIGIN,
-          expectedRPID: RelyingParty.ID,
-          credential: {
-            id: passkey.id,
-            publicKey: passkey.publicKey,
-            counter: passkey.counter,
-            transports: passkey.transports,
-          },
-        });
-
-      if (!verified) {
-        res.status(401).json({ error: "Unable to verify the passkey" });
-        return;
-      }
-
-      const { newCounter } = authenticationInfo;
-      await updatePasskeyCounter(uid, req.body.id, newCounter);
-
-      // Create a custom token that can be exchanged for a Firebase token
-      const idToken = await FirebaseAdmin.instance.getIdToken(uid);
-      res.json({ token: idToken });
+      ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
     }
-  } catch (err) {
-    const error = err as Error;
-    console.error("Failed to verify passkey:", error);
-    res
-      .status(400)
-      .json({ error: `Failed to verify passkey: ${error.message}` });
+
+    const challengeData = await getPasskeyChallenge(uid);
+
+    if (challengeData === null || challengeData.challenge === undefined) {
+      res.status(404).json({
+        error: "Passkey challenge has expired. Please try signing in again.",
+      });
+      return;
+    }
+
+    try {
+      if (isNewPasskey) {
+        // If this is a new passkey, verify the registration signature
+        const { registrationInfo, verified } = await verifyRegistrationResponse(
+          {
+            /**
+             * req.body:
+             * {
+             *   id: Base64URLString;
+             *   rawId: Base64URLString;
+             *   response: AuthenticatorAttestationResponseJSON;
+             *   authenticatorAttachment?: AuthenticatorAttachment;
+             *   clientExtensionResults: AuthenticationExtensionsClientOutputs;
+             *   type: PublicKeyCredentialType;
+             * }
+             */
+            response: req.body,
+            expectedChallenge: challengeData.challenge,
+            expectedOrigin: RelyingParty.ORIGIN,
+            expectedRPID: RelyingParty.ID,
+          }
+        );
+
+        if (!verified) {
+          res.status(401).json({ error: "Unable to verify the passkey" });
+          return;
+        }
+
+        const { aaguid, credential, credentialDeviceType, credentialBackedUp } =
+          registrationInfo;
+        const passkeyInfo = await getPasskeyInfo(aaguid);
+        const newPasskey: Passkey = {
+          webAuthnUserID: challengeData.webAuthnUserID,
+          id: credential.id,
+          publicKey: credential.publicKey,
+          counter: credential.counter,
+          transports: credential.transports,
+          deviceType: credentialDeviceType,
+          backedUp: credentialBackedUp,
+          name: passkeyInfo?.name ?? "Unknown",
+          lastUsed: new Date(),
+          iconLight: passkeyInfo?.iconLight,
+          iconDark: passkeyInfo?.iconDark,
+        };
+        await savePasskey(uid, newPasskey);
+
+        res.json({ token });
+      } else {
+        // If the passkey exists, verify the authentication signature
+        const inputPasskeyId = req.body.id;
+        const passkeys = await getPasskeys(uid);
+        const passkey = passkeys.find((pk) => pk.id === inputPasskeyId);
+
+        if (passkey === undefined) {
+          res.status(401).json({ error: "Unknown passkey provided" });
+          return;
+        }
+
+        const { authenticationInfo, verified } =
+          await verifyAuthenticationResponse({
+            /**
+             * req.body:
+             * {
+             *   id: Base64URLString;
+             *   rawId: Base64URLString;
+             *   response: AuthenticatorAssertionResponseJSON; // main difference
+             *   authenticatorAttachment?: AuthenticatorAttachment;
+             *   clientExtensionResults: AuthenticationExtensionsClientOutputs;
+             *   type: PublicKeyCredentialType;
+             * }
+             */
+            response: req.body,
+            expectedChallenge: challengeData.challenge,
+            expectedOrigin: RelyingParty.ORIGIN,
+            expectedRPID: RelyingParty.ID,
+            credential: {
+              id: passkey.id,
+              publicKey: passkey.publicKey,
+              counter: passkey.counter,
+              transports: passkey.transports,
+            },
+          });
+
+        if (!verified) {
+          res.status(401).json({ error: "Invalid passkey provided" });
+          return;
+        }
+
+        const { credentialID, newCounter } = authenticationInfo;
+        await updatePasskeyCounter(uid, credentialID, newCounter);
+
+        // Create a custom token that can be exchanged for a Firebase token
+        const idToken = await FirebaseAdmin.instance.getIdToken(uid);
+        res.json({ token: idToken });
+      }
+    } catch (err) {
+      const error = err as Error;
+      console.error("Failed to verify passkey:", error);
+      res
+        .status(400)
+        .json({ error: `Failed to verify passkey: ${error.message}` });
+    }
   }
-});
+);
 
 router.delete(
   "/passkey",
