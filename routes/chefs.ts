@@ -458,7 +458,6 @@ router.delete(
 router.get("/passkey/create", auth, async (_req, res) => {
   // Get all the options needed to create a new passkey
   const { uid } = res.locals;
-  const chef = await getChef(uid);
   let email: string;
 
   // Passkeys are identified by email, not by UID
@@ -477,6 +476,8 @@ router.get("/passkey/create", auth, async (_req, res) => {
     res.status(500).json({ error: error.message });
     return;
   }
+
+  const chef = await getChef(uid);
 
   // Used in navigator.credentials.create:
   // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions

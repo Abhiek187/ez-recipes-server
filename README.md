@@ -25,7 +25,7 @@ By delegating Firebase to the server-side, these settings can be synced across a
 - RESTful APIs
 - MongoDB to store data, query data, and do full-text search
 - Pagination to reduce bandwidth and optimize query performance
-- Firebase for user authentication with OAuth providers
+- Firebase for user authentication with passwords, OAuth providers, and passkeys
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
@@ -150,6 +150,81 @@ Server->>MongoDB: Save refresh token
 Server-->>App: 200 OK
 App->>App: Encrypt/save ID token
 App-->>User: Show authenticated profile page
+```
+
+### Login with Passkey
+
+```mermaid
+sequenceDiagram
+
+actor User
+participant User
+participant App
+participant Authenticator
+participant Server
+participant Firebase
+participant MongoDB
+
+User->>User: Open login form
+User->>App: Enter email
+App->>Server: GET /api/chefs/passkey/auth
+Server->>Firebase: Get UID from email
+Server->>MongoDB: Get chef's passkeys
+Server->>Server: Generate authentication challenge
+Server->>MongoDB: Temporarily save challenge
+Server-->>App: 200 OK
+App->>Authenticator: Prompt user with existing passkeys
+User->>Authenticator: Use passkey
+Authenticator->>App: Sign challenge using private key
+App->>Server: POST /api/chefs/passkey/verify
+Server->>Firebase: Get UID from email
+Server->>MongoDB: Get passkey challenge
+MongoDB->>MongoDB: Discard passkey challenge after 1 minute
+Server->>MongoDB: Get chef's passkey
+Server->>Server: Verify authentication response
+Server->>MongoDB: Update passkey info
+Server->>Firebase: Create custom token
+Server->>Firebase: Exchange custom token for ID token
+Server->>MongoDB: Save refresh token
+Server-->>App: 200 OK
+App->>App: Encrypt/save ID token
+App-->>User: Show authenticated profile page
+```
+
+### Register New Passkey
+
+```mermaid
+sequenceDiagram
+
+actor User
+participant User
+participant App
+participant Authenticator
+participant Server
+participant Firebase
+participant MongoDB
+participant FIDO MDS
+
+User->>User: Open profile
+User->>App: Create passkey
+App->>Server: GET /api/chefs/passkey/create
+Server->>Server: Validate/refresh token
+Server->>Firebase: Get email from UID
+Server->>MongoDB: Get chef's passkeys
+Server->>Server: Generate registration challenge
+Server->>MongoDB: Temporarily save challenge and user ID
+Server-->>App: 200 OK
+App->>Authenticator: Prompt user to select a new passkey
+User->>Authenticator: Use passkey
+Authenticator->>App: Generate public-private key pair
+App->>Server: POST /api/chefs/passkey/verify
+Server->>Server: Validate/refresh token
+Server->>MongoDB: Get passkey challenge and user ID
+MongoDB->>MongoDB: Discard passkey challenge after 1 minute
+Server->>Server: Verify registration response
+Server->>FIDO MDS: Get passkey info from AAGUID
+Server->>MongoDB: Save passkey
+Server-->>App: 200 OK
 ```
 
 ### Logout
