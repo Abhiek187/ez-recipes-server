@@ -370,6 +370,97 @@ paths:
                 missingToken:
                   $ref: "#/components/examples/missingToken"
 
+  /passkey/create:
+    get:
+      summary: Generate a challenge to create a new passkey
+      tags:
+        - chefs
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully generated the config to create a passkey
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/passkeyCreationOptions"
+
+  /passkey/auth:
+    get:
+      summary: Generate a challenge to login with a passkey
+      tags:
+        - chefs
+      parameters:
+        - in: query
+          name: email
+          required: true
+          description: The chef's email
+          schema:
+            type: string
+            format: email
+      responses:
+        "200":
+          description: Successfully generated the config to get a passkey
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/passkeyRequestOptions"
+
+  /passkey/verify:
+    post:
+      summary: Validate a signed or registered passkey
+      tags:
+        - chefs
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: email
+          description: The chef's email, required if signing in
+          schema:
+            type: string
+            format: email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/passkeyClientResponse"
+      responses:
+        "200":
+          description: Successfully signed in or created a passkey
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: "#/components/schemas/idTokenCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/token"
+
+  /passkey:
+    delete:
+      summary: Remove a passkey
+      tags:
+        - chefs
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: id
+          required: true
+          description: The ID of the passkey
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully deleted the passkey
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/token"
+
 components:
   schemas:
     userProfile:
@@ -389,6 +480,7 @@ components:
           type: array
           items:
             type: object
+            required: ["email", "providerId", "uid"]
             properties:
               displayName:
                 type: string
@@ -408,10 +500,61 @@ components:
               uid:
                 type: string
                 description: The user identifier for the linked provider
+        passkeys:
+          type: array
+          items:
+            type: object
             required:
-              - email
-              - providerId
-              - uid
+              [
+                "id",
+                "publicKey",
+                "counter",
+                "deviceType",
+                "backedUp",
+                "name",
+                "lastUsed",
+              ]
+            properties:
+              webAuthnUserID:
+                type: string
+                description: A unique user ID associated with the passkey
+              id:
+                type: string
+                description: A unique ID for the passkey
+              publicKey:
+                type: string
+                format: byte # base64
+                description: The passkey's public key in base64
+              counter:
+                type: number
+                description: The number of times the authenticator has been used
+              transports:
+                type: array
+                items:
+                  type: string
+                  description: >-
+                    How a passkey can be used, see:
+                    https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse/getTransports#return_value
+              deviceType:
+                type: string
+                enum: ["singleDevice", "multiDevice"]
+                description: Whether the passkey can be shared across devices
+              backedUp:
+                type: boolean
+                description: Whether the passkey can be backed up on other devices
+              name:
+                type: string
+                description: A user-friendly name for the passkey
+              lastUsed:
+                type: string
+                format: date-time
+                description: When the passkey was last used
+              iconLight:
+                type: string
+                description: The base64 image source for the passkey in light mode
+              iconDark:
+                type: string
+                description: The base64 image source for the passkey in dark mode
         ratings:
           type: object
           description: >-
@@ -524,6 +667,200 @@ components:
         redirectUrl:
           type: string
           description: The same redirect URL specified when retrieving all the auth URLs
+    passkeyCreationOptions:
+      type: object
+      description: See https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
+      properties:
+        challenge:
+          type: string
+          format: byte
+          description: A randomly generated passkey challenge
+        rp:
+          type: object
+          properties:
+            name:
+              type: string
+              description: The display name for the Relying Party
+            id:
+              type: string
+              description: The domain of the Relying Party
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: byte
+              description: A unique ID generated for the user
+            name:
+              type: string
+              description: The username
+            displayName:
+              type: string
+              description: A user-friendly name for the user
+        pubKeyCredParams:
+          type: array
+          items:
+            type: object
+            properties:
+              alg:
+                type: number
+                description: A COSE Algorithm Identifier for the public key
+              type:
+                type: string
+                enum: ["public-key"]
+        timeout:
+          type: number
+          description: The number of milliseconds before the challenge times out
+        attestation:
+          type: string
+          description: The type of attestation requested by the server
+        excludeCredentials:
+          type: array
+          description: Existing passkeys for the chef that shouldn't be prompted for registration
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The passkey's unique ID
+              transports:
+                type: array
+                items:
+                  type: string
+                  description: >-
+                    How a passkey can be used, see:
+                    https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse/getTransports#return_value
+              type:
+                type: string
+                enum: ["public-key"]
+        authenticatorSelection:
+          type: object
+          description: >-
+            Filters for the authenticators that can be used to create a passkey,
+            see: https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions#authenticatorselection
+          properties:
+            userVerification:
+              type: string
+              description: Whether the user is required to authenticate with their passkey
+        extensions:
+          type: object
+          description: Passkey extensions used
+          additionalProperties:
+            type: boolean
+        hints:
+          type: array
+          items:
+            type: string
+            description: How the client should ask for a passkey
+    passkeyRequestOptions:
+      type: object
+      description: See https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions
+      properties:
+        rpId:
+          type: string
+          description: The domain of the Relying Party
+        challenge:
+          type: string
+          format: byte
+          description: A randomly generated passkey challenge
+        allowedCredentials:
+          type: array
+          description: Existing passkeys for the chef that can only be prompted for authentication
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The passkey's unique ID
+              transports:
+                type: array
+                items:
+                  type: string
+                  description: Sync info about the passkey
+              type:
+                type: string
+                enum: ["public-key"]
+        timeout:
+          type: number
+          description: The number of milliseconds before the challenge times out
+        userVerification:
+          type: string
+          description: Whether the user is required to authenticate with their passkey
+    passkeyClientResponse:
+      type: object
+      description: See https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential
+      properties:
+        authenticatorAttachment:
+          type: string
+          required: true
+          description: Whether the authenticator is tied to a platform or roaming (cross-platform)
+        clientExtensionResults:
+          type: object
+          description: Extension results requested by the server
+          additionalProperties:
+            type: object
+        id:
+          type: string
+          format: byte
+          required: true
+          description: A base64 unique ID for the passkey
+        rawId:
+          type: string
+          format: binary
+          required: true
+          description: A binary unique ID for the passkey
+        response:
+          type: object
+          required: true
+          description: |
+            If registering a passkey:
+              - attestationObject, authenticatorData, clientDataJSON, publicKey, publicKeyAlgorithm, and transports are required
+              - See https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse
+
+            If signing a passkey:
+              - authenticatorData, clientDataJSON, signature, and userHandle are required
+              - See https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAssertionResponse
+          properties:
+            attestationObject:
+              type: string
+              format: byte
+              description: The authenticator data and attestation statement
+            authenticatorData:
+              type: string
+              format: byte
+              required: true
+              description: Details about the authenticator used
+            clientDataJSON:
+              type: string
+              format: byte
+              required: true
+              description: The client data when requesting a passkey
+            publicKey:
+              type: string
+              format: byte
+              description: The public key generated for the passkey
+            publicKeyAlgorithm:
+              type: number
+              description: The COSE Algorithm Identifier used to generate the passkey
+            signature:
+              type: string
+              format: byte
+              description: A signed response using the passkey's private key
+            transports:
+              type: array
+              items:
+                type: string
+                description: >-
+                  How a passkey can be used, see:
+                  https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse/getTransports#return_value
+            userHandle:
+              type: string
+              format: byte
+              description: The unique user ID when the passkey was registered
+        type:
+          type: string
+          required: true
+          enum: ["public-key"]
 
   examples:
     invalidEmail:

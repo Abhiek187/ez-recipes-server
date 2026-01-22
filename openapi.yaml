@@ -39,6 +39,14 @@ paths:
     $ref: "./docs/chefs.yaml#/paths/~1logout"
   /api/chefs/oauth:
     $ref: "./docs/chefs.yaml#/paths/~1oauth"
+  /api/chefs/passkey/create:
+    $ref: "./docs/chefs.yaml#/paths/~1passkey~1create"
+  /api/chefs/passkey/auth:
+    $ref: "./docs/chefs.yaml#/paths/~1passkey~1auth"
+  /api/chefs/passkey/verify:
+    $ref: "./docs/chefs.yaml#/paths/~1passkey~1verify"
+  /api/chefs/passkey:
+    $ref: "./docs/chefs.yaml#/paths/~1passkey"
 
 # Components to be shown on the main page
 components:
@@ -95,3 +103,9 @@ components:
       $ref: "./docs/chefs.yaml#/components/schemas/authUrls"
     oauthCredential:
       $ref: "./docs/chefs.yaml#/components/schemas/oauthCredential"
+    passkeyCreationOptions:
+      $ref: "./docs/chefs.yaml#/components/schemas/passkeyCreationOptions"
+    passkeyRequestOptions:
+      $ref: "./docs/chefs.yaml#/components/schemas/passkeyRequestOptions"
+    passkeyClientResponse:
+      $ref: "./docs/chefs.yaml#/components/schemas/passkeyClientResponse"
