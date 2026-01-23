@@ -31,3 +31,4 @@ export const disconnectFromMongoDB = async () => {
 
 export * from "./recipes";
 export * from "./chefs";
+export * from "./temp";

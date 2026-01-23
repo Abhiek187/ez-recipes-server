@@ -43,10 +43,19 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     typeof req.body?.view === "boolean";
   const isOauthLogin =
     req.originalUrl === "/api/chefs/oauth" && req.method === "POST";
+  const isPasskeyLogin =
+    req.originalUrl.startsWith("/api/chefs/passkey/verify") &&
+    req.method === "POST" &&
+    typeof req.query?.email === "string";
 
   if (token === undefined) {
     // Skip validation for certain requests
-    if (isResettingPassword || isViewingRecipe || isOauthLogin) {
+    if (
+      isResettingPassword ||
+      isViewingRecipe ||
+      isOauthLogin ||
+      isPasskeyLogin
+    ) {
       next();
     } else {
       res
