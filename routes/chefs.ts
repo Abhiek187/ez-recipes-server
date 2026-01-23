@@ -479,32 +479,40 @@ router.get("/passkey/create", auth, async (_req, res) => {
 
   const chef = await getChef(uid);
 
-  // Used in navigator.credentials.create:
-  // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
-  const createOptions = await generateRegistrationOptions({
-    // RP = Relying Party (the web app)
-    rpName: RelyingParty.NAME,
-    rpID: RelyingParty.ID,
-    userName: email,
-    // No need to get specific information about the authenticator (protects users' privacy)
-    attestationType: "none",
-    // Prevent users from re-registering existing authenticators
-    excludeCredentials: chef?.passkeys?.map((passkey) => ({
-      id: passkey.id,
-      transports: passkey.transports,
-    })),
-    authenticatorSelection: {
-      userVerification: "required", // the user must authenticate with their passkey
-    },
-  });
+  try {
+    // Used in navigator.credentials.create:
+    // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
+    const createOptions = await generateRegistrationOptions({
+      // RP = Relying Party (the web app)
+      rpName: RelyingParty.NAME,
+      rpID: RelyingParty.ID,
+      userName: email,
+      // No need to get specific information about the authenticator (protects users' privacy)
+      attestationType: "none",
+      // Prevent users from re-registering existing authenticators
+      excludeCredentials: chef?.passkeys?.map((passkey) => ({
+        id: passkey.id,
+        transports: passkey.transports,
+      })),
+      authenticatorSelection: {
+        userVerification: "required", // the user must authenticate with their passkey
+      },
+    });
 
-  // Save the challenge and user ID for verification
-  await savePasskeyChallenge(
-    uid,
-    createOptions.challenge,
-    createOptions.user.id
-  );
-  res.json(createOptions);
+    // Save the challenge and user ID for verification
+    await savePasskeyChallenge(
+      uid,
+      createOptions.challenge,
+      createOptions.user.id
+    );
+    res.json(createOptions);
+  } catch (err) {
+    const error = err as Error;
+    console.error("Failed to generate a new passkey challenge:", error);
+    res.status(500).json({
+      error: `Failed to generate a new passkey challenge: ${error.message}`,
+    });
+  }
 });
 
 router.get(
@@ -529,20 +537,28 @@ router.get(
 
     const chef = await getChef(uid);
 
-    // Used in navigator.credentials.get:
-    // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions
-    const requestOptions = await generateAuthenticationOptions({
-      rpID: RelyingParty.ID,
-      // Require users to use a previously-registered authenticator
-      allowCredentials: chef?.passkeys?.map((passkey) => ({
-        id: passkey.id,
-        transports: passkey.transports,
-      })),
-      userVerification: "required",
-    });
+    try {
+      // Used in navigator.credentials.get:
+      // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions
+      const requestOptions = await generateAuthenticationOptions({
+        rpID: RelyingParty.ID,
+        // Require users to use a previously-registered authenticator
+        allowCredentials: chef?.passkeys?.map((passkey) => ({
+          id: passkey.id,
+          transports: passkey.transports,
+        })),
+        userVerification: "required",
+      });
 
-    await savePasskeyChallenge(uid, requestOptions.challenge);
-    res.json(requestOptions);
+      await savePasskeyChallenge(uid, requestOptions.challenge);
+      res.json(requestOptions);
+    } catch (err) {
+      const error = err as Error;
+      console.error("Failed to generate an existing passkey challenge:", error);
+      res.status(500).json({
+        error: `Failed to generate an existing passkey challenge: ${error.message}`,
+      });
+    }
   }
 );
 
@@ -577,7 +593,8 @@ router.post(
 
     if (challengeData === null || challengeData.challenge === undefined) {
       res.status(404).json({
-        error: "Passkey challenge has expired. Please try signing in again.",
+        error:
+          "The passkey challenge has expired. Please try signing in again.",
       });
       return;
     }
@@ -606,7 +623,7 @@ router.post(
         );
 
         if (!verified) {
-          res.status(401).json({ error: "Unable to verify the passkey" });
+          res.status(401).json({ error: "Unable to verify the new passkey" });
           return;
         }
 
@@ -636,7 +653,11 @@ router.post(
         const passkey = passkeys.find((pk) => pk.id === inputPasskeyId);
 
         if (passkey === undefined) {
-          res.status(401).json({ error: "Unknown passkey provided" });
+          res
+            .status(401)
+            .json({
+              error: `The passkey provided isn't associated with chef ${uid}`,
+            });
           return;
         }
 
@@ -666,7 +687,9 @@ router.post(
           });
 
         if (!verified) {
-          res.status(401).json({ error: "Invalid passkey provided" });
+          res
+            .status(401)
+            .json({ error: "Unable to verify the existing passkey" });
           return;
         }
 
@@ -680,10 +703,10 @@ router.post(
       }
     } catch (err) {
       const error = err as Error;
-      console.error("Failed to verify passkey:", error);
+      console.error("Failed to verify the passkey:", error);
       res
-        .status(400)
-        .json({ error: `Failed to verify passkey: ${error.message}` });
+        .status(500)
+        .json({ error: `Failed to verify the passkey: ${error.message}` });
     }
   }
 );
