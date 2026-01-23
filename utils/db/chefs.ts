@@ -223,14 +223,14 @@ export const updatePasskeyCounter = async (
 
     doc.passkeys[passkeyIndex].counter = newCount;
     doc.passkeys[passkeyIndex].lastUsed = new Date();
-    await doc?.save();
+    await doc.save();
 
     console.log(
       `Successfully updated the passkey counter for chef ${uid}, ${passkeyId} --> ${newCount}`
     );
   } catch (error) {
     console.error(
-      `Failed to update the passkey counter for chef ${uid}, ${passkeyId}`,
+      `Failed to update the passkey counter for chef ${uid}, ${passkeyId}:`,
       error
     );
   }
@@ -254,13 +254,15 @@ export const deletePasskey = async (
     }
 
     doc.passkeys.splice(passkeyIndex, 1);
-    await doc?.save();
+    await doc.save();
 
     console.log(`Successfully deleted passkey ${passkeyId} for chef ${uid}`);
     return true;
   } catch (error) {
     console.error(
-      `Failed to delete passkey ${passkeyId} for chef ${uid}`,
+      "Failed to delete passkey",
+      `${passkeyId} for chef`,
+      `${uid}:`,
       error
     );
     return false;

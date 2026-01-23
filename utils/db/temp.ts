@@ -42,7 +42,7 @@ export const getPasskeyChallenge = async (
   try {
     return await TempModel.findById(uid).exec();
   } catch (error) {
-    console.error(`Failed to get passkey challenge for chef ${uid}`, error);
+    console.error(`Failed to get passkey challenge for chef ${uid}:`, error);
     return null;
   }
 };
