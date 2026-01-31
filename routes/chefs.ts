@@ -531,7 +531,7 @@ router.get(
     } catch (err) {
       const error = err as FirebaseAuthError;
       console.error(`Error getting the user's UID:`, error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
       return;
     }
 
@@ -586,7 +586,14 @@ router.post(
       res.status(400).json({ error: "Missing email" });
       return;
     } else {
-      ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
+      try {
+        ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
+      } catch (err) {
+        const error = err as FirebaseAuthError;
+        console.error(`Error getting the user's UID:`, error);
+        res.status(400).json({ error: error.message });
+        return;
+      }
     }
 
     const challengeData = await getPasskeyChallenge(uid);
@@ -653,11 +660,9 @@ router.post(
         const passkey = passkeys.find((pk) => pk.id === inputPasskeyId);
 
         if (passkey === undefined) {
-          res
-            .status(401)
-            .json({
-              error: `The passkey provided isn't associated with chef ${uid}`,
-            });
+          res.status(401).json({
+            error: `The passkey provided isn't associated with chef ${uid}`,
+          });
           return;
         }
 

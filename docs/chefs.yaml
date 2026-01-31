@@ -862,7 +862,7 @@ components:
           type: string
           format: byte
           description: A randomly generated passkey challenge
-        allowedCredentials:
+        allowCredentials:
           type: array
           description: Existing passkeys for the chef that can only be prompted for authentication
           items:
