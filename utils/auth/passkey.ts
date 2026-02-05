@@ -3,9 +3,15 @@ import createAxios from "../axios";
 
 export const RelyingParty = {
   NAME: "EZ Recipes Web",
-  ID: "ez-recipes-web.onrender.com", // should be part of the origin
-  ORIGIN: "https://ez-recipes-web.onrender.com",
-} as const;
+  ID: "ez-recipes-web.onrender.com", // should be part of the web origin
+  // All the clients that support passkeys (prevents phishing)
+  ORIGINS: [
+    "https://ez-recipes-web.onrender.com",
+    "ios:bundle-id:com.abhiek.EZ-Recipes",
+    "android:apk-key-hash:8Znu2G7b5SsIboIQ0fVbK8Zofk9F6_W8NXhKqHZ83uk", // debug fingerprint
+    "android:apk-key-hash:ZuHdlL_PLiSrXs3LMCp4tCmImpkYuQOJXcX-sMsa3og", // release fingerprint
+  ],
+};
 
 // Community-driven AAGUID list, may be removed at any point:
 // https://github.com/passkeydeveloper/passkey-authenticator-aaguids/tree/main

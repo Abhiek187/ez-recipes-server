@@ -624,7 +624,7 @@ router.post(
              */
             response: req.body,
             expectedChallenge: challengeData.challenge,
-            expectedOrigin: RelyingParty.ORIGIN,
+            expectedOrigin: RelyingParty.ORIGINS,
             expectedRPID: RelyingParty.ID,
           }
         );
@@ -681,7 +681,7 @@ router.post(
              */
             response: req.body,
             expectedChallenge: challengeData.challenge,
-            expectedOrigin: RelyingParty.ORIGIN,
+            expectedOrigin: RelyingParty.ORIGINS,
             expectedRPID: RelyingParty.ID,
             credential: {
               id: passkey.id,
