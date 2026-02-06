@@ -20,7 +20,11 @@ export const savePasskeyChallenge = async (
   };
 
   try {
-    const doc = await TempModel.create(challengeData);
+    // If the user requested another challenge before the timeout, replace the existing challenge
+    const doc = await TempModel.findOneAndReplace({ _id: uid }, challengeData, {
+      upsert: true,
+      returnDocument: "after",
+    }).exec();
     console.log(
       `Successfully saved passkey challenge for chef ${doc._id} to the DB`
     );
