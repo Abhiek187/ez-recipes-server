@@ -634,9 +634,14 @@ router.post(
           return;
         }
 
-        const { aaguid, credential, credentialDeviceType, credentialBackedUp } =
-          registrationInfo;
-        const passkeyInfo = await getPasskeyInfo(aaguid);
+        const {
+          aaguid,
+          credential,
+          credentialDeviceType,
+          credentialBackedUp,
+          origin,
+        } = registrationInfo;
+        const passkeyInfo = await getPasskeyInfo(aaguid, origin);
         const newPasskey: Passkey = {
           webAuthnUserID: challengeData.webAuthnUserID,
           id: credential.id,

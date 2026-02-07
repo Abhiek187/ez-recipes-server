@@ -28,10 +28,12 @@ let aaguidCache: PasskeyAAGUIDResponse = {};
  * Fetch user-friendly information about a passkey based on its AAGUID
  * (Authenticator Attestation Global Unique Identifier)
  * @param aaguid the AAGUID of the passkey
+ * @param origin the client that used the passkey
  * @returns user-friendly data about the passkey, or `undefined` if no info could be found
  */
 export const getPasskeyInfo = async (
-  aaguid: string
+  aaguid: string,
+  origin: string
 ): Promise<
   | {
       name: string;
@@ -48,8 +50,25 @@ export const getPasskeyInfo = async (
       aaguidCache = allPasskeys.data ?? {};
       passkeyInfo = allPasskeys.data?.[aaguid];
 
+      /* If the AAGUID is all 0's, the authenticator may have intentionally hid the device info.
+       * As a fallback, create a default name based on the origin.
+       */
       if (passkeyInfo === undefined) {
-        return undefined;
+        if (origin.startsWith("https")) {
+          return {
+            name: "Web Browser",
+          };
+        } else if (origin.startsWith("ios")) {
+          return {
+            name: "iOS Device",
+          };
+        } else if (origin.startsWith("android")) {
+          return {
+            name: "Android Device",
+          };
+        } else {
+          return undefined;
+        }
       }
     }
 
