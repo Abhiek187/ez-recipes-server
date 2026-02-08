@@ -525,17 +525,23 @@ router.get(
 
     const email = req.query?.email as string;
     let uid: string;
+    // Don't give attackers hints if an account exists or has a passkey
+    const genericPasskeyError = `No passkeys are associated with chef ${email}`;
 
     try {
       ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
     } catch (err) {
       const error = err as FirebaseAuthError;
       console.error(`Error getting the user's UID:`, error);
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ error: genericPasskeyError });
       return;
     }
 
     const chef = await getChef(uid);
+    if (chef === null || chef.passkeys.length === 0) {
+      res.status(400).json({ error: genericPasskeyError });
+      return;
+    }
 
     try {
       // Used in navigator.credentials.get:
@@ -543,7 +549,7 @@ router.get(
       const requestOptions = await generateAuthenticationOptions({
         rpID: RelyingParty.ID,
         // Require users to use a previously-registered authenticator
-        allowCredentials: chef?.passkeys?.map((passkey) => ({
+        allowCredentials: chef.passkeys.map((passkey) => ({
           id: passkey.id,
           transports: passkey.transports,
         })),
@@ -666,7 +672,7 @@ router.post(
 
         if (passkey === undefined) {
           res.status(401).json({
-            error: `The passkey provided isn't associated with chef ${uid}`,
+            error: `The passkey provided isn't associated with chef ${email}`,
           });
           return;
         }
