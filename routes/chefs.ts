@@ -538,7 +538,11 @@ router.get(
     }
 
     const chef = await getChef(uid);
-    if (chef === null || chef.passkeys.length === 0) {
+    if (
+      chef === null ||
+      chef.passkeys === undefined ||
+      chef.passkeys.length === 0
+    ) {
       res.status(400).json({ error: genericPasskeyError });
       return;
     }
