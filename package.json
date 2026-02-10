@@ -36,7 +36,7 @@
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
     "@simplewebauthn/server": "^13.2.2",
-    "axios": "^1.13.4",
+    "axios": "^1.13.5",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
