@@ -495,6 +495,9 @@ router.get("/passkey/create", auth, async (_req, res) => {
         transports: passkey.transports,
       })),
       authenticatorSelection: {
+        // Android requires the passkey to be discoverable
+        requireResidentKey: true,
+        residentKey: "required",
         userVerification: "required", // the user must authenticate with their passkey
       },
     });

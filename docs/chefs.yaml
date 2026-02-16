@@ -838,6 +838,12 @@ components:
             Filters for the authenticators that can be used to create a passkey,
             see: https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions#authenticatorselection
           properties:
+            requireResidentKey:
+              type: boolean
+              description: Whether the passkey should be discoverable
+            residentKey:
+              type: string
+              description: The requirements for a discoverable passkey
             userVerification:
               type: string
               description: Whether the user is required to authenticate with their passkey
