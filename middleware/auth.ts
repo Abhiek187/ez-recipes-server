@@ -84,12 +84,14 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
         // Assuming the rest of the token is valid, and a new token will be generated anyway
         const { sub: uid } = jwtDecode(token);
         if (uid === undefined) {
-          throw new Error("UID not found in the token");
+          throw new Error("UID not found in the token", { cause: err });
         }
 
         const refreshToken = await getRefreshToken(uid);
         if (refreshToken === null) {
-          throw new Error(`Couldn't find a refresh token for user: ${uid}`);
+          throw new Error(`Couldn't find a refresh token for user: ${uid}`, {
+            cause: err,
+          });
         }
 
         // newUid should === uid, but better to be safe than sorry

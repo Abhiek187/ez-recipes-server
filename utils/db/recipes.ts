@@ -311,7 +311,7 @@ const recipeAggregateQuery = async (
 export const filterRecipes = async (
   filter: Partial<RecipeFilter>
 ): Promise<Recipe[] | string | null> => {
-  let recipes: Recipe[] | string | null = null;
+  let recipes: Recipe[] | string | null;
 
   if (filter.query !== undefined) {
     // If a full-text search is required, use an aggregation pipeline

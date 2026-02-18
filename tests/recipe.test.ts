@@ -39,7 +39,8 @@ describe(`${basePath}/random`, () => {
       searchResponse = await spoonacularApi.get<SearchResponse>(recipeUrl);
     } catch (err) {
       throw new Error(
-        `The random recipe endpoint failed instead of succeeded: ${err}`
+        `The random recipe endpoint failed instead of succeeded: ${err}`,
+        { cause: err }
       );
     }
 
@@ -91,7 +92,8 @@ describe(`${basePath}/:id`, () => {
       recipeResponse = await spoonacularApi.get<RecipeResponse>(recipeUrl);
     } catch (err) {
       throw new Error(
-        `The recipe ID endpoint failed instead of succeeded: ${err}`
+        `The recipe ID endpoint failed instead of succeeded: ${err}`,
+        { cause: err }
       );
     }
 
