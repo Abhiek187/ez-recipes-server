@@ -455,7 +455,7 @@ router.delete(
   }
 );
 
-router.get("/passkey/create", auth, async (_req, res) => {
+router.get("/passkey/create", auth, async (req, res) => {
   // Get all the options needed to create a new passkey
   const { uid } = res.locals;
   let email: string;
@@ -478,6 +478,7 @@ router.get("/passkey/create", auth, async (_req, res) => {
   }
 
   const chef = await getChef(uid);
+  const isLocal = req.headers.origin?.includes("localhost") === true;
 
   try {
     // Used in navigator.credentials.create:
@@ -485,7 +486,7 @@ router.get("/passkey/create", auth, async (_req, res) => {
     const createOptions = await generateRegistrationOptions({
       // RP = Relying Party (the web app)
       rpName: RelyingParty.NAME,
-      rpID: RelyingParty.ID,
+      rpID: isLocal ? RelyingParty.ID_LOCAL : RelyingParty.ID,
       userName: email,
       // No need to get specific information about the authenticator (protects users' privacy)
       attestationType: "none",
@@ -550,11 +551,13 @@ router.get(
       return;
     }
 
+    const isLocal = req.headers.origin?.includes("localhost") === true;
+
     try {
       // Used in navigator.credentials.get:
       // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialRequestOptions
       const requestOptions = await generateAuthenticationOptions({
-        rpID: RelyingParty.ID,
+        rpID: isLocal ? RelyingParty.ID_LOCAL : RelyingParty.ID,
         // Require users to use a previously-registered authenticator
         allowCredentials: chef.passkeys.map((passkey) => ({
           id: passkey.id,
@@ -638,7 +641,7 @@ router.post(
             response: req.body,
             expectedChallenge: challengeData.challenge,
             expectedOrigin: RelyingParty.ORIGINS,
-            expectedRPID: RelyingParty.ID,
+            expectedRPID: [RelyingParty.ID, RelyingParty.ID_LOCAL],
           }
         );
 
@@ -700,7 +703,7 @@ router.post(
             response: req.body,
             expectedChallenge: challengeData.challenge,
             expectedOrigin: RelyingParty.ORIGINS,
-            expectedRPID: RelyingParty.ID,
+            expectedRPID: [RelyingParty.ID, RelyingParty.ID_LOCAL],
             credential: {
               id: passkey.id,
               publicKey: passkey.publicKey,

@@ -4,8 +4,10 @@ import createAxios from "../axios";
 export const RelyingParty = {
   NAME: "EZ Recipes Web",
   ID: "ez-recipes-web.onrender.com", // should be part of the web origin
+  ID_LOCAL: "localhost", // required to test passkeys on localhost
   // All the clients that support passkeys (prevents phishing)
   ORIGINS: [
+    "http://localhost:4200",
     "https://ez-recipes-web.onrender.com",
     "ios:bundle-id:com.abhiek.EZ-Recipes",
     "android:apk-key-hash:8Znu2G7b5SsIboIQ0fVbK8Zofk9F6_W8NXhKqHZ83uk", // debug fingerprint
