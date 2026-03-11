@@ -35,7 +35,7 @@
   "homepage": "https://github.com/Abhiek187/ez-recipes-server#readme",
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
-    "@simplewebauthn/server": "^13.2.3",
+    "@simplewebauthn/server": "^13.3.0",
     "axios": "^1.13.6",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
