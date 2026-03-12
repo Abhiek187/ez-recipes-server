@@ -265,7 +265,7 @@ App-->>User: Show unauthenticated profile page
 ```mermaid
 flowchart LR
 
-A(Checkout repository) -->|20.x, 22.x| B(Install Node.js)
+A(Checkout repository) -->|22.x, 24.x| B(Install Node.js)
 B --> C(Install dependencies:<br>npm ci)
 C --> D(Lint app:<br>npm run lint)
 D --> E(Build app:<br>npm run build --if-present)
@@ -300,7 +300,7 @@ A(Merge PR to main) -->|Dockerfile.prod| B(Auto-Deploy to Render)
 
 subgraph B [Auto-Deploy to Render]
 direction TB
-C(Use Node 18 Alpine image) --> D(Install dependencies)
+C(Use Node 24 Alpine image) --> D(Install dependencies)
 D --> E(Compile TypeScript)
 E --> F(Start PM2 server)
 end
