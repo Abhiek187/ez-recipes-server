@@ -614,9 +614,6 @@ components:
                 "lastUsed",
               ]
             properties:
-              webAuthnUserID:
-                type: string
-                description: A unique user ID associated with the passkey
               id:
                 type: string
                 description: A unique ID for the passkey

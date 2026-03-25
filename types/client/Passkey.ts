@@ -4,7 +4,6 @@ import type {
 } from "@simplewebauthn/server";
 
 type Passkey = {
-  webAuthnUserID?: string; // user ID (different from the UID)
   id: string; // credential ID
   publicKey: Uint8Array<ArrayBuffer>;
   // The number of times the authenticator has been used

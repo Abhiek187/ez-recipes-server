@@ -3,7 +3,6 @@ import Chef from "../types/client/Chef";
 
 const PasskeySchema = new Schema<Chef["passkeys"][number]>(
   {
-    webAuthnUserID: { type: String },
     id: { type: String, required: true },
     publicKey: {
       type: Buffer,

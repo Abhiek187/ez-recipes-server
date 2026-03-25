@@ -6,7 +6,6 @@ const TempSchema = new Schema<Temp>({
   _id: { type: String, required: true },
   createdAt: { type: Date, expires: 60, default: Date.now },
   challenge: { type: String },
-  webAuthnUserID: { type: String },
 });
 
 // Don't pluralize "temp"

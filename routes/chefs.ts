@@ -488,6 +488,7 @@ router.get("/passkey/create", auth, async (req, res) => {
       rpName: RelyingParty.NAME,
       rpID: isLocal ? RelyingParty.ID_LOCAL : RelyingParty.ID,
       userName: email,
+      userID: Buffer.from(uid),
       // No need to get specific information about the authenticator (protects users' privacy)
       attestationType: "none",
       // Prevent users from re-registering existing authenticators
@@ -504,11 +505,7 @@ router.get("/passkey/create", auth, async (req, res) => {
     });
 
     // Save the challenge and user ID for verification
-    await savePasskeyChallenge(
-      uid,
-      createOptions.challenge,
-      createOptions.user.id
-    );
+    await savePasskeyChallenge(uid, createOptions.challenge);
     res.json(createOptions);
   } catch (err) {
     const error = err as Error;
@@ -659,7 +656,6 @@ router.post(
         } = registrationInfo;
         const passkeyInfo = await getPasskeyInfo(aaguid, origin);
         const newPasskey: Passkey = {
-          webAuthnUserID: challengeData.webAuthnUserID,
           id: credential.id,
           publicKey: credential.publicKey,
           counter: credential.counter,
