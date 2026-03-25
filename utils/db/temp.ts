@@ -5,18 +5,11 @@ import Temp from "../../types/client/Temp";
  * Temporarily save a passkey challenge for verification
  * @param uid the UID of the chef
  * @param challenge the randomly generated challenge for the client
- * @param webAuthnUserID the randomly generated user ID for the passkey,
- * only required for registration
  */
-export const savePasskeyChallenge = async (
-  uid: string,
-  challenge: string,
-  webAuthnUserID?: string
-) => {
+export const savePasskeyChallenge = async (uid: string, challenge: string) => {
   const challengeData: Partial<Temp> = {
     _id: uid,
     challenge,
-    webAuthnUserID,
   };
 
   try {
