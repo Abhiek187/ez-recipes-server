@@ -11,6 +11,10 @@ This is an API built using Express to fetch low-effort recipes from [spoonacular
 
 In addition to spoonacular, MongoDB is used to cache the recipes for improved query performance. It is also used to perform full-text search on recipes based on various criteria like recipe name, description, or ingredients.
 
+> [!NOTE]
+>
+> There's a work-in-progress feature to add vector embeddings for recipes in MongoDB using HuggingFace transformers. Vector search allows chefs to search for recipes semantically, rather than by name. The plan is to combine this with full-text search using hybrid search, but this currently in [public preview](https://www.mongodb.com/docs/atlas/atlas-vector-search/hybrid-search/vector-search-with-full-text-search/?pipeline-stage=rank-fusion&interface=driver&language=nodejs) in MongoDB.
+
 Firebase is used to manage user authentication. Chefs can create an account to get access to additional features, including:
 
 - Rating recipes
@@ -18,6 +22,8 @@ Firebase is used to manage user authentication. Chefs can create an account to g
 - Accessing recently viewed recipes
 
 By delegating Firebase to the server-side, these settings can be synced across all the client apps for a seamless cooking experience.
+
+Additionally, Firebase is used to handle OAuth flows with Google, Facebook, and GitHub. Multiple accounts can be linked together if signed in. @simplewebauth/server was used to create, login, and validate passkeys for a more secure way to sign in. In conjunction with MongoDB, chefs can easily identify, sync, and delete passkeys from their account.
 
 ## Features
 
