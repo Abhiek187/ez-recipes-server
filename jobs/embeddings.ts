@@ -8,17 +8,6 @@ import RecipeModel from "../models/RecipeModel";
 import Recipe from "../types/client/Recipe";
 import { taskManager } from "../utils/number";
 
-/* Workaround to fix type bug:
- * https://github.com/huggingface/transformers.js/issues/1337
- * https://github.com/huggingface/transformers.js/issues/1448
- */
-declare module "@huggingface/transformers" {
-  export interface MgpstrProcessor {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    batch_decode(...args: any[]): any;
-  }
-}
-
 export default class Embedding {
   private _embedder?: FeatureExtractionPipeline;
 
@@ -45,7 +34,7 @@ export default class Embedding {
     console.time("Initializing pipeline");
     // Need to specify type to fix bug: https://github.com/huggingface/transformers.js/issues/1299
     // If Protobuf parsing fails, try rm -rf node_modules/@huggingface/transformers/.cache
-    this._embedder = await pipeline<"feature-extraction">(
+    this._embedder = await pipeline(
       "feature-extraction",
       // https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2 (access token not required)
       // View memory requirements: https://huggingface.co/spaces/hf-accelerate/model-memory-usage
