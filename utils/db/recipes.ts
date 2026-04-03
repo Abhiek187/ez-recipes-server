@@ -23,7 +23,7 @@ export const saveRecipe = async (
     const query = { id: recipe.id };
     // If the recipe exists, update it with what spoonacular returns, otherwise insert a new document
     const doc = await RecipeModel.findOneAndUpdate(query, recipe, {
-      new: true, // return the document after the update
+      returnDocument: 'after', // return the document after the update
       upsert: true,
     }).exec();
 
