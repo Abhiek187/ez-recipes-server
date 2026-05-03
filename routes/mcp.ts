@@ -1,5 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import express, { Request, Response } from "express";
 import z from "zod/v3";
 
 const MCP_NAME = "ez-recipes";
@@ -96,6 +99,37 @@ server.registerTool(
   }
 );
 
+const router = express.Router();
+
+router.post("/", async (req, res) => {
+  const sessionId = req.headers["mcp-session-id"];
+  console.log("MCP session ID:", sessionId);
+
+  if (isInitializeRequest(req.body)) {
+    console.log("MCP HTTP server initialized");
+  }
+
+  const transport = new StreamableHTTPServerTransport();
+  if (server.isConnected()) {
+    console.warn("Closing existing transport connection");
+    await server.close();
+  }
+  await server.connect(transport);
+  await server.sendLoggingMessage({
+    level: "info",
+    data: "EZ Recipes MCP Server running on streamable HTTP",
+  });
+
+  await transport.handleRequest(req, res, req.body);
+});
+
+const handleDefaultMcpRequest = async (req: Request, res: Response) => {
+  const transport = new StreamableHTTPServerTransport();
+  await transport.handleRequest(req, res);
+};
+router.get("/", handleDefaultMcpRequest);
+router.delete("/", handleDefaultMcpRequest);
+
 const main = async () => {
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -109,3 +143,5 @@ const main = async () => {
 if (require.main === module) {
   main();
 }
+
+export default router;
