@@ -1,9 +1,13 @@
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
+import { OAuthTokenVerifier } from "@modelcontextprotocol/sdk/server/auth/provider.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import express, { Request, Response } from "express";
 import z from "zod/v3";
+
+import FirebaseAdmin from "../utils/auth/admin";
 
 const MCP_NAME = "ez-recipes";
 
@@ -101,7 +105,29 @@ server.registerTool(
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+const tokenVerifier: OAuthTokenVerifier = {
+  verifyAccessToken: async (token) => {
+    try {
+      const decodedToken = await FirebaseAdmin.instance.validateToken(token);
+
+      return {
+        token,
+        clientId: decodedToken.uid,
+        scopes: [], // Firebase doesn't use OAuth scopes by default
+        expiresAt: decodedToken.exp,
+      };
+    } catch (error) {
+      console.error("Failed to validate token:", error);
+      throw new Error("Invalid Firebase token provided", { cause: error });
+    }
+  },
+};
+
+const mcpAuth = requireBearerAuth({
+  verifier: tokenVerifier,
+});
+
+router.post("/", mcpAuth, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"];
   console.log("MCP session ID:", sessionId);
 
@@ -127,8 +153,8 @@ const handleDefaultMcpRequest = async (req: Request, res: Response) => {
   const transport = new StreamableHTTPServerTransport();
   await transport.handleRequest(req, res);
 };
-router.get("/", handleDefaultMcpRequest);
-router.delete("/", handleDefaultMcpRequest);
+router.get("/", mcpAuth, handleDefaultMcpRequest);
+router.delete("/", mcpAuth, handleDefaultMcpRequest);
 
 const main = async () => {
   const transport = new StdioServerTransport();
@@ -139,7 +165,6 @@ const main = async () => {
   });
 };
 
-// Sample test: {"jsonrpc":"2.0","id":1,"method":"tools/list"}
 if (require.main === module) {
   main();
 }

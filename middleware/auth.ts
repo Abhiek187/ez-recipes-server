@@ -67,7 +67,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    const uid = await FirebaseAdmin.instance.validateToken(token);
+    const { uid } = await FirebaseAdmin.instance.validateToken(token);
     saveTokenAndContinue(res, next, uid, token);
   } catch (err) {
     const error = err as FirebaseAuthError;
