@@ -48,7 +48,7 @@
     "jwt-decode": "^4.0.0",
     "mongoose": "^9.6.1",
     "node-cron": "^4.2.1",
-    "pm2": "^6.0.14",
+    "pm2": "^7.0.1",
     "swagger-ui-express": "^5.0.1",
     "yaml": "^2.8.4"
   },
