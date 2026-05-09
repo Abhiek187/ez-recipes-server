@@ -23,7 +23,7 @@ export const saveRecipe = async (
     const query = { id: recipe.id };
     // If the recipe exists, update it with what spoonacular returns, otherwise insert a new document
     const doc = await RecipeModel.findOneAndUpdate(query, recipe, {
-      returnDocument: 'after', // return the document after the update
+      returnDocument: "after", // return the document after the update
       upsert: true,
     }).exec();
 
@@ -416,5 +416,14 @@ export const updateRecipeStats = async (
     const message = "Failed to update the recipe's stats";
     console.error(`${message}:`, error);
     return { code: 500, message };
+  }
+};
+
+export const getRecipeById = async (id: number): Promise<Recipe | null> => {
+  try {
+    return await RecipeModel.findOne({ id }).lean().exec();
+  } catch (error) {
+    console.error("Failed to get recipe by ID", `${id}`, error);
+    return null;
   }
 };

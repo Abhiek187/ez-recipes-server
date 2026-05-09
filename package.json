@@ -4,7 +4,7 @@
   "description": "Server to fetch easy-to-make recipes for the EZ Recipes app",
   "main": "dist/index.js",
   "scripts": {
-    "start": "tsx index",
+    "start": "tsx watch index",
     "test": "jest",
     "prebuild": "rimraf dist",
     "build": "tsc",
@@ -14,7 +14,7 @@
     "cron": "node dist/jobs/cron.js",
     "embeddings": "node dist/jobs/embeddings.js",
     "embeddings:all": "node dist/jobs/embeddings.js all",
-    "mcp:local": "tsx routes/mcp",
+    "mcp:local": "tsx watch routes/mcp",
     "mcp:inspector": "npx @modelcontextprotocol/inspector node dist/routes/mcp.js"
   },
   "repository": {

@@ -8,6 +8,9 @@ import express, { Request, Response } from "express";
 import z from "zod/v3";
 
 import FirebaseAdmin from "../utils/auth/admin";
+import { getRecipeById } from "../utils/db";
+import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
+import { filterObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
 
@@ -64,9 +67,60 @@ server.registerTool(
     description: "Get detailed information about a recipe by its ID",
     inputSchema: {
       id: z
-        .string()
+        .number()
+        .int()
+        .positive()
         .describe("A unique recipe ID that maps to spoonacular's recipe ID"),
     },
+    outputSchema: z.object({
+      // Only return fields useful to an LLM to save on context & reduce hallucinations
+      id: z.number(),
+      name: z.string(),
+      url: z.string().url().optional(),
+      healthScore: z.number(),
+      time: z.number(),
+      servings: z.number(),
+      summary: z.string(),
+      types: z.array(z.enum(MEAL_TYPES)),
+      spiceLevel: z.enum(SPICE_LEVELS),
+      isVegetarian: z.boolean(),
+      isVegan: z.boolean(),
+      isGlutenFree: z.boolean(),
+      isHealthy: z.boolean(),
+      isCheap: z.boolean(),
+      isSustainable: z.boolean(),
+      culture: z.array(z.enum(CUISINES)),
+      nutrients: z.array(
+        z.object({
+          name: z.string(),
+          amount: z.number(),
+          unit: z.string(),
+        })
+      ),
+      ingredients: z.array(
+        z.object({
+          name: z.string(),
+          amount: z.number(),
+          unit: z.string(),
+        })
+      ),
+      instructions: z.array(
+        z.object({
+          name: z.string(),
+          steps: z.array(
+            z.object({
+              number: z.number(),
+              step: z.string(),
+              ingredients: z.array(z.string()),
+              equipment: z.array(z.string()),
+            })
+          ),
+        })
+      ),
+      averageRating: z.number().nullable().optional(),
+      totalRatings: z.number().optional(),
+      views: z.number().optional(),
+    }),
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -80,12 +134,14 @@ server.registerTool(
       data: `Getting recipe by ID: ${id}`,
     });
 
-    if (id.trim().length === 0) {
+    const recipe = await getRecipeById(id);
+
+    if (recipe === null) {
       return {
         content: [
           {
             type: "text",
-            text: "Invalid recipe ID",
+            text: `A recipe with ID ${id} does not exist.`,
           },
         ],
         isError: true,
@@ -93,10 +149,53 @@ server.registerTool(
     }
 
     return {
+      structuredContent: {
+        ...filterObject(recipe, [
+          "id",
+          "name",
+          "url",
+          "healthScore",
+          "time",
+          "servings",
+          "summary",
+          "types",
+          "spiceLevel",
+          "isVegetarian",
+          "isVegan",
+          "isGlutenFree",
+          "isHealthy",
+          "isCheap",
+          "isSustainable",
+          "culture",
+          "averageRating",
+          "totalRatings",
+          "views",
+        ]),
+        nutrients: recipe.nutrients.map((nutrient) =>
+          filterObject(nutrient, ["name", "amount", "unit"])
+        ),
+        ingredients: recipe.ingredients.map((ingredient) =>
+          filterObject(ingredient, ["name", "amount", "unit"])
+        ),
+        instructions: recipe.instructions.map((instruction) => ({
+          name: instruction.name,
+          steps: instruction.steps.map((step) => ({
+            number: step.number,
+            step: step.step,
+            ingredients: step.ingredients.map((ingredient) => ingredient.name),
+            equipment: step.equipment.map((equip) => equip.name),
+          })),
+        })),
+      },
+      // For backwards compatibility
       content: [
         {
           type: "text",
-          text: "Placeholder for recipe output",
+          text: `Recipe name: ${recipe.name}\nSummary: ${recipe.summary}\nInstructions: ${recipe.instructions
+            .flatMap((instruction) =>
+              instruction.steps.map((step) => `${step.number}. ${step.step}`)
+            )
+            .join("\n")}`,
         },
       ],
     };

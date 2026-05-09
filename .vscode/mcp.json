@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "ez-recipes": {
+      "type": "http",
+      "url": "https://ez-recipes-server.onrender.com/mcp"
+    }
+  },
+  "inputs": []
+}
