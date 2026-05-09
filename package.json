@@ -27,7 +27,9 @@
     "api",
     "spoonacular",
     "mongodb",
-    "firebase"
+    "firebase",
+    "passkeys",
+    "mcp"
   ],
   "author": "Abhishek Chaudhuri",
   "license": "ISC",

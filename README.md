@@ -36,6 +36,7 @@ Additionally, Firebase is used to handle OAuth flows with Google, Facebook, and 
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
 - Mermaid to write diagrams as code
+- MCP tools to allow LLMs to use this server
 
 ## Architecture Diagram
 
@@ -381,6 +382,56 @@ To stop the containers, run `docker compose down`.
 ## Testing
 
 Run `npm test` to run the unit tests using Jest.
+
+## MCP Server
+
+**Name:** `ez-recipes`
+
+This server can be used as an MCP server so LLMs can search for recipes and get recipe details from MongoDB. Both stdio and streamable HTTP transports are supported. Sample JSON configs are provided for each transport, but refer to the instructions for your specific MCP client to connect to an MCP server.
+
+> [!IMPORTANT]
+>
+> For security purposes, all tools are read-only protected by bearer auth. Once connected, you can view more information about how to call each tool.
+
+### STDIO
+
+1. [Clone](https://github.com/Abhiek187/ez-recipes-web.git) this repo.
+2. Install all dependencies and build the app: `npm i && npm run build`
+3. Run `npm run mcp:local`, or in your MCP config, set the command to `node <ABSOLUTE_PATH_TO_REPO>/dist/routes/mcp.js`
+
+```json
+{
+  "ez-recipes": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["<ABSOLUTE_PATH_TO_REPO>/dist/routes/mcp.js"]
+  }
+}
+```
+
+### HTTP
+
+If connecting remotely, set the connection URL to `https://ez-recipes-server.onrender.com/mcp`
+
+```json
+{
+  "ez-recipes": {
+    "type": "http",
+    "url": "https://ez-recipes-server.onrender.com/mcp"
+  }
+}
+```
+
+If running this server locally, run `npm start` and connect to `http://localhost:5000/mcp`
+
+```json
+{
+  "ez-recipes": {
+    "type": "http",
+    "url": "http://localhost:5000/mcp"
+  }
+}
+```
 
 ## Related Repos
 
