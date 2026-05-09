@@ -20,7 +20,8 @@ import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
 import { filterObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+let server: McpServer | null = null;
+const transports: Record<string, StreamableHTTPServerTransport> = {};
 
 const createMcpServer = () => {
   const server = new McpServer(
@@ -216,6 +217,14 @@ const createMcpServer = () => {
   return server;
 };
 
+const getMcpServer = () => {
+  if (server === null) {
+    server = createMcpServer();
+  }
+
+  return server;
+};
+
 const router = express.Router();
 
 const tokenVerifier: OAuthTokenVerifier = {
@@ -261,11 +270,13 @@ router.post("/", mcpAuth, async (req, res) => {
     transport.onclose = () => {
       if (transport.sessionId !== undefined) {
         delete transports[transport.sessionId];
-        console.log(`[MCP] [${sessionId}] MCP HTTP connection closed`);
+        console.log(
+          `[MCP] [${transport.sessionId}] MCP HTTP connection closed`
+        );
       }
     };
 
-    const server = createMcpServer();
+    const server = getMcpServer();
     await server.connect(transport);
     await server.sendLoggingMessage({
       level: "info",
@@ -303,7 +314,7 @@ router.delete("/", mcpAuth, handleDefaultMcpRequest);
 const main = async () => {
   try {
     const transport = new StdioServerTransport();
-    const server = createMcpServer();
+    const server = getMcpServer();
     await server.connect(transport);
     await server.sendLoggingMessage({
       level: "info",
