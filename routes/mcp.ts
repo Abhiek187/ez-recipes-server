@@ -17,23 +17,12 @@ import {
   filterRecipes,
   getRecipeById,
 } from "../utils/db";
-import Recipe, {
-  CUISINES,
-  MEAL_TYPES,
-  SPICE_LEVELS,
-} from "../types/client/Recipe";
+import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
 import { filterObject, isEmptyObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
-let server: McpServer | null = null;
+let _server: McpServer | null = null;
 const transports: Record<string, StreamableHTTPServerTransport> = {};
-
-const recipeContent = (recipe: Recipe) =>
-  `Recipe name: ${recipe.name}\nSummary: ${recipe.summary}\nInstructions: ${recipe.instructions
-    .flatMap((instruction) =>
-      instruction.steps.map((step) => `${step.number}. ${step.step}`)
-    )
-    .join("\n")}`;
 
 const createMcpServer = () => {
   const server = new McpServer(
@@ -213,7 +202,10 @@ const createMcpServer = () => {
           {
             type: "text",
             text: `${recipes.length} result(s)\n${recipes
-              .map((recipe) => recipeContent(recipe))
+              .map(
+                (recipe) =>
+                  `Recipe ID: ${recipe.id}\nName: ${recipe.name}\nSummary: ${recipe.summary}`
+              )
               .join("\n")}`,
           },
         ],
@@ -353,7 +345,11 @@ const createMcpServer = () => {
         content: [
           {
             type: "text",
-            text: recipeContent(recipe),
+            text: `Recipe name: ${recipe.name}\nSummary: ${recipe.summary}\nInstructions: ${recipe.instructions
+              .flatMap((instruction) =>
+                instruction.steps.map((step) => `${step.number}. ${step.step}`)
+              )
+              .join("\n")}`,
           },
         ],
       };
@@ -364,11 +360,11 @@ const createMcpServer = () => {
 };
 
 const getMcpServer = () => {
-  if (server === null) {
-    server = createMcpServer();
+  if (_server === null) {
+    _server = createMcpServer();
   }
 
-  return server;
+  return _server;
 };
 
 const router = express.Router();

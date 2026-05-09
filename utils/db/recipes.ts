@@ -119,22 +119,22 @@ const createQuery = (
       };
     }
   }
-  if (vegetarian !== undefined) {
+  if (vegetarian === true) {
     query.isVegetarian = vegetarian;
   }
-  if (vegan !== undefined) {
+  if (vegan === true) {
     query.isVegan = vegan;
   }
-  if (glutenFree !== undefined) {
+  if (glutenFree === true) {
     query.isGlutenFree = glutenFree;
   }
-  if (healthy !== undefined) {
+  if (healthy === true) {
     query.isHealthy = healthy;
   }
-  if (cheap !== undefined) {
+  if (cheap === true) {
     query.isCheap = cheap;
   }
-  if (sustainable !== undefined) {
+  if (sustainable === true) {
     query.isSustainable = sustainable;
   }
   if (rating !== undefined) {
