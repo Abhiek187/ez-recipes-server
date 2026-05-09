@@ -14,14 +14,26 @@ import FirebaseAdmin from "../utils/auth/admin";
 import {
   connectToMongoDB,
   disconnectFromMongoDB,
+  filterRecipes,
   getRecipeById,
 } from "../utils/db";
-import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
-import { filterObject } from "../utils/object";
+import Recipe, {
+  CUISINES,
+  MEAL_TYPES,
+  SPICE_LEVELS,
+} from "../types/client/Recipe";
+import { filterObject, isEmptyObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
 let server: McpServer | null = null;
 const transports: Record<string, StreamableHTTPServerTransport> = {};
+
+const recipeContent = (recipe: Recipe) =>
+  `Recipe name: ${recipe.name}\nSummary: ${recipe.summary}\nInstructions: ${recipe.instructions
+    .flatMap((instruction) =>
+      instruction.steps.map((step) => `${step.number}. ${step.step}`)
+    )
+    .join("\n")}`;
 
 const createMcpServer = () => {
   const server = new McpServer(
@@ -43,10 +55,94 @@ const createMcpServer = () => {
       inputSchema: {
         query: z
           .string()
+          .min(1)
+          .optional()
           .describe(
             "An full-text query to search recipes by name or description"
           ),
+        minCals: z
+          .number()
+          .int()
+          .min(0)
+          .max(2000)
+          .optional()
+          .describe("The minimum number of calories for a recipe"),
+        maxCals: z
+          .number()
+          .int()
+          .min(0)
+          .max(2000)
+          .optional()
+          .describe("The maximum number of calories for a recipe"),
+        vegetarian: z
+          .boolean()
+          .optional()
+          .describe("Whether the recipes must be vegetarian"),
+        vegan: z
+          .boolean()
+          .optional()
+          .describe("Whether the recipes must be vegan"),
+        glutenFree: z
+          .boolean()
+          .optional()
+          .describe("Whether the recipes must be gluten-free"),
+        healthy: z
+          .boolean()
+          .optional()
+          .describe("Whether the recipes must be healthy"),
+        cheap: z
+          .boolean()
+          .optional()
+          .describe("Whether the recipes must be cheap"),
+        sustainable: z
+          .boolean()
+          .optional()
+          .describe("Whether the recipes must be sustainable"),
+        rating: z
+          .number()
+          .int()
+          .min(1)
+          .max(5)
+          .optional()
+          .describe("The minimum number of stars a recipe is rated, from 1-5"),
+        spiceLevels: z
+          .array(z.enum(SPICE_LEVELS).exclude(["unknown"]))
+          .optional()
+          .describe("The spice levels for a recipe: none, mild, or spicy"),
+        types: z
+          .array(z.enum(MEAL_TYPES))
+          .optional()
+          .describe(
+            "The meal types a recipe is appropriate for, such as breakfast, lunch, or dinner"
+          ),
+        cultures: z
+          .array(z.enum(CUISINES))
+          .optional()
+          .describe(
+            "The cuisine types associated with a recipe, such as American, Italian, or Latin American"
+          ),
       },
+      outputSchema: z.object({
+        results: z.array(
+          z.object({
+            // Return limited recipe information since get_recipe_details will add more detail
+            // (Similar to viewing recipe cards at a glance)
+            id: z.number(),
+            name: z.string(),
+            time: z.number(),
+            summary: z.string(),
+            nutrients: z.array(
+              z.object({
+                name: z.string(),
+                amount: z.number(),
+                unit: z.string(),
+              })
+            ),
+            averageRating: z.number().nullable().optional(),
+            totalRatings: z.number().optional(),
+          })
+        ),
+      }),
       annotations: {
         readOnlyHint: true, // only reads data
         destructiveHint: false, // no write actions, so reversible
@@ -54,17 +150,71 @@ const createMcpServer = () => {
         openWorldHint: false, // doesn't interact with the open internet (constrained to MongoDB database)
       },
     },
-    async ({ query }) => {
+    async (filter) => {
       await server.sendLoggingMessage({
         level: "debug",
-        data: `Searching recipes using the following query: ${query}`,
+        data: `Searching recipes using the following filter: ${JSON.stringify(filter)}`,
       });
 
+      if (isEmptyObject(filter)) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "At least one filter must be provided to search for recipes",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const recipes = await filterRecipes(filter);
+
+      if (typeof recipes === "string") {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to filter recipes. Error: ${recipes}`,
+            },
+          ],
+          isError: true,
+        };
+      } else if (recipes === null) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Failed to filter recipes. Please try again later.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       return {
+        // structuredContent must be an object, not an array
+        structuredContent: {
+          results: recipes.map((recipe) => ({
+            ...filterObject(recipe, [
+              "id",
+              "name",
+              "time",
+              "summary",
+              "averageRating",
+              "totalRatings",
+            ]),
+            nutrients: recipe.nutrients.map((nutrient) =>
+              filterObject(nutrient, ["name", "amount", "unit"])
+            ),
+          })),
+        },
         content: [
           {
             type: "text",
-            text: "Placeholder for search output",
+            text: `${recipes.length} result(s)\n${recipes
+              .map((recipe) => recipeContent(recipe))
+              .join("\n")}`,
           },
         ],
       };
@@ -203,11 +353,7 @@ const createMcpServer = () => {
         content: [
           {
             type: "text",
-            text: `Recipe name: ${recipe.name}\nSummary: ${recipe.summary}\nInstructions: ${recipe.instructions
-              .flatMap((instruction) =>
-                instruction.steps.map((step) => `${step.number}. ${step.step}`)
-              )
-              .join("\n")}`,
+            text: recipeContent(recipe),
           },
         ],
       };
