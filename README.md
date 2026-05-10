@@ -391,7 +391,7 @@ This server can be used as an MCP server so LLMs can search for recipes and get 
 
 > [!IMPORTANT]
 >
-> For security purposes, all tools are read-only protected by bearer auth. Once connected, you can view more information about how to call each tool.
+> For security purposes, all tools are read-only and protected by bearer auth. You must provide a valid Firebase token. Once connected, you can view more information about how to call each tool.
 
 ### STDIO
 
@@ -417,7 +417,10 @@ If connecting remotely, set the connection URL to `https://ez-recipes-server.onr
 {
   "ez-recipes": {
     "type": "http",
-    "url": "https://ez-recipes-server.onrender.com/mcp"
+    "url": "https://ez-recipes-server.onrender.com/mcp",
+    "headers": {
+      "Authorization": "Bearer YOUR_FIREBASE_TOKEN"
+    }
   }
 }
 ```
@@ -428,7 +431,10 @@ If running this server locally, run `npm start` and connect to `http://localhost
 {
   "ez-recipes": {
     "type": "http",
-    "url": "http://localhost:5000/mcp"
+    "url": "http://localhost:5000/mcp",
+    "headers": {
+      "Authorization": "Bearer YOUR_FIREBASE_TOKEN"
+    }
   }
 }
 ```
