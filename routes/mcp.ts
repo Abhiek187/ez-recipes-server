@@ -21,7 +21,7 @@ import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
 import { filterObject, isEmptyObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
-let _server: McpServer | null = null;
+// Multiple sessions can run in parallel in HTTP mode
 const transports: Record<string, StreamableHTTPServerTransport> = {};
 
 const createMcpServer = () => {
@@ -359,14 +359,6 @@ const createMcpServer = () => {
   return server;
 };
 
-const getMcpServer = () => {
-  if (_server === null) {
-    _server = createMcpServer();
-  }
-
-  return _server;
-};
-
 const router = express.Router();
 
 const tokenVerifier: OAuthTokenVerifier = {
@@ -418,7 +410,7 @@ router.post("/", mcpAuth, async (req, res) => {
       }
     };
 
-    const server = getMcpServer();
+    const server = createMcpServer();
     await server.connect(transport);
     await server.sendLoggingMessage({
       level: "info",
@@ -455,8 +447,9 @@ router.delete("/", mcpAuth, handleDefaultMcpRequest);
 
 const main = async () => {
   try {
+    // A single session runs in STDIO mode
     const transport = new StdioServerTransport();
-    const server = getMcpServer();
+    const server = createMcpServer();
     await server.connect(transport);
     await server.sendLoggingMessage({
       level: "info",
