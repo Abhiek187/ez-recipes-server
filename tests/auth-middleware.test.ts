@@ -13,7 +13,7 @@ const mockRequest = (authorization?: string, req?: object) =>
     headers: {
       authorization,
     },
-  } as Request);
+  }) as Request;
 
 const mockJson = jest.fn();
 const mockStatus = jest.fn().mockReturnValue({ json: mockJson });
@@ -36,7 +36,7 @@ const mockValidateToken = (
 ) => {
   jest.spyOn(FirebaseAdmin, "instance", "get").mockReturnValue({
     validateToken: isSuccess
-      ? jest.fn().mockResolvedValue("mock-uid")
+      ? jest.fn().mockResolvedValue({ uid: "mock-uid" })
       : jest.fn().mockRejectedValue(
           isExpired
             ? {
@@ -44,14 +44,14 @@ const mockValidateToken = (
                 code: `auth/${AuthClientErrorCode.ID_TOKEN_EXPIRED.code}`,
               }
             : isInvalidKid
-            ? {
-                code: `auth/${AuthClientErrorCode.INVALID_ARGUMENT.code}`,
-                message:
-                  'Firebase ID token has "kid" claim which does not correspond to a known ' +
-                  "public key. Most likely the ID token is expired, so get a fresh token from " +
-                  "your client app and try again.",
-              }
-            : "mock error"
+              ? {
+                  code: `auth/${AuthClientErrorCode.INVALID_ARGUMENT.code}`,
+                  message:
+                    'Firebase ID token has "kid" claim which does not correspond to a known ' +
+                    "public key. Most likely the ID token is expired, so get a fresh token from " +
+                    "your client app and try again.",
+                }
+              : "mock error"
         ),
   } as unknown as FirebaseAdmin);
 };
