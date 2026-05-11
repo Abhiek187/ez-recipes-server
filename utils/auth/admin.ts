@@ -1,7 +1,7 @@
 // Need to enable allowSyntheticDefaultImports
 import { credential } from "firebase-admin";
 import { initializeApp } from "firebase-admin/app";
-import { getAuth, UserRecord } from "firebase-admin/auth";
+import { DecodedIdToken, getAuth, UserRecord } from "firebase-admin/auth";
 
 import { createChef, deleteChef, saveRefreshToken } from "../db";
 import UserInfoResponse from "../../types/firebase/UserInfoResponse";
@@ -77,12 +77,11 @@ export default class FirebaseAdmin {
    * Validate a Firebase ID token and check if it's revoked
    * @param token the ID token to validate
    * @throws `FirebaseAuthError` if an error occurred
-   * @returns the UID from the token
+   * @returns the decoded token
    */
-  async validateToken(token: string): Promise<string> {
+  async validateToken(token: string): Promise<DecodedIdToken> {
     const auth = getAuth();
-    const decodedToken = await auth.verifyIdToken(token, true);
-    return decodedToken.uid;
+    return await auth.verifyIdToken(token, true);
   }
 
   /**

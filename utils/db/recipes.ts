@@ -23,7 +23,7 @@ export const saveRecipe = async (
     const query = { id: recipe.id };
     // If the recipe exists, update it with what spoonacular returns, otherwise insert a new document
     const doc = await RecipeModel.findOneAndUpdate(query, recipe, {
-      returnDocument: 'after', // return the document after the update
+      returnDocument: "after", // return the document after the update
       upsert: true,
     }).exec();
 
@@ -119,22 +119,22 @@ const createQuery = (
       };
     }
   }
-  if (vegetarian !== undefined) {
+  if (vegetarian === true) {
     query.isVegetarian = vegetarian;
   }
-  if (vegan !== undefined) {
+  if (vegan === true) {
     query.isVegan = vegan;
   }
-  if (glutenFree !== undefined) {
+  if (glutenFree === true) {
     query.isGlutenFree = glutenFree;
   }
-  if (healthy !== undefined) {
+  if (healthy === true) {
     query.isHealthy = healthy;
   }
-  if (cheap !== undefined) {
+  if (cheap === true) {
     query.isCheap = cheap;
   }
-  if (sustainable !== undefined) {
+  if (sustainable === true) {
     query.isSustainable = sustainable;
   }
   if (rating !== undefined) {
@@ -416,5 +416,14 @@ export const updateRecipeStats = async (
     const message = "Failed to update the recipe's stats";
     console.error(`${message}:`, error);
     return { code: 500, message };
+  }
+};
+
+export const getRecipeById = async (id: number): Promise<Recipe | null> => {
+  try {
+    return await RecipeModel.findOne({ id }).lean().exec();
+  } catch (error) {
+    console.error("Failed to get recipe by ID", `${id}`, error);
+    return null;
   }
 };

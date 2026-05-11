@@ -1,3 +1,4 @@
+import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config"; // fetch secrets from .env
@@ -6,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
 import docs from "./routes/docs";
+import mcp from "./routes/mcp";
 import recipes from "./routes/recipes";
 import terms from "./routes/terms";
 import chefs from "./routes/chefs";
@@ -15,7 +17,7 @@ import Embedding from "./jobs/embeddings";
 import { taskManager } from "./utils/number";
 import CronJobs from "./jobs/cron";
 
-const app = express();
+const app = createMcpExpressApp();
 app.disable("x-powered-by"); // disable fingerprinting
 
 /**
@@ -61,6 +63,7 @@ app.use(logger);
 
 // Define routes
 app.use("/", docs);
+app.use("/mcp", mcp);
 app.use("/api/recipes", recipes);
 app.use("/api/terms", terms);
 app.use("/api/chefs", chefs);

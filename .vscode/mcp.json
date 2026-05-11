@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "ez-recipes": {
+      "type": "http",
+      "url": "https://ez-recipes-server.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ..."
+      }
+    }
+  },
+  "inputs": []
+}
