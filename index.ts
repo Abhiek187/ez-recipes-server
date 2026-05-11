@@ -22,7 +22,7 @@ const app = createMcpExpressApp({
     "127.0.0.1",
     "localhost",
     "::1",
-    "https://ez-recipes-server.onrender.com",
+    "ez-recipes-server.onrender.com",
   ],
 });
 app.disable("x-powered-by"); // disable fingerprinting
