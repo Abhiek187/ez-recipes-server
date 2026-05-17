@@ -36,6 +36,7 @@ import auth from "../middleware/auth";
 import RecipePatch from "../types/client/RecipePatch";
 import { isObject } from "../utils/object";
 import checkAuthStatus from "../utils/auth/checkAuthStatus";
+import PDFCreate from "../utils/pdf-create";
 
 const badRequestError = (res: Response, error: string) => {
   res.status(400).json({ error });
@@ -321,6 +322,101 @@ router.patch("/:id", auth, async (req, res) => {
   }
 
   res.status(200).json({ token });
+});
+
+router.get("/:id/pdf", async (req, res) => {
+  const { id } = req.params;
+
+  if (!isNumeric(id)) {
+    res.status(400).json({ error: "The recipe ID must be numeric" });
+    return;
+  }
+
+  const recipe = await fetchRecipe(Number(id));
+
+  if (recipe === null) {
+    res.status(404).json({ error: "Recipe not found" });
+    return;
+  }
+
+  const pdf = new PDFCreate();
+
+  pdf.text(recipe.name);
+  await pdf.addImage(recipe.image, 62.4, 46.2);
+  pdf.text(`Image © ${recipe.credit}`);
+  if (["mild", "spicy"].includes(recipe.spiceLevel)) {
+    pdf.text(recipe.spiceLevel);
+  }
+  if (recipe.isVegetarian) pdf.text("Vegetarian");
+  if (recipe.isVegan) pdf.text("Vegan");
+  if (recipe.isGlutenFree) pdf.text("Gluten-Free");
+  if (recipe.isHealthy) pdf.text("Healthy");
+  if (recipe.isCheap) pdf.text("Cheap");
+  if (recipe.isSustainable) pdf.text("Sustainable");
+  pdf.text(`Time: ${recipe.time} minutes`);
+  pdf.text(`Great for: ${recipe.types.join(", ")}`);
+  pdf.text(`Cuisines: ${recipe.culture.join(", ")}`);
+
+  pdf.text("Nutritional Facts");
+  pdf.text(`Health Score: ${recipe.healthScore}%`);
+  pdf.text(`${recipe.servings} servings`);
+  for (const nutrient of recipe.nutrients) {
+    pdf.text(
+      `${nutrient.name}: ${Math.round(nutrient.amount)} ${nutrient.unit}`
+    );
+  }
+  // Strip HTML tags from the summary
+  pdf.text(`Summary: ${recipe.summary.replace(/<\/?[^>]+(>|$)/g, "")}`);
+  pdf.text("Ingredients");
+  for (const ingredient of recipe.ingredients) {
+    pdf.text(`${ingredient.amount} ${ingredient.unit} ${ingredient.name}`);
+  }
+
+  pdf.text("Steps");
+  for (const instruction of recipe.instructions) {
+    if (instruction.name.length > 0) {
+      pdf.text(instruction.name);
+    }
+
+    for (const step of instruction.steps) {
+      pdf.text(`${step.number}. ${step.step}`);
+
+      if (step.ingredients.length > 0) {
+        pdf.text("Ingredients");
+
+        for (const ingredient of step.ingredients) {
+          await pdf.addImage(
+            `https://img.spoonacular.com/ingredients_100x100/${ingredient.image}`,
+            20,
+            20
+          );
+          pdf.text(ingredient.name);
+        }
+      }
+
+      if (step.equipment.length > 0) {
+        pdf.text("Equipment");
+
+        for (const equipment of step.equipment) {
+          await pdf.addImage(
+            `https://img.spoonacular.com/equipment_100x100/${equipment.image}`,
+            20,
+            20
+          );
+          pdf.text(equipment.name);
+        }
+      }
+    }
+  }
+  pdf.text("Powered by spoonacular");
+
+  const pdfBuffer = pdf.doc.output("arraybuffer");
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=${recipe.name}.pdf`
+  );
+  res.send(Buffer.from(pdfBuffer));
 });
 
 export default router;
