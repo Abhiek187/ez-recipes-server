@@ -335,7 +335,9 @@ router.get("/:id/pdf", async (req, res) => {
   const recipe = await fetchRecipe(Number(id));
 
   if (recipe === null) {
-    res.status(404).json({ error: "Recipe not found" });
+    res
+      .status(404)
+      .json({ error: `A recipe with the id ${id} does not exist.` });
     return;
   }
 

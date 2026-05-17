@@ -357,6 +357,43 @@ paths:
               schema:
                 $ref: "..#/components/schemas/error"
 
+  /{id}/pdf:
+    get:
+      summary: Create a PDF for a given recipe
+      tags:
+        - recipes
+      parameters:
+        - $ref: "#/components/parameters/recipeId"
+
+      responses:
+        "200":
+          description: Successfully generated a PDF of the recipe
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+        "400":
+          description: The recipe ID isn't numeric
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                invalidRecipeId:
+                  $ref: "#/components/examples/invalidRecipeId"
+
+        "404":
+          description: A recipe with the ID couldn't be found
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                nonExistentRecipeId:
+                  $ref: "#/components/examples/nonExistentRecipeId"
+
 components:
   parameters:
     recipeId:
