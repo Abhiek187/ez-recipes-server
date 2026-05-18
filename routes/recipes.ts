@@ -347,14 +347,14 @@ router.get("/:id/pdf", async (req, res) => {
   await pdf.addImage(recipe.image, 62.4, 46.2);
   pdf.text(`Image © ${recipe.credit}`, { size: 12, align: "center" });
   if (["mild", "spicy"].includes(recipe.spiceLevel)) {
-    pdf.text(recipe.spiceLevel);
+    pdf.text(recipe.spiceLevel, { circle: true });
   }
-  if (recipe.isVegetarian) pdf.text("Vegetarian");
-  if (recipe.isVegan) pdf.text("Vegan");
-  if (recipe.isGlutenFree) pdf.text("Gluten-Free");
-  if (recipe.isHealthy) pdf.text("Healthy");
-  if (recipe.isCheap) pdf.text("Cheap");
-  if (recipe.isSustainable) pdf.text("Sustainable");
+  if (recipe.isVegetarian) pdf.text("Vegetarian", { circle: true });
+  if (recipe.isVegan) pdf.text("Vegan", { circle: true });
+  if (recipe.isGlutenFree) pdf.text("Gluten-Free", { circle: true });
+  if (recipe.isHealthy) pdf.text("Healthy", { circle: true });
+  if (recipe.isCheap) pdf.text("Cheap", { circle: true });
+  if (recipe.isSustainable) pdf.text("Sustainable", { circle: true });
   pdf.text(`Time: ${recipe.time} minutes`);
   pdf.text(`Great for: ${recipe.types.join(", ")}`);
   pdf.text(`Cuisines: ${recipe.culture.join(", ")}`);
@@ -368,8 +368,6 @@ router.get("/:id/pdf", async (req, res) => {
       { align: "center" }
     );
   }
-  // Strip HTML tags from the summary
-  pdf.text(`Summary: ${recipe.summary.replace(/<\/?[^>]+(>|$)/g, "")}`);
   pdf.text("Ingredients", { align: "center" });
   for (const ingredient of recipe.ingredients) {
     pdf.text(`${ingredient.amount} ${ingredient.unit} ${ingredient.name}`, {

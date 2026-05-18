@@ -32,10 +32,12 @@ export default class PDFCreate {
       bold = false,
       size,
       align = "left",
+      circle = false,
     }: {
       bold?: boolean;
       size?: number;
       align?: "left" | "center" | "right" | "justify";
+      circle?: boolean;
     } = {}
   ) {
     // Split long text across multiple lines
@@ -57,6 +59,15 @@ export default class PDFCreate {
     this.doc.text(textLines, docX, this.docY, {
       align,
     });
+    if (circle) {
+      const textSize = this.doc.getTextDimensions(text);
+      this.doc.ellipse(
+        docX + textSize.w / 2,
+        this.docY - textSize.h / 3,
+        textSize.w,
+        textSize.h
+      );
+    }
 
     if (bold) this.doc.setFont(this.DEFAULT_FONT, "normal");
     if (size) this.doc.setFontSize(this.DEFAULT_FONT_SIZE);
