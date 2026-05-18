@@ -6,6 +6,8 @@ import jsPDF from "jspdf";
 export default class PDFCreate {
   // A4, portrait, and mm by default
   private readonly MARGIN = 12.7;
+  private readonly DEFAULT_FONT = "helvetica";
+  private readonly DEFAULT_FONT_SIZE = 16;
 
   // Public in case jsPDF methods should be called directly
   doc = new jsPDF();
@@ -24,7 +26,18 @@ export default class PDFCreate {
     }
   }
 
-  text(text: string) {
+  text(
+    text: string,
+    {
+      bold = false,
+      size,
+      align = "left",
+    }: {
+      bold?: boolean;
+      size?: number;
+      align?: "left" | "center" | "right" | "justify";
+    } = {}
+  ) {
     // Split long text across multiple lines
     const textLines = this.doc.splitTextToSize(text, this.maxLineWidth);
     // Check if there's enough room for all the text
@@ -33,9 +46,20 @@ export default class PDFCreate {
       this.docY = this.MARGIN;
     }
 
-    this.doc.text(textLines, this.pageWidth / 2, this.docY, {
-      align: "center",
+    if (bold) this.doc.setFont(this.DEFAULT_FONT, "bold");
+    if (size) this.doc.setFontSize(size);
+    const docX =
+      align === "left"
+        ? this.MARGIN
+        : align === "center"
+          ? this.pageWidth / 2
+          : this.pageWidth - this.MARGIN;
+    this.doc.text(textLines, docX, this.docY, {
+      align,
     });
+
+    if (bold) this.doc.setFont(this.DEFAULT_FONT, "normal");
+    if (size) this.doc.setFontSize(this.DEFAULT_FONT_SIZE);
     this.paginate(textLines.length);
   }
 

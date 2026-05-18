@@ -343,9 +343,9 @@ router.get("/:id/pdf", async (req, res) => {
 
   const pdf = new PDFCreate();
 
-  pdf.text(recipe.name);
+  pdf.text(recipe.name, { bold: true, size: 20, align: "center" });
   await pdf.addImage(recipe.image, 62.4, 46.2);
-  pdf.text(`Image © ${recipe.credit}`);
+  pdf.text(`Image © ${recipe.credit}`, { size: 12, align: "center" });
   if (["mild", "spicy"].includes(recipe.spiceLevel)) {
     pdf.text(recipe.spiceLevel);
   }
@@ -359,19 +359,22 @@ router.get("/:id/pdf", async (req, res) => {
   pdf.text(`Great for: ${recipe.types.join(", ")}`);
   pdf.text(`Cuisines: ${recipe.culture.join(", ")}`);
 
-  pdf.text("Nutritional Facts");
-  pdf.text(`Health Score: ${recipe.healthScore}%`);
-  pdf.text(`${recipe.servings} servings`);
+  pdf.text("Nutritional Facts", { align: "center" });
+  pdf.text(`Health Score: ${recipe.healthScore}%`, { align: "center" });
+  pdf.text(`${recipe.servings} servings`, { align: "center" });
   for (const nutrient of recipe.nutrients) {
     pdf.text(
-      `${nutrient.name}: ${Math.round(nutrient.amount)} ${nutrient.unit}`
+      `${nutrient.name}: ${Math.round(nutrient.amount)} ${nutrient.unit}`,
+      { align: "center" }
     );
   }
   // Strip HTML tags from the summary
   pdf.text(`Summary: ${recipe.summary.replace(/<\/?[^>]+(>|$)/g, "")}`);
-  pdf.text("Ingredients");
+  pdf.text("Ingredients", { align: "center" });
   for (const ingredient of recipe.ingredients) {
-    pdf.text(`${ingredient.amount} ${ingredient.unit} ${ingredient.name}`);
+    pdf.text(`${ingredient.amount} ${ingredient.unit} ${ingredient.name}`, {
+      align: "center",
+    });
   }
 
   pdf.text("Steps");
@@ -392,7 +395,7 @@ router.get("/:id/pdf", async (req, res) => {
             20,
             20
           );
-          pdf.text(ingredient.name);
+          pdf.text(ingredient.name, { align: "center" });
         }
       }
 
@@ -405,12 +408,12 @@ router.get("/:id/pdf", async (req, res) => {
             20,
             20
           );
-          pdf.text(equipment.name);
+          pdf.text(equipment.name, { align: "center" });
         }
       }
     }
   }
-  pdf.text("Powered by spoonacular");
+  pdf.text("Powered by spoonacular", { size: 12 });
 
   const pdfBuffer = pdf.doc.output("arraybuffer");
   res.setHeader("Content-Type", "application/pdf");
