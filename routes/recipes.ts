@@ -344,22 +344,36 @@ router.get("/:id/pdf", async (req, res) => {
   const pdf = new PDFCreate();
 
   pdf.text(recipe.name, { bold: true, size: 20, align: "center" });
-  await pdf.addImage(recipe.image, 62.4, 46.2);
+  await pdf.addImage(recipe.image, 62.4, 46.2, { align: "center" });
   pdf.text(`Image © ${recipe.credit}`, { size: 12, align: "center" });
-  if (["mild", "spicy"].includes(recipe.spiceLevel)) {
-    pdf.text(recipe.spiceLevel, { circle: true });
-  }
-  if (recipe.isVegetarian) pdf.text("Vegetarian", { circle: true });
-  if (recipe.isVegan) pdf.text("Vegan", { circle: true });
-  if (recipe.isGlutenFree) pdf.text("Gluten-Free", { circle: true });
-  if (recipe.isHealthy) pdf.text("Healthy", { circle: true });
-  if (recipe.isCheap) pdf.text("Cheap", { circle: true });
-  if (recipe.isSustainable) pdf.text("Sustainable", { circle: true });
-  pdf.text(`Time: ${recipe.time} minutes`);
-  pdf.text(`Great for: ${recipe.types.join(", ")}`);
-  pdf.text(`Cuisines: ${recipe.culture.join(", ")}`);
 
-  pdf.text("Nutritional Facts", { align: "center" });
+  pdf.beginLine();
+  if (["mild", "spicy"].includes(recipe.spiceLevel)) {
+    pdf.text(recipe.spiceLevel, { pill: true });
+  }
+  if (recipe.isVegetarian) pdf.text("Vegetarian", { pill: true });
+  if (recipe.isVegan) pdf.text("Vegan", { pill: true });
+  if (recipe.isGlutenFree) pdf.text("Gluten-Free", { pill: true });
+  if (recipe.isHealthy) pdf.text("Healthy", { pill: true });
+  if (recipe.isCheap) pdf.text("Cheap", { pill: true });
+  if (recipe.isSustainable) pdf.text("Sustainable", { pill: true });
+  pdf.endLine();
+
+  pdf.beginLine(30);
+  pdf.text("Time:", { bold: true });
+  pdf.text(`${recipe.time} minutes`);
+  pdf.endLine();
+  pdf.beginLine(30);
+  pdf.text("Great for:", { bold: true });
+  pdf.text(`${recipe.types.join(", ")}`);
+  pdf.endLine();
+  pdf.beginLine(30);
+  pdf.text("Cuisines:", { bold: true });
+  pdf.text(`${recipe.culture.join(", ")}`);
+  pdf.endLine();
+  pdf.divider();
+
+  pdf.text("Nutrition Facts", { bold: true, size: 18, align: "center" });
   pdf.text(`Health Score: ${recipe.healthScore}%`, { align: "center" });
   pdf.text(`${recipe.servings} servings`, { align: "center" });
   for (const nutrient of recipe.nutrients) {
@@ -368,14 +382,16 @@ router.get("/:id/pdf", async (req, res) => {
       { align: "center" }
     );
   }
-  pdf.text("Ingredients", { align: "center" });
+  pdf.text(""); // spacer
+  pdf.text("Ingredients", { bold: true, size: 18, align: "center" });
   for (const ingredient of recipe.ingredients) {
     pdf.text(`${ingredient.amount} ${ingredient.unit} ${ingredient.name}`, {
       align: "center",
     });
   }
+  pdf.divider();
 
-  pdf.text("Steps");
+  pdf.text("Steps", { bold: true, size: 18 });
   for (const instruction of recipe.instructions) {
     if (instruction.name.length > 0) {
       pdf.text(instruction.name);
@@ -387,28 +403,44 @@ router.get("/:id/pdf", async (req, res) => {
       if (step.ingredients.length > 0) {
         pdf.text("Ingredients");
 
+        pdf.beginLine(40);
         for (const ingredient of step.ingredients) {
           await pdf.addImage(
             `https://img.spoonacular.com/ingredients_100x100/${ingredient.image}`,
             20,
             20
           );
-          pdf.text(ingredient.name, { align: "center" });
         }
+        pdf.endLine(3);
+
+        pdf.beginLine(40);
+        for (const ingredient of step.ingredients) {
+          pdf.text(ingredient.name);
+        }
+        pdf.endLine();
       }
 
       if (step.equipment.length > 0) {
         pdf.text("Equipment");
 
+        pdf.beginLine(40);
         for (const equipment of step.equipment) {
           await pdf.addImage(
             `https://img.spoonacular.com/equipment_100x100/${equipment.image}`,
             20,
             20
           );
-          pdf.text(equipment.name, { align: "center" });
         }
+        pdf.endLine(3);
+
+        pdf.beginLine(40);
+        for (const equipment of step.equipment) {
+          pdf.text(equipment.name);
+        }
+        pdf.endLine();
       }
+
+      pdf.divider();
     }
   }
   pdf.text("Powered by spoonacular", { size: 12 });
