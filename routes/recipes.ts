@@ -37,6 +37,7 @@ import RecipePatch from "../types/client/RecipePatch";
 import { isObject } from "../utils/object";
 import checkAuthStatus from "../utils/auth/checkAuthStatus";
 import PDFCreate from "../utils/pdf-create";
+import { zip } from "../utils/array";
 
 const badRequestError = (res: Response, error: string) => {
   res.status(400).json({ error });
@@ -373,21 +374,61 @@ router.get("/:id/pdf", async (req, res) => {
   pdf.endLine();
   pdf.divider();
 
-  pdf.text("Nutrition Facts", { bold: true, size: 18, align: "center" });
-  pdf.text(`Health Score: ${recipe.healthScore}%`, { align: "center" });
-  pdf.text(`${recipe.servings} servings`, { align: "center" });
-  for (const nutrient of recipe.nutrients) {
+  // Display nutrition facts and ingredients side-by-side
+  pdf.beginLine();
+  pdf.text("Nutrition Facts", { bold: true, size: 18 });
+  pdf.text("Ingredients", { bold: true, size: 18, align: "right" });
+  pdf.endLine();
+  pdf.beginLine();
+  pdf.text(`Health Score: ${recipe.healthScore}%`);
+  if (recipe.ingredients.length > 0) {
     pdf.text(
-      `${nutrient.name}: ${Math.round(nutrient.amount)} ${nutrient.unit}`,
-      { align: "center" }
+      `${recipe.ingredients[0].amount} ${recipe.ingredients[0].unit} ${recipe.ingredients[0].name}`,
+      {
+        align: "right",
+      }
     );
   }
-  pdf.text(""); // spacer
-  pdf.text("Ingredients", { bold: true, size: 18, align: "center" });
-  for (const ingredient of recipe.ingredients) {
-    pdf.text(`${ingredient.amount} ${ingredient.unit} ${ingredient.name}`, {
-      align: "center",
-    });
+  pdf.endLine();
+  pdf.beginLine();
+  pdf.text(`${recipe.servings} servings`);
+  if (recipe.ingredients.length > 1) {
+    pdf.text(
+      `${recipe.ingredients[1].amount} ${recipe.ingredients[1].unit} ${recipe.ingredients[1].name}`,
+      {
+        align: "right",
+      }
+    );
+  }
+  pdf.endLine();
+
+  const nutrientIngredients = zip(
+    recipe.nutrients,
+    recipe.ingredients.slice(2)
+  );
+  for (const [nutrient, ingredient] of nutrientIngredients) {
+    pdf.beginLine();
+    pdf.text(
+      nutrient === undefined
+        ? ""
+        : `${nutrient.name}: ${Math.round(nutrient.amount)} ${nutrient.unit}`,
+      {
+        bold:
+          nutrient !== undefined &&
+          ["Calories", "Fat", "Carbohydrates", "Protein"].includes(
+            nutrient.name
+          ),
+      }
+    );
+    pdf.text(
+      ingredient === undefined
+        ? ""
+        : `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`,
+      {
+        align: "right",
+      }
+    );
+    pdf.endLine();
   }
   pdf.divider();
 
@@ -413,7 +454,7 @@ router.get("/:id/pdf", async (req, res) => {
         pdf.endLine(3);
 
         pdf.beginLine(40);
-        pdf.text("");
+        pdf.text(""); // spacer
         for (const ingredient of step.ingredients) {
           pdf.text(ingredient.name);
         }
