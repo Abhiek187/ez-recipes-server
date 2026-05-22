@@ -401,9 +401,8 @@ router.get("/:id/pdf", async (req, res) => {
       pdf.text(`${step.number}. ${step.step}`);
 
       if (step.ingredients.length > 0) {
-        pdf.text("Ingredients");
-
         pdf.beginLine(40);
+        pdf.text("Ingredients", { bold: true });
         for (const ingredient of step.ingredients) {
           await pdf.addImage(
             `https://img.spoonacular.com/ingredients_100x100/${ingredient.image}`,
@@ -414,6 +413,7 @@ router.get("/:id/pdf", async (req, res) => {
         pdf.endLine(3);
 
         pdf.beginLine(40);
+        pdf.text("");
         for (const ingredient of step.ingredients) {
           pdf.text(ingredient.name);
         }
@@ -421,9 +421,8 @@ router.get("/:id/pdf", async (req, res) => {
       }
 
       if (step.equipment.length > 0) {
-        pdf.text("Equipment");
-
         pdf.beginLine(40);
+        pdf.text("Equipment", { bold: true });
         for (const equipment of step.equipment) {
           await pdf.addImage(
             `https://img.spoonacular.com/equipment_100x100/${equipment.image}`,
@@ -434,6 +433,7 @@ router.get("/:id/pdf", async (req, res) => {
         pdf.endLine(3);
 
         pdf.beginLine(40);
+        pdf.text("");
         for (const equipment of step.equipment) {
           pdf.text(equipment.name);
         }
