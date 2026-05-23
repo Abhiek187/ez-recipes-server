@@ -389,6 +389,7 @@ router.get("/:id/pdf", async (req, res) => {
     pdf.text(
       `${recipe.ingredients[0].amount} ${recipe.ingredients[0].unit} ${recipe.ingredients[0].name}`,
       {
+        size: 14,
         align: "right",
       }
     );
@@ -400,6 +401,7 @@ router.get("/:id/pdf", async (req, res) => {
     pdf.text(
       `${recipe.ingredients[1].amount} ${recipe.ingredients[1].unit} ${recipe.ingredients[1].name}`,
       {
+        size: 14,
         align: "right",
       }
     );
@@ -422,6 +424,7 @@ router.get("/:id/pdf", async (req, res) => {
           ["Calories", "Fat", "Carbohydrates", "Protein"].includes(
             nutrient.name
           ),
+        size: 14,
       }
     );
     pdf.text(
@@ -429,6 +432,7 @@ router.get("/:id/pdf", async (req, res) => {
         ? ""
         : `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`,
       {
+        size: 14,
         align: "right",
       }
     );
@@ -472,7 +476,7 @@ router.get("/:id/pdf", async (req, res) => {
             index,
             index + delta
           )) {
-            pdf.text(ingredient.name);
+            pdf.text(ingredient.name, { size: 15 });
           }
           pdf.endLine();
 
@@ -501,7 +505,7 @@ router.get("/:id/pdf", async (req, res) => {
           pdf.beginLine(40);
           if (index === 0) pdf.text("");
           for (const equipment of step.equipment.slice(index, index + delta)) {
-            pdf.text(equipment.name);
+            pdf.text(equipment.name, { size: 15 });
           }
           pdf.endLine();
 

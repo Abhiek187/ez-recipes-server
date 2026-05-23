@@ -74,8 +74,9 @@ export default class PDFCreate {
   ) {
     // Split long text across multiple lines
     const textLines = this.doc.splitTextToSize(text, this.maxLineWidth);
+    const textSize = this.doc.getTextDimensions(text);
     // Check if there's enough room for all the text
-    if (this.docX + this.deltaX >= this.pageWidth - this.MARGIN) {
+    if (this.docX + textSize.w >= this.pageWidth - this.MARGIN) {
       this.newLine();
     }
     if (
@@ -97,7 +98,6 @@ export default class PDFCreate {
       align,
     });
     if (pill) {
-      const textSize = this.doc.getTextDimensions(text);
       this.doc.roundedRect(
         docX - 1.5,
         this.docY - textSize.h - 0.5,
