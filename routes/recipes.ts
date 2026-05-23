@@ -364,14 +364,18 @@ router.get("/:id/pdf", async (req, res) => {
   pdf.text("Time:", { bold: true });
   pdf.text(`${recipe.time} minutes`);
   pdf.endLine();
-  pdf.beginLine(30);
-  pdf.text("Great for:", { bold: true });
-  pdf.text(`${recipe.types.join(", ")}`);
-  pdf.endLine();
-  pdf.beginLine(30);
-  pdf.text("Cuisines:", { bold: true });
-  pdf.text(`${recipe.culture.join(", ")}`);
-  pdf.endLine();
+  if (recipe.types.length > 0) {
+    pdf.beginLine(30);
+    pdf.text("Great for:", { bold: true });
+    pdf.text(`${recipe.types.join(", ")}`);
+    pdf.endLine();
+  }
+  if (recipe.culture.length > 0) {
+    pdf.beginLine(30);
+    pdf.text("Cuisines:", { bold: true });
+    pdf.text(`${recipe.culture.join(", ")}`);
+    pdf.endLine();
+  }
   pdf.divider();
 
   // Display nutrition facts and ingredients side-by-side
