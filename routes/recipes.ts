@@ -448,41 +448,66 @@ router.get("/:id/pdf", async (req, res) => {
       if (step.ingredients.length > 0) {
         pdf.beginLine(40);
         pdf.text("Ingredients", { bold: true });
-        for (const ingredient of step.ingredients) {
-          await pdf.addImage(
-            `https://img.spoonacular.com/ingredients_100x100/${ingredient.image}`,
-            20,
-            20
-          );
-        }
-        pdf.endLine(3);
 
-        pdf.beginLine(40);
-        pdf.text(""); // spacer
-        for (const ingredient of step.ingredients) {
-          pdf.text(ingredient.name);
+        // Start with 4 items, then 5 on subsequent rows
+        let index = 0;
+        let delta = 4;
+        while (index < step.ingredients.length) {
+          if (index > 0) pdf.beginLine(40);
+          for (const ingredient of step.ingredients.slice(
+            index,
+            index + delta
+          )) {
+            await pdf.addImage(
+              `https://img.spoonacular.com/ingredients_100x100/${ingredient.image}`,
+              20,
+              20
+            );
+          }
+          pdf.endLine(3);
+
+          pdf.beginLine(40);
+          if (index === 0) pdf.text(""); // spacer
+          for (const ingredient of step.ingredients.slice(
+            index,
+            index + delta
+          )) {
+            pdf.text(ingredient.name);
+          }
+          pdf.endLine();
+
+          index += delta;
+          if (delta === 4) delta = 5;
         }
-        pdf.endLine();
       }
 
       if (step.equipment.length > 0) {
         pdf.beginLine(40);
         pdf.text("Equipment", { bold: true });
-        for (const equipment of step.equipment) {
-          await pdf.addImage(
-            `https://img.spoonacular.com/equipment_100x100/${equipment.image}`,
-            20,
-            20
-          );
-        }
-        pdf.endLine(3);
 
-        pdf.beginLine(40);
-        pdf.text("");
-        for (const equipment of step.equipment) {
-          pdf.text(equipment.name);
+        let index = 0;
+        let delta = 4;
+        while (index < step.equipment.length) {
+          if (index > 0) pdf.beginLine(40);
+          for (const equipment of step.equipment.slice(index, index + delta)) {
+            await pdf.addImage(
+              `https://img.spoonacular.com/equipment_100x100/${equipment.image}`,
+              20,
+              20
+            );
+          }
+          pdf.endLine(3);
+
+          pdf.beginLine(40);
+          if (index === 0) pdf.text("");
+          for (const equipment of step.equipment.slice(index, index + delta)) {
+            pdf.text(equipment.name);
+          }
+          pdf.endLine();
+
+          index += delta;
+          if (delta === 4) delta = 5;
         }
-        pdf.endLine();
       }
 
       pdf.divider();
