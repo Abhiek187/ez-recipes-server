@@ -348,7 +348,7 @@ router.get("/:id/pdf", async (req, res) => {
   await pdf.addImage(recipe.image, 62.4, 46.2, { align: "center" });
   pdf.text(`Image © ${recipe.credit}`, { size: 12, align: "center" });
 
-  pdf.beginLine();
+  pdf.beginLine(35);
   if (["mild", "spicy"].includes(recipe.spiceLevel)) {
     pdf.text(recipe.spiceLevel, { pill: true });
   }
