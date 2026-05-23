@@ -36,6 +36,8 @@ import auth from "../middleware/auth";
 import RecipePatch from "../types/client/RecipePatch";
 import { isObject } from "../utils/object";
 import checkAuthStatus from "../utils/auth/checkAuthStatus";
+import PDFCreate from "../utils/pdf-create";
+import { zip } from "../utils/array";
 
 const badRequestError = (res: Response, error: string) => {
   res.status(400).json({ error });
@@ -321,6 +323,209 @@ router.patch("/:id", auth, async (req, res) => {
   }
 
   res.status(200).json({ token });
+});
+
+router.get("/:id/pdf", async (req, res) => {
+  const { id } = req.params;
+
+  if (!isNumeric(id)) {
+    res.status(400).json({ error: "The recipe ID must be numeric" });
+    return;
+  }
+
+  const recipe = await fetchRecipe(Number(id));
+
+  if (recipe === null) {
+    res
+      .status(404)
+      .json({ error: `A recipe with the id ${id} does not exist.` });
+    return;
+  }
+
+  const pdf = new PDFCreate();
+
+  pdf.text(recipe.name, { bold: true, size: 20, align: "center" });
+  await pdf.addImage(recipe.image, 62.4, 46.2, { align: "center" });
+  pdf.text(`Image © ${recipe.credit}`, { size: 12, align: "center" });
+
+  pdf.beginLine();
+  if (["mild", "spicy"].includes(recipe.spiceLevel)) {
+    pdf.text(recipe.spiceLevel, { pill: true });
+  }
+  if (recipe.isVegetarian) pdf.text("Vegetarian", { pill: true });
+  if (recipe.isVegan) pdf.text("Vegan", { pill: true });
+  if (recipe.isGlutenFree) pdf.text("Gluten-Free", { pill: true });
+  if (recipe.isHealthy) pdf.text("Healthy", { pill: true });
+  if (recipe.isCheap) pdf.text("Cheap", { pill: true });
+  if (recipe.isSustainable) pdf.text("Sustainable", { pill: true });
+  pdf.endLine();
+
+  pdf.beginLine(30);
+  pdf.text("Time:", { bold: true });
+  pdf.text(`${recipe.time} minutes`);
+  pdf.endLine();
+  if (recipe.types.length > 0) {
+    pdf.beginLine(30);
+    pdf.text("Great for:", { bold: true });
+    pdf.text(`${recipe.types.join(", ")}`);
+    pdf.endLine();
+  }
+  if (recipe.culture.length > 0) {
+    pdf.beginLine(30);
+    pdf.text("Cuisines:", { bold: true });
+    pdf.text(`${recipe.culture.join(", ")}`);
+    pdf.endLine();
+  }
+  pdf.divider();
+
+  // Display nutrition facts and ingredients side-by-side
+  pdf.beginLine();
+  pdf.text("Nutrition Facts", { bold: true, size: 18 });
+  pdf.text("Ingredients", { bold: true, size: 18, align: "right" });
+  pdf.endLine();
+  pdf.beginLine();
+  pdf.text(`Health Score: ${recipe.healthScore}%`);
+  if (recipe.ingredients.length > 0) {
+    pdf.text(
+      `${recipe.ingredients[0].amount} ${recipe.ingredients[0].unit} ${recipe.ingredients[0].name}`,
+      {
+        size: 14,
+        align: "right",
+      }
+    );
+  }
+  pdf.endLine();
+  pdf.beginLine();
+  pdf.text(`${recipe.servings} servings`);
+  if (recipe.ingredients.length > 1) {
+    pdf.text(
+      `${recipe.ingredients[1].amount} ${recipe.ingredients[1].unit} ${recipe.ingredients[1].name}`,
+      {
+        size: 14,
+        align: "right",
+      }
+    );
+  }
+  pdf.endLine();
+
+  const nutrientIngredients = zip(
+    recipe.nutrients,
+    recipe.ingredients.slice(2)
+  );
+  for (const [nutrient, ingredient] of nutrientIngredients) {
+    pdf.beginLine();
+    pdf.text(
+      nutrient === undefined
+        ? ""
+        : `${nutrient.name}: ${Math.round(nutrient.amount)} ${nutrient.unit}`,
+      {
+        bold:
+          nutrient !== undefined &&
+          ["Calories", "Fat", "Carbohydrates", "Protein"].includes(
+            nutrient.name
+          ),
+        size: 14,
+      }
+    );
+    pdf.text(
+      ingredient === undefined
+        ? ""
+        : `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`,
+      {
+        size: 14,
+        align: "right",
+      }
+    );
+    pdf.endLine();
+  }
+  pdf.divider();
+
+  pdf.text("Steps", { bold: true, size: 18 });
+  for (const instruction of recipe.instructions) {
+    if (instruction.name.length > 0) {
+      pdf.text(instruction.name);
+    }
+
+    for (const step of instruction.steps) {
+      pdf.text(`${step.number}. ${step.step}`);
+
+      if (step.ingredients.length > 0) {
+        pdf.beginLine(40);
+        pdf.text("Ingredients", { bold: true });
+
+        // Start with 4 items, then 5 on subsequent rows
+        let index = 0;
+        let delta = 4;
+        while (index < step.ingredients.length) {
+          if (index > 0) pdf.beginLine(40);
+          for (const ingredient of step.ingredients.slice(
+            index,
+            index + delta
+          )) {
+            await pdf.addImage(
+              `https://img.spoonacular.com/ingredients_100x100/${ingredient.image}`,
+              20,
+              20
+            );
+          }
+          pdf.endLine(3);
+
+          pdf.beginLine(40);
+          if (index === 0) pdf.text(""); // spacer
+          for (const ingredient of step.ingredients.slice(
+            index,
+            index + delta
+          )) {
+            pdf.text(ingredient.name, { size: 15 });
+          }
+          pdf.endLine();
+
+          index += delta;
+          if (delta === 4) delta = 5;
+        }
+      }
+
+      if (step.equipment.length > 0) {
+        pdf.beginLine(40);
+        pdf.text("Equipment", { bold: true });
+
+        let index = 0;
+        let delta = 4;
+        while (index < step.equipment.length) {
+          if (index > 0) pdf.beginLine(40);
+          for (const equipment of step.equipment.slice(index, index + delta)) {
+            await pdf.addImage(
+              `https://img.spoonacular.com/equipment_100x100/${equipment.image}`,
+              20,
+              20
+            );
+          }
+          pdf.endLine(3);
+
+          pdf.beginLine(40);
+          if (index === 0) pdf.text("");
+          for (const equipment of step.equipment.slice(index, index + delta)) {
+            pdf.text(equipment.name, { size: 15 });
+          }
+          pdf.endLine();
+
+          index += delta;
+          if (delta === 4) delta = 5;
+        }
+      }
+
+      pdf.divider();
+    }
+  }
+  pdf.text("Powered by spoonacular", { size: 12 });
+
+  const pdfBuffer = pdf.doc.output("arraybuffer");
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=${recipe.name}.pdf`
+  );
+  res.send(Buffer.from(pdfBuffer));
 });
 
 export default router;

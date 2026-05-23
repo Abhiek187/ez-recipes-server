@@ -25,6 +25,8 @@ paths:
     $ref: "./docs/recipes.yaml#/paths/~1random"
   /api/recipes/{id}:
     $ref: "./docs/recipes.yaml#/paths/~1{id}"
+  /api/recipes/{id}/pdf:
+    $ref: "./docs/recipes.yaml#/paths/~1{id}~1pdf"
 
   /api/terms:
     $ref: "./docs/terms.yaml#/paths/~1"
