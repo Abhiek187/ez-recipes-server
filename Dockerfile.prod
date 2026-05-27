@@ -1,6 +1,6 @@
 # Fetch the latest LTS version of node
 # slim is required over alpine for glibc support in the 🤗 transformers ONNX runtime
-FROM node:26-slim
+FROM node:26-slim AS builder
 
 # Create server directory
 WORKDIR /usr/src/server
@@ -9,7 +9,7 @@ WORKDIR /usr/src/server
 # where available (npm@5+)
 COPY package*.json ./
 
-# Typescript is the only dev dependency needed in production
+# TypeScript is the only dev dependency needed in production
 RUN npm ci --omit=dev && \
     npm ci typescript && \
     npm cache clean --force
@@ -19,6 +19,14 @@ COPY . .
 
 # Compile the build in the dist directory
 RUN npm run build
+
+# Create a second stage containing only node_modules and dist
+FROM node:26-slim
+WORKDIR /usr/src/server
+
+COPY package*.json openapi.yaml ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=builder /usr/src/server/dist ./dist
 
 # Run the node server on port 5000 and open the connection
 EXPOSE $PORT
