@@ -305,6 +305,7 @@ router.post(
   "/oauth",
   body().isObject().withMessage("Body is missing or not an object"),
   body("code").isString().withMessage("Invalid/missing code"),
+  body("state").isString().withMessage("Invalid/missing state"),
   body("providerId")
     .isString()
     .withMessage("Invalid/missing providerId")
@@ -316,7 +317,7 @@ router.post(
     checkValidations(req, res);
     if (res.writableEnded) return;
 
-    const { code, providerId, redirectUrl } = req.body;
+    const { code, state, providerId, redirectUrl } = req.body;
     const { token } = res.locals;
     let oauthToken: string;
     let errorPrefix = `Failed to login to OAuth provider ${providerId}`;
@@ -326,6 +327,7 @@ router.post(
       oauthToken = await FirebaseApi.instance.getOAuthToken(
         providerId,
         code,
+        state,
         redirectUrl
       );
     } catch (error) {

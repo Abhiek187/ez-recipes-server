@@ -758,6 +758,11 @@ components:
         code:
           type: string
           description: The authorization code received after signing in with an OAuth provider
+        state:
+          type: string
+          description: >-
+            The randomly generated state returned by the OAuth provider
+            (MUST be validated client-side before passing in)
         providerId:
           $ref: "#/components/schemas/providerId"
         redirectUrl:
