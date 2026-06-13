@@ -1,7 +1,7 @@
 type Temp = {
   _id: string;
-  createdAt: Date; // required to setup TTL
-  challenge?: string; // passkey challenge data
+  expiresAt: Date; // required to setup TTL
+  challenge?: string; // passkey/PKCE challenge data
 };
 
 export default Temp;

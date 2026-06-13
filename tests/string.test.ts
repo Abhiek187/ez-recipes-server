@@ -1,4 +1,9 @@
-import { isAtLeastDaysOld, isInteger, isNumeric } from "../utils/string";
+import {
+  generateRandomString,
+  isAtLeastDaysOld,
+  isInteger,
+  isNumeric,
+} from "../utils/string";
 
 describe("isNumeric", () => {
   it.each([
@@ -116,4 +121,15 @@ describe("isAtLeastDaysOld", () => {
       expect(isAtLeastDaysOld(date, 0)).toBe(false);
     }
   );
+});
+
+describe("generateRandomString", () => {
+  it("generates unique strings each time", () => {
+    const str1 = generateRandomString(16);
+    const str2 = generateRandomString(16);
+
+    expect(str1).toHaveLength(16);
+    expect(str2).toHaveLength(16);
+    expect(str1).not.toBe(str2);
+  });
 });

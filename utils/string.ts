@@ -1,4 +1,5 @@
 // Helper methods for strings
+import crypto from "node:crypto";
 
 /**
  * Check if the input is a number or a string that can be parsed as a number
@@ -32,3 +33,19 @@ export const isAtLeastDaysOld = (timestamp: string, days: number): boolean => {
   const daysInMs = days * 24 * 60 * 60 * 1000;
   return currentUTC - oldUTC >= daysInMs;
 };
+
+/**
+ * Create a cryptographically secure random string of a specified length
+ * @param length the length of the string (default: 64)
+ * @returns a randomly generated string
+ */
+export const generateRandomString = (length: number = 64): string =>
+  crypto.randomBytes(length).toString("base64url").slice(0, length);
+
+/**
+ * Hash a given string using SHA-256
+ * @param message the string to hash
+ * @returns the SHA-256 hash, base64 URL-encoded
+ */
+export const sha256 = (message: string): string =>
+  crypto.createHash("sha256").update(message).digest("base64url");

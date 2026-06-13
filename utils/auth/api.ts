@@ -12,6 +12,8 @@ import FirebaseAuthUrlResponse from "../../types/firebase/FirebaseAuthUrlRespons
 import OAuthUrl from "../../types/client/OAuthUrl";
 import { OAuthConfig } from "./oauth";
 import FirebaseIdpResponse from "../../types/firebase/FirebaseIdpResponse";
+import { generateRandomString, sha256 } from "../string";
+import { getPKCEChallenge, savePKCEChallenge } from "../db";
 
 export default class FirebaseApi {
   private static _instance: FirebaseApi;
@@ -168,13 +170,35 @@ export default class FirebaseApi {
    */
   async getOAuthUrls(redirectUrl: string): Promise<OAuthUrl[]> {
     const authUrlResponses = await Promise.all(
-      Object.values(OAuthProvider).map((provider) =>
-        this.idApi.post<FirebaseAuthUrlResponse>("/accounts:createAuthUri", {
-          continueUri: redirectUrl,
-          providerId: provider,
-          authFlowType: "CODE_FLOW",
-        })
-      )
+      Object.values(OAuthProvider).map(async (provider) => {
+        // Generate a random PKCE challenge to save alongside the state
+        const codeVerifier = generateRandomString();
+
+        const authUrlResponse = await this.idApi.post<FirebaseAuthUrlResponse>(
+          "/accounts:createAuthUri",
+          {
+            continueUri: redirectUrl,
+            providerId: provider,
+            authFlowType: "CODE_FLOW",
+            customParameter: {
+              code_challenge: sha256(codeVerifier),
+              code_challenge_method: "S256",
+            },
+          }
+        );
+
+        const state = new URL(authUrlResponse.data.authUri).searchParams.get(
+          "state"
+        );
+        if (state === null) {
+          throw new Error(
+            `state missing from URL for OAuth provider ${provider}`
+          );
+        }
+
+        await savePKCEChallenge(state, codeVerifier);
+        return authUrlResponse;
+      })
     );
 
     return authUrlResponses.map((authUrlResponse) => ({
@@ -187,15 +211,19 @@ export default class FirebaseApi {
    * Exchange the authorization code for an ID or access token from the OAuth provider
    * @param providerId the provider ID
    * @param code the authorization code after signing in with the provider
+   * @param state the randomly generated state returned by the OAuth provider
    * @param redirectUrl the same redirect URL used in the authorization endpoint
    * @returns the ID or access token from the OAuth provider
    */
   async getOAuthToken(
     providerId: OAuthProvider,
     code: string,
+    state: string,
     redirectUrl: string
   ): Promise<string> {
     const { clientId, clientSecret, tokenUrl } = OAuthConfig[providerId];
+    const challengeData = await getPKCEChallenge(state);
+
     // Pass x-www-form-urlencoded parameters
     const params = querystring.stringify({
       client_id: clientId,
@@ -203,6 +231,8 @@ export default class FirebaseApi {
       code,
       redirect_uri: redirectUrl,
       grant_type: "authorization_code",
+      // If the PKCE challenge expired, let the API fail
+      code_verifier: challengeData?.challenge,
     });
 
     const oauthApi = createAxios({
