@@ -12,7 +12,7 @@ import FirebaseAuthUrlResponse from "../../types/firebase/FirebaseAuthUrlRespons
 import OAuthUrl from "../../types/client/OAuthUrl";
 import { OAuthConfig } from "./oauth";
 import FirebaseIdpResponse from "../../types/firebase/FirebaseIdpResponse";
-import { base64URLEncode, generateRandomString, sha256 } from "../string";
+import { generateRandomString, sha256 } from "../string";
 import { getPKCEChallenge, savePKCEChallenge } from "../db";
 
 export default class FirebaseApi {
@@ -181,7 +181,7 @@ export default class FirebaseApi {
             providerId: provider,
             authFlowType: "CODE_FLOW",
             customParameter: {
-              code_challenge: base64URLEncode(await sha256(codeVerifier)),
+              code_challenge: sha256(codeVerifier),
               code_challenge_method: "S256",
             },
           }

@@ -23,7 +23,7 @@ Firebase is used to manage user authentication. Chefs can create an account to g
 
 By delegating Firebase to the server-side, these settings can be synced across all the client apps for a seamless cooking experience.
 
-Additionally, Firebase is used to handle OAuth flows with Google, Facebook, and GitHub. Multiple accounts can be linked together if signed in. @simplewebauth/server was used to create, login, and validate passkeys for a more secure way to sign in. In conjunction with MongoDB, chefs can easily identify, sync, and delete passkeys from their account.
+Additionally, Firebase is used to handle OAuth PKCE flows with Google, Facebook, and GitHub. Multiple accounts can be linked together if signed in. @simplewebauth/server was used to create, login, and validate passkeys for a more secure way to sign in. In conjunction with MongoDB, chefs can easily identify, sync, and delete passkeys from their account.
 
 ## Features
 
@@ -31,7 +31,7 @@ Additionally, Firebase is used to handle OAuth flows with Google, Facebook, and 
 - RESTful APIs
 - MongoDB to store data, query data, and do full-text search
 - Pagination to reduce bandwidth and optimize query performance
-- Firebase for user authentication with passwords, OAuth providers, and passkeys
+- Firebase for user authentication with passwords, OAuth providers w/ PKCE, and passkeys
 - Docker to containerize the server on any machine
 - OpenAPI to publish standardized API documentation
 - GitHub Actions for automated testing and deployment in a CI/CD pipeline
@@ -143,11 +143,14 @@ actor User
 User->>App: Open login form
 App->>Server: GET /api/chefs/oauth
 Server->>Firebase: Create auth URLs
+Server->>MongoDB: Temporarily save PKCE challenge
 Server-->>App: 200 OK
 User->>App: Select OAuth provider
 App->>OAuth Provider: Sign in
 OAuth Provider-->>App: Authorization code
 App->>Server: POST /api/chefs/oauth
+Server->>MongoDB: Get PKCE challenge
+MongoDB->>MongoDB: Discard PKCE challenge after 5 minutes
 Server->>OAuth Provider: Exchange code for OAuth token
 Server->>Firebase: Exchange OAuth token for Firebase token
 opt New account

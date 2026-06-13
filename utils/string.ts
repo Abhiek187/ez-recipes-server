@@ -35,14 +35,6 @@ export const isAtLeastDaysOld = (timestamp: string, days: number): boolean => {
 };
 
 /**
- * Convert an ArrayBuffer to a base64 URL-encoded string
- * @param str the array buffer
- * @returns a base64 URL-encoded string
- */
-export const base64URLEncode = (buffer: ArrayBuffer): string =>
-  Buffer.from(buffer).toString("base64url");
-
-/**
  * Create a cryptographically secure random string of a specified length
  * @param length the length of the string (default: 64)
  * @returns a randomly generated string
@@ -53,11 +45,7 @@ export const generateRandomString = (length: number = 64): string =>
 /**
  * Hash a given string using SHA-256
  * @param message the string to hash
- * @returns the SHA-256 hash as an ArrayBuffer
+ * @returns the SHA-256 hash, base64 URL-encoded
  */
-export const sha256 = async (message: string): Promise<ArrayBuffer> => {
-  // Encode the message as an array of unsigned ints (buffer)
-  const msgBuffer = Buffer.from(message);
-  // Hash the buffer using SHA-256
-  return await crypto.subtle.digest("SHA-256", msgBuffer);
-};
+export const sha256 = (message: string): string =>
+  crypto.createHash("sha256").update(message).digest("base64url");
