@@ -87,9 +87,10 @@ export const savePKCEChallenge = async (
  */
 export const getPKCEChallenge = async (state: string): Promise<Temp | null> => {
   try {
-    return await TempModel.findById(state).exec();
+    // More secure than findById for request parameters
+    return await TempModel.findOne({ _id: { $eq: state } }).exec();
   } catch (error) {
-    console.error(`Failed to get PKCE challenge for state ${state}:`, error);
+    console.error("Failed to get PKCE challenge for state", `${state}:`, error);
     return null;
   }
 };
