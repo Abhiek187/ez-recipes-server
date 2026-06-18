@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { AuthClientErrorCode, FirebaseAuthError } from "firebase-admin/auth";
+import { AuthErrorCode, FirebaseAuthError } from "firebase-admin/auth";
 import { jwtDecode } from "jwt-decode";
 
 import FirebaseAdmin from "../utils/auth/admin";
@@ -76,7 +76,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     // The token could also be expired if the kid claim is invalid
     // (but don't check for auth/argument-error)
     if (
-      error.code === `auth/${AuthClientErrorCode.ID_TOKEN_EXPIRED.code}` ||
+      error.code === `auth/${AuthErrorCode.ID_TOKEN_EXPIRED}` ||
       error.message?.includes("expired")
     ) {
       try {
