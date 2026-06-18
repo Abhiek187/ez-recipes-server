@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AuthClientErrorCode } from "firebase-admin/auth";
+import { AuthErrorCode } from "firebase-admin/auth";
 import * as jwt from "jwt-decode";
 
 import auth from "../middleware/auth";
@@ -40,12 +40,12 @@ const mockValidateToken = (
       : jest.fn().mockRejectedValue(
           isExpired
             ? {
-                ...AuthClientErrorCode.ID_TOKEN_EXPIRED,
-                code: `auth/${AuthClientErrorCode.ID_TOKEN_EXPIRED.code}`,
+                code: `auth/${AuthErrorCode.ID_TOKEN_EXPIRED}`,
+                message: "The provided Firebase ID token is expired.",
               }
             : isInvalidKid
               ? {
-                  code: `auth/${AuthClientErrorCode.INVALID_ARGUMENT.code}`,
+                  code: `auth/${AuthErrorCode.INVALID_ARGUMENT}`,
                   message:
                     'Firebase ID token has "kid" claim which does not correspond to a known ' +
                     "public key. Most likely the ID token is expired, so get a fresh token from " +

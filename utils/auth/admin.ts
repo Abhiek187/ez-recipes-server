@@ -1,5 +1,5 @@
 // Need to enable allowSyntheticDefaultImports
-import { credential } from "firebase-admin";
+import { cert } from "firebase-admin";
 import { initializeApp } from "firebase-admin/app";
 import { DecodedIdToken, getAuth, UserRecord } from "firebase-admin/auth";
 
@@ -13,9 +13,7 @@ export default class FirebaseAdmin {
   private constructor() {
     // Application Default Credentials (ADC) don't work as of firebase-admin v13
     initializeApp({
-      credential: credential.cert(
-        `${process.env.GOOGLE_APPLICATION_CREDENTIALS}`
-      ),
+      credential: cert(`${process.env.GOOGLE_APPLICATION_CREDENTIALS}`),
     });
     console.log("Initialized the Firebase Admin SDK");
   }
