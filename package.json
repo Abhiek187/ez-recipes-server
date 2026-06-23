@@ -65,7 +65,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.0",
     "@types/swagger-ui-express": "^4.1.8",
     "copyfiles": "^2.4.1",
     "eslint": "^10.5.0",
@@ -75,7 +75,7 @@
     "ts-jest": "^29.4.11",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.0"
+    "typescript-eslint": "^8.61.1"
   },
   "overrides": {
     "jwks-rsa": {
