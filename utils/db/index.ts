@@ -7,6 +7,7 @@ export const Indexes = {
 } as const;
 
 export const MAX_DOCS = 100;
+export const MAX_SEARCH_LENGTH = 100;
 
 /**
  * Connect to MongoDB using mongoose

@@ -1,6 +1,6 @@
 import { QueryFilter, SortValues, Types } from "mongoose";
 
-import { MAX_DOCS, Indexes } from ".";
+import { Indexes, MAX_DOCS, MAX_SEARCH_LENGTH } from ".";
 import RecipeModel from "../../models/RecipeModel";
 import Recipe from "../../types/client/Recipe";
 import RecipeFilter, {
@@ -242,6 +242,14 @@ const recipeAggregateQuery = async (
   const sortQuery = createSortQuery(filter.sort, filter.asc);
   console.log("MongoDB sort query:", JSON.stringify(sortQuery));
   const sortByCalories = filter.sort === "calories";
+  /* A long, complex query could trigger the following exception:
+   * MongoServerError: maxClauseCount is set to 1024
+   * Discard the rest of the string if it's too long
+   */
+  const normalizedQuery = filter.query
+    ?.replace(/\s+/g, " ")
+    ?.trim()
+    ?.slice(0, MAX_SEARCH_LENGTH);
 
   /*
    * Search must be the first stage in the pipeline before $match.
@@ -251,7 +259,7 @@ const recipeAggregateQuery = async (
   let pipeline = RecipeModel.aggregate().search({
     index: Indexes.RecipeName,
     text: {
-      query: filter.query,
+      query: normalizedQuery,
       path: {
         wildcard: "*",
       },

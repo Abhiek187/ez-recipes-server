@@ -365,6 +365,42 @@ describe("recipeAggregateQuery", () => {
     });
   });
 
+  it("truncates a long search string", async () => {
+    // Given a recipe filter with a long query
+    const filter: Partial<RecipeFilter> = {
+      query: `
+      I would like a #5: a quadruple deluxe double cheeseburger with extra pickles,
+      hold the mayo, and instead of onions, add extra cheese. Make sure that comes with some large
+      fries, extra ketchup packets on the side, and a large Diet Doctor Cola. Actually...instead of a
+      Doctor Cola, can I have a large root beer instead? Oh, and one chocolate fudge sundae to go
+      please. Thank you!
+      `,
+    };
+
+    // When filterRecipes is called
+    await filterRecipes(filter);
+
+    // Then the full query is truncated in the aggregation pipeline
+    expect(mockSearch).toHaveBeenCalledWith({
+      index: Indexes.RecipeName,
+      text: {
+        query: expect.stringMatching(/^.{0,100}$/),
+        path: {
+          wildcard: "*",
+        },
+      },
+      sort: searchSort,
+    });
+    expect(mockMatch).not.toHaveBeenCalled();
+    expect(mockSort).not.toHaveBeenCalled();
+    expect(mockLimit).toHaveBeenCalledWith(MAX_DOCS);
+    expect(mockAddFields).toHaveBeenCalledWith({
+      token: {
+        $meta: "searchSequenceToken",
+      },
+    });
+  });
+
   it("includes searchAfter if a token is passed", async () => {
     // Given a recipe filter with a token
     const filter: Partial<RecipeFilter> = {
