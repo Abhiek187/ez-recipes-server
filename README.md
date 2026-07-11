@@ -13,7 +13,7 @@ In addition to spoonacular, MongoDB is used to cache the recipes for improved qu
 
 > [!NOTE]
 >
-> There's a work-in-progress feature to add vector embeddings for recipes in MongoDB using HuggingFace transformers. Vector search allows chefs to search for recipes semantically, rather than by name. The plan is to combine this with full-text search using hybrid search, but this currently in [public preview](https://www.mongodb.com/docs/atlas/atlas-vector-search/hybrid-search/vector-search-with-full-text-search/?pipeline-stage=rank-fusion&interface=driver&language=nodejs) in MongoDB.
+> There's an experimental feature to add vector embeddings for recipes in MongoDB using HuggingFace transformers. Vector search allows chefs to search for recipes semantically, rather than by name. The plan is to combine this with full-text search using hybrid search, but due to some limitations, this is not currently in production.
 
 Firebase is used to manage user authentication. Chefs can create an account to get access to additional features, including:
 
