@@ -237,6 +237,31 @@ export const updatePasskeyCounter = async (
 };
 
 /**
+ * Change the name of a passkey
+ * @param uid the UID of the chef
+ * @param passkeyId the ID of the passkey
+ * @param newName the new passkey name
+ */
+export const updatePasskeyName = async (
+  uid: string,
+  passkeyId: string,
+  newName: string
+) => {
+  const doc = await ChefModel.findById(uid).exec();
+  const passkeyIndex = doc?.passkeys?.findIndex((pk) => pk.id === passkeyId);
+  if (doc === null || passkeyIndex === undefined || passkeyIndex === -1) {
+    throw new Error(`Couldn't find passkey ${passkeyId} for chef ${uid}`);
+  }
+
+  doc.passkeys[passkeyIndex].name = newName;
+  await doc.save();
+
+  console.log(
+    `Successfully updated the passkey name for chef ${uid}, ${passkeyId} --> ${newName}`
+  );
+};
+
+/**
  * Delete the chef's passkey
  * @param uid the UID of the chef
  * @param passkeyId the ID of the passkey

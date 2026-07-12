@@ -27,6 +27,7 @@ import {
   savePasskey,
   saveRefreshToken,
   updatePasskeyCounter,
+  updatePasskeyName,
 } from "../utils/db";
 import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
@@ -731,6 +732,43 @@ router.post(
       res
         .status(500)
         .json({ error: `Failed to verify the passkey: ${error.message}` });
+    }
+  }
+);
+
+router.patch(
+  "/passkey",
+  body().isObject().withMessage("Body is missing or not an object"),
+  body("id")
+    .isString()
+    .withMessage("Passkey ID is not a string")
+    .notEmpty()
+    .withMessage("Passkey ID is required"),
+  body("name")
+    .isString()
+    .withMessage("Passkey name is not a string")
+    .notEmpty()
+    .withMessage("Passkey name is required"),
+  auth,
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
+
+    const { id, name } = req.body;
+    const { token, uid } = res.locals;
+
+    try {
+      await updatePasskeyName(uid, id, name);
+      res.status(200).json({ token });
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error updating the passkey name:", error);
+
+      if (error.message.includes("Couldn't find passkey")) {
+        res.status(404).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   }
 );
