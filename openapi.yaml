@@ -3,7 +3,7 @@ openapi: 3.1.0
 info:
   title: EZ Recipes
   description: An API that fetches recipes from spoonacular and MongoDB
-  version: 3.3.0
+  version: 3.3.1
 
 servers:
   - url: https://ez-recipes-server.onrender.com
@@ -111,3 +111,5 @@ components:
       $ref: "./docs/chefs.yaml#/components/schemas/passkeyRequestOptions"
     passkeyClientResponse:
       $ref: "./docs/chefs.yaml#/components/schemas/passkeyClientResponse"
+    passkeyUpdate:
+      $ref: "./docs/chefs.yaml#/components/schemas/passkeyUpdate"

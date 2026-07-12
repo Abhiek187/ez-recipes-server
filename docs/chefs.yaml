@@ -508,6 +508,57 @@ paths:
                 $ref: "..#/components/schemas/error"
 
   /passkey:
+    patch:
+      summary: Update the name of a passkey
+      tags:
+        - chefs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/passkeyUpdate"
+      responses:
+        "200":
+          description: Succesfully updated the passkey
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/token"
+
+        "400":
+          description: The request body is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
+        "401":
+          description: The token passed is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+              examples:
+                missingToken:
+                  $ref: "#/components/examples/missingToken"
+
+        "404":
+          description: The passkey couldn't be found
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
+        "500":
+          description: An error occurred while updating the passkey
+          content:
+            application/json:
+              schema:
+                $ref: "..#/components/schemas/error"
+
     delete:
       summary: Remove a passkey
       tags:
@@ -968,6 +1019,15 @@ components:
           type: string
           required: true
           enum: ["public-key"]
+    passkeyUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The passkey ID
+        name:
+          type: string
+          description: The new name for the passkey
 
   examples:
     invalidEmail:
