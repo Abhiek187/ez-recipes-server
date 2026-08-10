@@ -47,7 +47,7 @@ const createMcpServer = () => {
           .min(1)
           .optional()
           .describe(
-            "An full-text query to search recipes by name or description"
+            "A full-text query to search recipes by name or description"
           ),
         minCals: z
           .number()
