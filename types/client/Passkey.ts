@@ -1,7 +1,4 @@
-import type {
-  AuthenticatorTransportFuture,
-  CredentialDeviceType,
-} from "@simplewebauthn/server";
+import type { CredentialDeviceType } from "@simplewebauthn/server";
 
 type Passkey = {
   id: string; // credential ID
@@ -10,7 +7,7 @@ type Passkey = {
   counter: number;
   // How an authenticator can be used:
   // https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse/getTransports#return_value
-  transports?: AuthenticatorTransportFuture[];
+  transports?: string[];
   deviceType: CredentialDeviceType;
   backedUp: boolean;
   // Helpful user-friendly attributes
