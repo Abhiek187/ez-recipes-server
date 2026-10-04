@@ -377,6 +377,15 @@ paths:
         - chefs
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: restore-key
+          description: >-
+            If provided, generate a challenge for creating a new restore key.
+            Restore keys are exclusive to Android and require special rules, such as not requiring user verification.
+          schema:
+            type: boolean
+          allowEmptyValue: true
       responses:
         "200":
           description: Successfully generated the config to create a passkey
@@ -410,8 +419,7 @@ paths:
       parameters:
         - in: query
           name: email
-          required: true
-          description: The chef's email
+          description: The chef's email, omit this to support conditional mediation
           schema:
             type: string
             format: email
@@ -450,10 +458,16 @@ paths:
       parameters:
         - in: query
           name: email
-          description: The chef's email, required if signing in
+          description: The chef's email, required if signing in without conditional mediation
           schema:
             type: string
             format: email
+        - in: query
+          name: restore-key
+          description: If provided, validate a restore key challenge
+          schema:
+            type: boolean
+          allowEmptyValue: true
       requestBody:
         required: true
         content:
