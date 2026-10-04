@@ -1,4 +1,4 @@
-import Passkey from "./Passkey";
+import Passkey, { RestoreKey } from "./Passkey";
 
 type Chef = {
   _id: string; // Firebase UID
@@ -7,6 +7,7 @@ type Chef = {
   ratings: Map<string, number>;
   recentRecipes: Map<string, Date>;
   favoriteRecipes: string[];
+  restoreKey?: RestoreKey;
 };
 
 export default Chef;

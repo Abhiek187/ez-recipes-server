@@ -4,7 +4,7 @@ import ChefModel from "../../models/ChefModel";
 import Chef from "../../types/client/Chef";
 import Encryptor from "../crypto";
 import RecipePatch from "../../types/client/RecipePatch";
-import Passkey from "../../types/client/Passkey";
+import Passkey, { RestoreKey } from "../../types/client/Passkey";
 
 /**
  * Create a new chef in the DB
@@ -291,5 +291,54 @@ export const deletePasskey = async (
       error
     );
     return false;
+  }
+};
+
+/**
+ * Store the chef's restore key in the DB
+ * @param uid the UID of the chef
+ * @param restoreKey the restore key
+ */
+export const saveRestoreKey = async (uid: string, restoreKey: RestoreKey) => {
+  const filter: QueryFilter<Chef> = {
+    _id: uid,
+  };
+  const update: UpdateQuery<Chef> = {
+    $set: {
+      restoreKey,
+    },
+  };
+
+  try {
+    const result = await ChefModel.updateOne(filter, update).exec();
+    console.log(
+      `Successfully added restore key ${restoreKey.id} for chef ${uid}:`,
+      result
+    );
+  } catch (error) {
+    console.error(
+      `Failed to save the restore key ${restoreKey.id} for chef ${uid}:`,
+      error
+    );
+  }
+};
+
+/**
+ * Get the chef with a matching restore key
+ * @param restoreKeyId the ID of the restore key
+ * @returns the chef's document, or `null` if the chef couldn't be found
+ */
+export const getChefWithRestoreKey = async (
+  restoreKeyId: string
+): Promise<Chef | null> => {
+  try {
+    return await ChefModel.findOne({ "restoreKey.id": restoreKeyId }).exec();
+  } catch (error) {
+    console.error(
+      "Failed to find chef with restore key",
+      `${restoreKeyId}:`,
+      error
+    );
+    return null;
   }
 };

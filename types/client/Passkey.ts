@@ -27,4 +27,9 @@ export type PasskeyAAGUIDResponse = Record<
   }
 >;
 
+export type RestoreKey = Pick<
+  Passkey,
+  "id" | "publicKey" | "counter" | "transports" | "deviceType" | "backedUp"
+>;
+
 export default Passkey;
