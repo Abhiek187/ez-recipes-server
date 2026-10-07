@@ -9,6 +9,7 @@ import express from "express";
 import { body, query, validationResult } from "express-validator";
 import { Request } from "express-validator/lib/base";
 import { FirebaseAuthError } from "firebase-admin/auth";
+import { randomUUID } from "node:crypto";
 
 import FirebaseAdmin from "../utils/auth/admin";
 import auth from "../middleware/auth";
@@ -29,6 +30,7 @@ import {
   updatePasskeyCounter,
   updatePasskeyName,
   saveRestoreKey,
+  getChefWithRestoreKey,
 } from "../utils/db";
 import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
@@ -591,9 +593,22 @@ router.get(
         userVerification: chef === undefined ? "preferred" : "required",
       });
 
-      // TODO: figure out a different way to key a passkey challenge without any user info
-      await savePasskeyChallenge(uid, requestOptions.challenge);
-      res.json(requestOptions);
+      // For conditional mediation, generate a unique transaction ID to key the challenge
+      // (must be sent back by the client)
+      if (uid === undefined) {
+        const transactionId = randomUUID();
+        await savePasskeyChallenge(transactionId, requestOptions.challenge);
+        res.json({
+          ...requestOptions,
+          extensions: {
+            ...requestOptions.extensions,
+            transactionId,
+          },
+        });
+      } else {
+        await savePasskeyChallenge(uid, requestOptions.challenge);
+        res.json(requestOptions);
+      }
     } catch (err) {
       const error = err as Error;
       console.error("Failed to generate an existing passkey challenge:", error);
@@ -612,6 +627,7 @@ router.post(
     .isEmail()
     .withMessage("Invalid email"),
   query("restore-key").optional(),
+  query("transaction-id").optional({ values: "falsy" }),
   auth,
   async (req, res) => {
     checkValidations(req, res);
@@ -619,17 +635,21 @@ router.post(
 
     const email = req.query?.email as string | undefined;
     const isRestoreKey = req.query?.["restore-key"] !== undefined;
+    const transactionId = req.query?.["transaction-id"] as string | undefined;
     const { token, uid: inputUid } = res.locals;
     const isNewPasskey = inputUid !== undefined;
-    let uid: string;
+    let uid: string | undefined = undefined;
 
     // A token is required when registering a new passkey
     if (isNewPasskey) {
       uid = inputUid;
-    } else if (email === undefined) {
+    } else if (
+      email === undefined &&
+      (!isRestoreKey || transactionId === undefined)
+    ) {
       res.status(400).json({ error: "Missing email" });
       return;
-    } else {
+    } else if (email !== undefined) {
       try {
         ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
       } catch (err) {
@@ -640,7 +660,7 @@ router.post(
       }
     }
 
-    const challengeData = await getPasskeyChallenge(uid);
+    const challengeData = await getPasskeyChallenge(uid ?? transactionId ?? "");
 
     if (challengeData === null || challengeData.challenge === undefined) {
       res.status(404).json({
@@ -696,7 +716,7 @@ router.post(
             deviceType: credentialDeviceType,
             backedUp: credentialBackedUp,
           };
-          await saveRestoreKey(uid, restoreKey);
+          await saveRestoreKey(inputUid, restoreKey);
         } else {
           const passkeyInfo = await getPasskeyInfo(aaguid, origin);
           const newPasskey: Passkey = {
@@ -711,15 +731,30 @@ router.post(
             iconLight: passkeyInfo?.iconLight,
             iconDark: passkeyInfo?.iconDark,
           };
-          await savePasskey(uid, newPasskey);
+          await savePasskey(inputUid, newPasskey);
         }
 
         res.json({ token });
       } else {
         // If the passkey exists, verify the authentication signature
         const inputPasskeyId = req.body.id;
-        const passkeys = await getPasskeys(uid);
-        const passkey = passkeys.find((pk) => pk.id === inputPasskeyId);
+        let passkey: Passkey | RestoreKey | undefined = undefined;
+
+        if (uid === undefined) {
+          const chef = await getChefWithRestoreKey(inputPasskeyId);
+          if (chef === null) {
+            res.status(401).json({
+              error: `No chef found with restore key ${inputPasskeyId}`,
+            });
+            return;
+          }
+
+          passkey = chef.restoreKey;
+          uid = chef._id;
+        } else {
+          const passkeys = await getPasskeys(uid);
+          passkey = passkeys.find((pk) => pk.id === inputPasskeyId);
+        }
 
         if (passkey === undefined) {
           res.status(401).json({
@@ -762,7 +797,7 @@ router.post(
         }
 
         const { credentialID, newCounter } = authenticationInfo;
-        await updatePasskeyCounter(uid, credentialID, newCounter);
+        await updatePasskeyCounter(uid, credentialID, newCounter, isRestoreKey);
 
         // Create a custom token that can be exchanged for a Firebase token
         const idToken = await FirebaseAdmin.instance.getIdToken(uid);

@@ -468,6 +468,12 @@ paths:
           schema:
             type: boolean
           allowEmptyValue: true
+        - in: query
+          name: transaction-id
+          description: The transaction ID generated with the challenge under extensions
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -958,6 +964,9 @@ components:
         userVerification:
           type: string
           description: Whether the user is required to authenticate with their passkey
+        extensions:
+          type: object
+          description: Passkey extensions used, includes a transactionId if using conditional mediation
     passkeyClientResponse:
       type: object
       description: See https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential

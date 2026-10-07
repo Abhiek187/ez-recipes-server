@@ -208,21 +208,40 @@ export const getPasskeys = async (uid: string): Promise<Passkey[]> => {
  * @param uid the UID of the chef
  * @param passkeyId the ID of the passkey
  * @param newCount the new passkey counter
+ * @param isRestoreKey whether the `passkeyId` is a restore key
  */
 export const updatePasskeyCounter = async (
   uid: string,
   passkeyId: string,
-  newCount: number
+  newCount: number,
+  isRestoreKey: boolean
 ) => {
   try {
     const doc = await ChefModel.findById(uid).exec();
-    const passkeyIndex = doc?.passkeys?.findIndex((pk) => pk.id === passkeyId);
-    if (doc === null || passkeyIndex === undefined || passkeyIndex === -1) {
-      throw new Error(`Couldn't find passkey ${passkeyId} for chef ${uid}`);
-    }
 
-    doc.passkeys[passkeyIndex].counter = newCount;
-    doc.passkeys[passkeyIndex].lastUsed = new Date();
+    if (isRestoreKey) {
+      if (
+        doc === null ||
+        doc.restoreKey === undefined ||
+        doc.restoreKey.id !== passkeyId
+      ) {
+        throw new Error(
+          `Couldn't find restore key ${passkeyId} for chef ${uid}`
+        );
+      }
+
+      doc.restoreKey.counter = newCount;
+    } else {
+      const passkeyIndex = doc?.passkeys?.findIndex(
+        (pk) => pk.id === passkeyId
+      );
+      if (doc === null || passkeyIndex === undefined || passkeyIndex === -1) {
+        throw new Error(`Couldn't find passkey ${passkeyId} for chef ${uid}`);
+      }
+
+      doc.passkeys[passkeyIndex].counter = newCount;
+      doc.passkeys[passkeyIndex].lastUsed = new Date();
+    }
     await doc.save();
 
     console.log(
