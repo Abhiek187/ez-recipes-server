@@ -46,7 +46,8 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
   const isPasskeyLogin =
     req.originalUrl.startsWith("/api/chefs/passkey/verify") &&
     req.method === "POST" &&
-    typeof req.query?.email === "string";
+    (typeof req.query?.email === "string" ||
+      Object.hasOwn(req.query ?? {}, "restore-key"));
 
   if (token === undefined) {
     // Skip validation for certain requests

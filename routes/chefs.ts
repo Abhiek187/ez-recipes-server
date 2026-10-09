@@ -9,6 +9,7 @@ import express from "express";
 import { body, query, validationResult } from "express-validator";
 import { Request } from "express-validator/lib/base";
 import { FirebaseAuthError } from "firebase-admin/auth";
+import { randomUUID } from "node:crypto";
 
 import FirebaseAdmin from "../utils/auth/admin";
 import auth from "../middleware/auth";
@@ -28,12 +29,15 @@ import {
   saveRefreshToken,
   updatePasskeyCounter,
   updatePasskeyName,
+  saveRestoreKey,
+  getChefWithRestoreKey,
 } from "../utils/db";
 import { filterObject } from "../utils/object";
 import { BASE_COOKIE_OPTIONS, COOKIE_2_WEEKS, COOKIES } from "../utils/cookie";
 import OAuthProvider from "../types/client/OAuthProvider";
-import Passkey from "../types/client/Passkey";
+import Passkey, { RestoreKey } from "../types/client/Passkey";
 import { getPasskeyInfo, RelyingParty } from "../utils/auth/passkey";
+import Chef from "../types/client/Chef";
 
 const checkValidations = (req: Request, res: express.Response) => {
   const validationErrors = validationResult(req);
@@ -458,97 +462,119 @@ router.delete(
   }
 );
 
-router.get("/passkey/create", auth, async (req, res) => {
-  // Get all the options needed to create a new passkey
-  const { uid } = res.locals;
-  let email: string;
+router.get(
+  "/passkey/create",
+  query("restore-key").optional(),
+  auth,
+  async (req, res) => {
+    checkValidations(req, res);
+    if (res.writableEnded) return;
 
-  // Passkeys are identified by email, not by UID
-  try {
-    const userRecord = await FirebaseAdmin.instance.getUserByUID(uid);
+    // Get all the options needed to create a new passkey
+    const isRestoreKey = req.query?.["restore-key"] !== undefined; // value doesn't matter
+    const { uid } = res.locals;
+    let email: string;
 
-    if (userRecord.email === undefined) {
-      res.status(404).json({ error: "No email associated with this account" });
+    // Passkeys are identified by email, not by UID
+    try {
+      const userRecord = await FirebaseAdmin.instance.getUserByUID(uid);
+
+      if (userRecord.email === undefined) {
+        res
+          .status(404)
+          .json({ error: "No email associated with this account" });
+        return;
+      } else {
+        email = userRecord.email;
+      }
+    } catch (err) {
+      const error = err as FirebaseAuthError;
+      console.error(`Error getting the user's email for UID ${uid}:`, error);
+      res.status(500).json({ error: error.message });
       return;
-    } else {
-      email = userRecord.email;
     }
-  } catch (err) {
-    const error = err as FirebaseAuthError;
-    console.error(`Error getting the user's email for UID ${uid}:`, error);
-    res.status(500).json({ error: error.message });
-    return;
+
+    const chef = await getChef(uid);
+    const isLocal = req.headers.origin?.includes("localhost") === true;
+
+    try {
+      // Used in navigator.credentials.create:
+      // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
+      const createOptions = await generateRegistrationOptions({
+        // RP = Relying Party (the web app)
+        rpName: RelyingParty.NAME,
+        rpID: isLocal ? RelyingParty.ID_LOCAL : RelyingParty.ID,
+        userName: email,
+        userID: Buffer.from(uid),
+        // No need to get specific information about the authenticator (protects users' privacy)
+        attestationType: "none",
+        // Prevent users from re-registering existing authenticators
+        excludeCredentials: chef?.passkeys?.map((passkey) => ({
+          id: passkey.id,
+          transports: passkey.transports,
+        })),
+        authenticatorSelection: {
+          // Android requires the passkey to be discoverable
+          requireResidentKey: true,
+          residentKey: "required",
+          // The user must authenticate with their passkey
+          // Restore keys are an exception since they're obtained in the background
+          userVerification: isRestoreKey ? "preferred" : "required",
+        },
+      });
+
+      // Save the challenge and user ID for verification
+      await savePasskeyChallenge(uid, createOptions.challenge);
+      res.json(createOptions);
+    } catch (err) {
+      const error = err as Error;
+      console.error("Failed to generate a new passkey challenge:", error);
+      res.status(500).json({
+        error: `Failed to generate a new passkey challenge: ${error.message}`,
+      });
+    }
   }
-
-  const chef = await getChef(uid);
-  const isLocal = req.headers.origin?.includes("localhost") === true;
-
-  try {
-    // Used in navigator.credentials.create:
-    // https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredentialCreationOptions
-    const createOptions = await generateRegistrationOptions({
-      // RP = Relying Party (the web app)
-      rpName: RelyingParty.NAME,
-      rpID: isLocal ? RelyingParty.ID_LOCAL : RelyingParty.ID,
-      userName: email,
-      userID: Buffer.from(uid),
-      // No need to get specific information about the authenticator (protects users' privacy)
-      attestationType: "none",
-      // Prevent users from re-registering existing authenticators
-      excludeCredentials: chef?.passkeys?.map((passkey) => ({
-        id: passkey.id,
-        transports: passkey.transports,
-      })),
-      authenticatorSelection: {
-        // Android requires the passkey to be discoverable
-        requireResidentKey: true,
-        residentKey: "required",
-        userVerification: "required", // the user must authenticate with their passkey
-      },
-    });
-
-    // Save the challenge and user ID for verification
-    await savePasskeyChallenge(uid, createOptions.challenge);
-    res.json(createOptions);
-  } catch (err) {
-    const error = err as Error;
-    console.error("Failed to generate a new passkey challenge:", error);
-    res.status(500).json({
-      error: `Failed to generate a new passkey challenge: ${error.message}`,
-    });
-  }
-});
+);
 
 router.get(
   "/passkey/auth",
-  query("email").isEmail().withMessage("Invalid email"),
+  query("email")
+    .optional({ values: "falsy" })
+    .isEmail()
+    .withMessage("Invalid email"),
   async (req, res) => {
     // Get all the options needed to sign in using an existing passkey
     checkValidations(req, res);
     if (res.writableEnded) return;
 
-    const email = req.query?.email as string;
-    let uid: string;
+    // If no email is provided, use the autofill or restore key flow
+    const email = req.query?.email as string | undefined;
+    let uid: string | undefined = undefined;
+    let chef: Chef | undefined = undefined;
     // Don't give attackers hints if an account exists or has a passkey
     const genericPasskeyError = `No passkeys are associated with chef ${email}`;
 
-    try {
-      ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
-    } catch (err) {
-      const error = err as FirebaseAuthError;
-      console.error(`Error getting the user's UID:`, error);
-      res.status(400).json({ error: genericPasskeyError });
-      return;
-    }
+    if (email !== undefined) {
+      try {
+        ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
+      } catch (err) {
+        const error = err as FirebaseAuthError;
+        console.error(`Error getting the user's UID:`, error);
+        res.status(400).json({ error: genericPasskeyError });
+        return;
+      }
 
-    const chef = await getChef(uid);
-    if (
-      chef === null ||
-      chef.passkeys === undefined ||
-      chef.passkeys.length === 0
-    ) {
-      res.status(400).json({ error: genericPasskeyError });
-      return;
+      const currentChef = await getChef(uid);
+      if (
+        currentChef === null ||
+        currentChef.passkeys === undefined ||
+        currentChef.passkeys.length === 0
+      ) {
+        res.status(400).json({ error: genericPasskeyError });
+        return;
+      }
+
+      chef = currentChef;
     }
 
     const isLocal = req.headers.origin?.includes("localhost") === true;
@@ -559,15 +585,30 @@ router.get(
       const requestOptions = await generateAuthenticationOptions({
         rpID: isLocal ? RelyingParty.ID_LOCAL : RelyingParty.ID,
         // Require users to use a previously-registered authenticator
-        allowCredentials: chef.passkeys.map((passkey) => ({
-          id: passkey.id,
-          transports: passkey.transports,
-        })),
-        userVerification: "required",
+        allowCredentials:
+          chef?.passkeys?.map((passkey) => ({
+            id: passkey.id,
+            transports: passkey.transports,
+          })) ?? [],
+        userVerification: chef === undefined ? "preferred" : "required",
       });
 
-      await savePasskeyChallenge(uid, requestOptions.challenge);
-      res.json(requestOptions);
+      // For conditional mediation, generate a unique transaction ID to key the challenge
+      // (must be sent back by the client)
+      if (uid === undefined) {
+        const transactionId = randomUUID();
+        await savePasskeyChallenge(transactionId, requestOptions.challenge);
+        res.json({
+          ...requestOptions,
+          extensions: {
+            ...requestOptions.extensions,
+            transactionId,
+          },
+        });
+      } else {
+        await savePasskeyChallenge(uid, requestOptions.challenge);
+        res.json(requestOptions);
+      }
     } catch (err) {
       const error = err as Error;
       console.error("Failed to generate an existing passkey challenge:", error);
@@ -585,23 +626,30 @@ router.post(
     .optional({ values: "falsy" })
     .isEmail()
     .withMessage("Invalid email"),
+  query("restore-key").optional(),
+  query("transaction-id").optional({ values: "falsy" }),
   auth,
   async (req, res) => {
     checkValidations(req, res);
     if (res.writableEnded) return;
 
     const email = req.query?.email as string | undefined;
+    const isRestoreKey = req.query?.["restore-key"] !== undefined;
+    const transactionId = req.query?.["transaction-id"] as string | undefined;
     const { token, uid: inputUid } = res.locals;
     const isNewPasskey = inputUid !== undefined;
-    let uid: string;
+    let uid: string | undefined = undefined;
 
     // A token is required when registering a new passkey
     if (isNewPasskey) {
       uid = inputUid;
-    } else if (email === undefined) {
+    } else if (
+      email === undefined &&
+      (!isRestoreKey || transactionId === undefined)
+    ) {
       res.status(400).json({ error: "Missing email" });
       return;
-    } else {
+    } else if (email !== undefined) {
       try {
         ({ uid } = await FirebaseAdmin.instance.getUserByEmail(email));
       } catch (err) {
@@ -612,7 +660,7 @@ router.post(
       }
     }
 
-    const challengeData = await getPasskeyChallenge(uid);
+    const challengeData = await getPasskeyChallenge(uid ?? transactionId ?? "");
 
     if (challengeData === null || challengeData.challenge === undefined) {
       res.status(404).json({
@@ -642,6 +690,7 @@ router.post(
             expectedChallenge: challengeData.challenge,
             expectedOrigin: RelyingParty.ORIGINS,
             expectedRPID: [RelyingParty.ID, RelyingParty.ID_LOCAL],
+            requireUserVerification: !isRestoreKey,
           }
         );
 
@@ -657,27 +706,55 @@ router.post(
           credentialBackedUp,
           origin,
         } = registrationInfo;
-        const passkeyInfo = await getPasskeyInfo(aaguid, origin);
-        const newPasskey: Passkey = {
-          id: credential.id,
-          publicKey: credential.publicKey,
-          counter: credential.counter,
-          transports: credential.transports,
-          deviceType: credentialDeviceType,
-          backedUp: credentialBackedUp,
-          name: passkeyInfo?.name ?? "Unknown",
-          lastUsed: new Date(),
-          iconLight: passkeyInfo?.iconLight,
-          iconDark: passkeyInfo?.iconDark,
-        };
-        await savePasskey(uid, newPasskey);
+
+        if (isRestoreKey) {
+          const restoreKey: RestoreKey = {
+            id: credential.id,
+            publicKey: credential.publicKey,
+            counter: credential.counter,
+            transports: credential.transports,
+            deviceType: credentialDeviceType,
+            backedUp: credentialBackedUp,
+          };
+          await saveRestoreKey(inputUid, restoreKey);
+        } else {
+          const passkeyInfo = await getPasskeyInfo(aaguid, origin);
+          const newPasskey: Passkey = {
+            id: credential.id,
+            publicKey: credential.publicKey,
+            counter: credential.counter,
+            transports: credential.transports,
+            deviceType: credentialDeviceType,
+            backedUp: credentialBackedUp,
+            name: passkeyInfo?.name ?? "Unknown",
+            lastUsed: new Date(),
+            iconLight: passkeyInfo?.iconLight,
+            iconDark: passkeyInfo?.iconDark,
+          };
+          await savePasskey(inputUid, newPasskey);
+        }
 
         res.json({ token });
       } else {
         // If the passkey exists, verify the authentication signature
         const inputPasskeyId = req.body.id;
-        const passkeys = await getPasskeys(uid);
-        const passkey = passkeys.find((pk) => pk.id === inputPasskeyId);
+        let passkey: Passkey | RestoreKey | undefined = undefined;
+
+        if (uid === undefined) {
+          const chef = await getChefWithRestoreKey(inputPasskeyId);
+          if (chef === null) {
+            res.status(401).json({
+              error: `No chef found with restore key ${inputPasskeyId}`,
+            });
+            return;
+          }
+
+          passkey = chef.restoreKey;
+          uid = chef._id;
+        } else {
+          const passkeys = await getPasskeys(uid);
+          passkey = passkeys.find((pk) => pk.id === inputPasskeyId);
+        }
 
         if (passkey === undefined) {
           res.status(401).json({
@@ -709,6 +786,7 @@ router.post(
               counter: passkey.counter,
               transports: passkey.transports,
             },
+            requireUserVerification: !isRestoreKey,
           });
 
         if (!verified) {
@@ -719,7 +797,7 @@ router.post(
         }
 
         const { credentialID, newCounter } = authenticationInfo;
-        await updatePasskeyCounter(uid, credentialID, newCounter);
+        await updatePasskeyCounter(uid, credentialID, newCounter, isRestoreKey);
 
         // Create a custom token that can be exchanged for a Firebase token
         const idToken = await FirebaseAdmin.instance.getIdToken(uid);

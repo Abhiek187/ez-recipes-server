@@ -3,19 +3,19 @@ import Temp from "../../types/client/Temp";
 
 /**
  * Temporarily save a passkey challenge for verification, expires after 1 minute
- * @param uid the UID of the chef
+ * @param id a unique ID for the chef
  * @param challenge the randomly generated challenge for the client
  */
-export const savePasskeyChallenge = async (uid: string, challenge: string) => {
+export const savePasskeyChallenge = async (id: string, challenge: string) => {
   const challengeData: Temp = {
-    _id: uid,
+    _id: id,
     expiresAt: new Date(Date.now() + 60_000), // 60s
     challenge,
   };
 
   try {
     // If the user requested another challenge before the timeout, replace the existing challenge
-    const doc = await TempModel.findOneAndReplace({ _id: uid }, challengeData, {
+    const doc = await TempModel.findOneAndReplace({ _id: id }, challengeData, {
       upsert: true,
       returnDocument: "after",
     }).exec();
@@ -23,7 +23,7 @@ export const savePasskeyChallenge = async (uid: string, challenge: string) => {
       `Successfully saved passkey challenge for chef ${doc._id} to the DB`
     );
   } catch (error) {
-    console.error(`Failed to save passkey challenge for chef ${uid}:`, error);
+    console.error(`Failed to save passkey challenge for chef ${id}:`, error);
   }
 };
 
@@ -31,16 +31,14 @@ export const savePasskeyChallenge = async (uid: string, challenge: string) => {
  * Get the passkey challenge for a chef
  *
  * **Note:** This may return `null` if the challenge expired after 1 minute
- * @param uid the UID of the chef
+ * @param id a unique ID for the chef
  * @returns all the challenge data associated with the chef, or `null` if it couldn't be found
  */
-export const getPasskeyChallenge = async (
-  uid: string
-): Promise<Temp | null> => {
+export const getPasskeyChallenge = async (id: string): Promise<Temp | null> => {
   try {
-    return await TempModel.findById(uid).exec();
+    return await TempModel.findOne({ _id: { $eq: id } }).exec();
   } catch (error) {
-    console.error(`Failed to get passkey challenge for chef ${uid}:`, error);
+    console.error("Failed to get passkey challenge for chef", `${id}:`, error);
     return null;
   }
 };

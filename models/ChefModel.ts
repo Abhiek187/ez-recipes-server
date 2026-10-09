@@ -24,6 +24,26 @@ const PasskeySchema = new Schema<Chef["passkeys"][number]>(
   { _id: false }
 );
 
+const RestoreKeySchema = new Schema<Chef["restoreKey"]>({
+  id: {
+    type: String,
+    required: true,
+    unique: true,
+    sparse: true, // only search docs where a restore key is provided
+  },
+  publicKey: {
+    type: Buffer,
+    required: true,
+    set: (value: Uint8Array | Buffer) =>
+      value instanceof Uint8Array ? Buffer.from(value) : value,
+    get: (value: Buffer) => new Uint8Array(value),
+  },
+  counter: { type: Number, required: true },
+  transports: { type: [String] },
+  deviceType: { type: String, required: true },
+  backedUp: { type: Boolean, required: true },
+});
+
 const ChefSchema = new Schema<Chef>({
   _id: { type: String, required: true },
   refreshToken: { type: String, default: null },
@@ -31,6 +51,7 @@ const ChefSchema = new Schema<Chef>({
   ratings: { type: Map, of: Number, required: true },
   recentRecipes: { type: Map, of: Date, required: true },
   favoriteRecipes: { type: [String], required: true },
+  restoreKey: { type: RestoreKeySchema },
 });
 
 export default model("chef", ChefSchema);
