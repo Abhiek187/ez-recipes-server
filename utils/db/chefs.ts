@@ -351,7 +351,9 @@ export const getChefWithRestoreKey = async (
   restoreKeyId: string
 ): Promise<Chef | null> => {
   try {
-    return await ChefModel.findOne({ "restoreKey.id": restoreKeyId }).exec();
+    return await ChefModel.findOne({
+      "restoreKey.id": { $eq: restoreKeyId },
+    }).exec();
   } catch (error) {
     console.error(
       "Failed to find chef with restore key",
