@@ -147,10 +147,9 @@ const createMcpServer = () => {
       },
     },
     async (filter) => {
-      await server.sendLoggingMessage({
-        level: "debug",
-        data: `Searching recipes using the following filter: ${JSON.stringify(filter)}`,
-      });
+      console.warn(
+        `Searching recipes using the following filter: ${JSON.stringify(filter)}`
+      );
 
       if (isEmptyObject(filter)) {
         return {
@@ -288,10 +287,7 @@ const createMcpServer = () => {
       },
     },
     async ({ id }) => {
-      await server.sendLoggingMessage({
-        level: "debug",
-        data: `Getting recipe by ID: ${id}`,
-      });
+      console.warn(`Getting recipe by ID: ${id}`);
 
       const recipe = await getRecipeById(id);
 
@@ -422,10 +418,7 @@ router.post("/", mcpAuth, async (req, res) => {
 
     const server = createMcpServer();
     await server.connect(transport);
-    await server.sendLoggingMessage({
-      level: "info",
-      data: "EZ Recipes MCP Server running on streamable HTTP",
-    });
+    console.warn("EZ Recipes MCP Server running on streamable HTTP");
   } else {
     res.status(400).json({
       jsonrpc: "2.0",
@@ -461,10 +454,7 @@ const main = async () => {
     const transport = new StdioServerTransport();
     const server = createMcpServer();
     await server.connect(transport);
-    await server.sendLoggingMessage({
-      level: "info",
-      data: "EZ Recipes MCP Server running on stdio",
-    });
+    console.warn("EZ Recipes MCP Server running on stdio");
 
     if (connection.readyState !== ConnectionStates.connected) {
       await connectToMongoDB();
