@@ -10,7 +10,7 @@ import {
   OAuthErrorCode,
   isInitializeRequest,
 } from "@modelcontextprotocol/server";
-import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import express, { Request, Response } from "express";
 import { connection, ConnectionStates } from "mongoose";
 import { randomUUID } from "node:crypto";
@@ -359,6 +359,10 @@ const createMcpServer = () => {
     }
   );
 
+  server.server.onclose = () => {
+    disconnectFromMongoDB();
+  };
+
   return server;
 };
 
@@ -451,18 +455,12 @@ router.delete("/", mcpAuth, handleDefaultMcpRequest);
 const main = async () => {
   try {
     // A single session runs in STDIO mode
-    const transport = new StdioServerTransport();
-    const server = createMcpServer();
-    await server.connect(transport);
+    serveStdio(createMcpServer);
     console.warn("EZ Recipes MCP Server running on stdio");
 
     if (connection.readyState !== ConnectionStates.connected) {
       await connectToMongoDB();
     }
-
-    transport.onclose = () => {
-      disconnectFromMongoDB();
-    };
   } catch (error) {
     console.error("Error running MCP from stdio:", error);
   }

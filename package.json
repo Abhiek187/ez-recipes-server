@@ -15,7 +15,7 @@
     "embeddings": "node dist/jobs/embeddings.js",
     "embeddings:all": "node dist/jobs/embeddings.js all",
     "mcp:local": "node dist/routes/mcp.js",
-    "mcp:inspector": "npx @modelcontextprotocol/inspector node dist/routes/mcp.js"
+    "mcp:inspector": "npx @modelcontextprotocol/inspector node dist/routes/mcp.js --protocol-era auto"
   },
   "repository": {
     "type": "git",
