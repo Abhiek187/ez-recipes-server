@@ -18,6 +18,9 @@ updates:
     groups:
       dev:
         dependency-type: "development"
+      mcp:
+        patterns:
+          - "@modelcontextprotocol*"
 
   # Enable version updates for Docker
   - package-ecosystem: "docker"

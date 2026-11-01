@@ -1,14 +1,15 @@
 import "dotenv/config";
-import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
-import { OAuthTokenVerifier } from "@modelcontextprotocol/sdk/server/auth/provider.js";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
+import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
+import { McpServer, isInitializeRequest } from "@modelcontextprotocol/server";
+import {
+  requireBearerAuth,
+  OAuthTokenVerifier,
+} from "@modelcontextprotocol/server-legacy/auth";
 import express, { Request, Response } from "express";
 import { connection, ConnectionStates } from "mongoose";
 import { randomUUID } from "node:crypto";
-import z from "zod/v3";
+import z from "zod";
 
 import FirebaseAdmin from "../utils/auth/admin";
 import {
@@ -21,14 +22,15 @@ import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
 import { filterObject, isEmptyObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
+const MCP_VERSION = "1.1.0";
 // Multiple sessions can run in parallel in HTTP mode
-const transports: Record<string, StreamableHTTPServerTransport> = {};
+const transports: Record<string, NodeStreamableHTTPServerTransport> = {};
 
 const createMcpServer = () => {
   const server = new McpServer(
     {
       name: MCP_NAME,
-      version: "1.0.0",
+      version: MCP_VERSION,
     },
     {
       capabilities: {
@@ -41,7 +43,7 @@ const createMcpServer = () => {
     `${MCP_NAME}_search_recipes`,
     {
       description: "Search recipes using a variety of filters",
-      inputSchema: {
+      inputSchema: z.object({
         query: z
           .string()
           .min(1)
@@ -110,7 +112,7 @@ const createMcpServer = () => {
           .describe(
             "The cuisine types associated with a recipe, such as American, Italian, or Latin American"
           ),
-      },
+      }),
       outputSchema: z.object({
         results: z.array(
           z.object({
@@ -217,13 +219,13 @@ const createMcpServer = () => {
     `${MCP_NAME}_get_recipe_details`,
     {
       description: "Get detailed information about a recipe by its ID",
-      inputSchema: {
+      inputSchema: z.object({
         id: z
           .number()
           .int()
           .positive()
           .describe("A unique recipe ID that maps to spoonacular's recipe ID"),
-      },
+      }),
       outputSchema: z.object({
         // Only return fields useful to an LLM to save on context & reduce hallucinations
         id: z.number(),
@@ -361,6 +363,7 @@ const createMcpServer = () => {
 
 const router = express.Router();
 
+/* @mcp-codemod-error OAuthTokenVerifier: resource-server auth helpers routed to the frozen @modelcontextprotocol/server-legacy/auth copy. The maintained v2 home is @modelcontextprotocol/express — when re-pointing, verifiers must throw the v2 OAuthError (the express middleware does not recognize the legacy error classes). See the migration guide's server auth split section. */
 const tokenVerifier: OAuthTokenVerifier = {
   verifyAccessToken: async (token) => {
     try {
@@ -379,13 +382,14 @@ const tokenVerifier: OAuthTokenVerifier = {
   },
 };
 
+/* @mcp-codemod-error requireBearerAuth: resource-server auth helpers routed to the frozen @modelcontextprotocol/server-legacy/auth copy. The maintained v2 home is @modelcontextprotocol/express — when re-pointing, verifiers must throw the v2 OAuthError (the express middleware does not recognize the legacy error classes). See the migration guide's server auth split section. */
 const mcpAuth = requireBearerAuth({
   verifier: tokenVerifier,
 });
 
 router.post("/", mcpAuth, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"];
-  let transport: StreamableHTTPServerTransport;
+  let transport: NodeStreamableHTTPServerTransport;
 
   if (typeof sessionId === "string" && Object.hasOwn(transports, sessionId)) {
     // Reuse an existing connection
@@ -393,7 +397,7 @@ router.post("/", mcpAuth, async (req, res) => {
     console.log(`[MCP] [${sessionId}] Reusing existing MCP connection`);
   } else if (sessionId === undefined && isInitializeRequest(req.body)) {
     // Create a new HTTP session
-    transport = new StreamableHTTPServerTransport({
+    transport = new NodeStreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
       onsessioninitialized: (sessionId) => {
         transports[sessionId] = transport;
