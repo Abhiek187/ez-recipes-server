@@ -3,33 +3,25 @@ import {
   OAuthTokenVerifier,
   requireBearerAuth,
 } from "@modelcontextprotocol/express";
-import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
+import { toNodeHandler } from "@modelcontextprotocol/node";
 import {
   McpServer,
   OAuthError,
   OAuthErrorCode,
-  isInitializeRequest,
+  createMcpHandler,
 } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import express, { Request, Response } from "express";
+import express from "express";
 import { connection, ConnectionStates } from "mongoose";
-import { randomUUID } from "node:crypto";
 import z from "zod";
 
 import FirebaseAdmin from "../utils/auth/admin";
-import {
-  connectToMongoDB,
-  disconnectFromMongoDB,
-  filterRecipes,
-  getRecipeById,
-} from "../utils/db";
+import { connectToMongoDB, filterRecipes, getRecipeById } from "../utils/db";
 import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
 import { filterObject, isEmptyObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
 const MCP_VERSION = "1.1.0";
-// Multiple sessions can run in parallel in HTTP mode
-const transports: Record<string, NodeStreamableHTTPServerTransport> = {};
 
 const createMcpServer = () => {
   const server = new McpServer(
@@ -359,10 +351,6 @@ const createMcpServer = () => {
     }
   );
 
-  server.server.onclose = () => {
-    disconnectFromMongoDB();
-  };
-
   return server;
 };
 
@@ -392,65 +380,10 @@ const tokenVerifier: OAuthTokenVerifier = {
 const mcpAuth = requireBearerAuth({
   verifier: tokenVerifier,
 });
+const handler = createMcpHandler(createMcpServer);
+const nodeHandler = toNodeHandler(handler);
 
-router.post("/", mcpAuth, async (req, res) => {
-  const sessionId = req.headers["mcp-session-id"];
-  let transport: NodeStreamableHTTPServerTransport;
-
-  if (typeof sessionId === "string" && Object.hasOwn(transports, sessionId)) {
-    // Reuse an existing connection
-    transport = transports[sessionId];
-    console.log(`[MCP] [${sessionId}] Reusing existing MCP connection`);
-  } else if (sessionId === undefined && isInitializeRequest(req.body)) {
-    // Create a new HTTP session
-    transport = new NodeStreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
-      onsessioninitialized: (sessionId) => {
-        transports[sessionId] = transport;
-        console.log(`[MCP] [${sessionId}] MCP HTTP server initialized`);
-      },
-    });
-
-    transport.onclose = () => {
-      if (transport.sessionId !== undefined) {
-        delete transports[transport.sessionId];
-        console.log(
-          `[MCP] [${transport.sessionId}] MCP HTTP connection closed`
-        );
-      }
-    };
-
-    const server = createMcpServer();
-    await server.connect(transport);
-    console.warn("EZ Recipes MCP Server running on streamable HTTP");
-  } else {
-    res.status(400).json({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Bad Request: No valid session ID provided",
-      },
-      id: null,
-    });
-    return;
-  }
-
-  await transport.handleRequest(req, res, req.body);
-});
-
-const handleDefaultMcpRequest = async (req: Request, res: Response) => {
-  const sessionId = req.headers["mcp-session-id"];
-  if (typeof sessionId !== "string" || !Object.hasOwn(transports, sessionId)) {
-    res.status(400).json({ error: "Invalid or missing session ID" });
-    return;
-  }
-
-  const transport = transports[sessionId];
-  await transport.handleRequest(req, res);
-};
-
-router.get("/", mcpAuth, handleDefaultMcpRequest);
-router.delete("/", mcpAuth, handleDefaultMcpRequest);
+router.all("/", mcpAuth, (req, res) => nodeHandler(req, res, req.body));
 
 const main = async () => {
   try {
