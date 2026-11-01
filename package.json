@@ -42,7 +42,6 @@
     "@modelcontextprotocol/express": "^2.0.2",
     "@modelcontextprotocol/node": "^2.1.2",
     "@modelcontextprotocol/server": "^2.4.0",
-    "@modelcontextprotocol/server-legacy": "^2.4.0",
     "@simplewebauthn/server": "^14.0.3",
     "axios": "^1.20.0",
     "cookie-parser": "^1.4.7",

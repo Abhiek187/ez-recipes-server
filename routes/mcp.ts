@@ -1,11 +1,16 @@
 import "dotenv/config";
-import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
-import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
-import { McpServer, isInitializeRequest } from "@modelcontextprotocol/server";
 import {
-  requireBearerAuth,
   OAuthTokenVerifier,
-} from "@modelcontextprotocol/server-legacy/auth";
+  requireBearerAuth,
+} from "@modelcontextprotocol/express";
+import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
+import {
+  McpServer,
+  OAuthError,
+  OAuthErrorCode,
+  isInitializeRequest,
+} from "@modelcontextprotocol/server";
+import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 import express, { Request, Response } from "express";
 import { connection, ConnectionStates } from "mongoose";
 import { randomUUID } from "node:crypto";
@@ -363,7 +368,6 @@ const createMcpServer = () => {
 
 const router = express.Router();
 
-/* @mcp-codemod-error OAuthTokenVerifier: resource-server auth helpers routed to the frozen @modelcontextprotocol/server-legacy/auth copy. The maintained v2 home is @modelcontextprotocol/express — when re-pointing, verifiers must throw the v2 OAuthError (the express middleware does not recognize the legacy error classes). See the migration guide's server auth split section. */
 const tokenVerifier: OAuthTokenVerifier = {
   verifyAccessToken: async (token) => {
     try {
@@ -377,12 +381,14 @@ const tokenVerifier: OAuthTokenVerifier = {
       };
     } catch (error) {
       console.error("[MCP] Failed to validate token:", error);
-      throw new Error("Invalid Firebase token provided", { cause: error });
+      throw new OAuthError(
+        OAuthErrorCode.InvalidToken,
+        "Invalid Firebase token provided"
+      );
     }
   },
 };
 
-/* @mcp-codemod-error requireBearerAuth: resource-server auth helpers routed to the frozen @modelcontextprotocol/server-legacy/auth copy. The maintained v2 home is @modelcontextprotocol/express — when re-pointing, verifiers must throw the v2 OAuthError (the express middleware does not recognize the legacy error classes). See the migration guide's server auth split section. */
 const mcpAuth = requireBearerAuth({
   verifier: tokenVerifier,
 });
