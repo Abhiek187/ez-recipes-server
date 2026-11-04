@@ -1,4 +1,4 @@
-import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
+import { createMcpExpressApp } from "@modelcontextprotocol/express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config"; // fetch secrets from .env

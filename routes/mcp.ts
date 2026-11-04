@@ -1,34 +1,33 @@
 import "dotenv/config";
-import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
-import { OAuthTokenVerifier } from "@modelcontextprotocol/sdk/server/auth/provider.js";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import express, { Request, Response } from "express";
+import {
+  OAuthTokenVerifier,
+  requireBearerAuth,
+} from "@modelcontextprotocol/express";
+import { toNodeHandler } from "@modelcontextprotocol/node";
+import {
+  McpServer,
+  OAuthError,
+  OAuthErrorCode,
+  createMcpHandler,
+} from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import express from "express";
 import { connection, ConnectionStates } from "mongoose";
-import { randomUUID } from "node:crypto";
-import z from "zod/v3";
+import z from "zod";
 
 import FirebaseAdmin from "../utils/auth/admin";
-import {
-  connectToMongoDB,
-  disconnectFromMongoDB,
-  filterRecipes,
-  getRecipeById,
-} from "../utils/db";
+import { connectToMongoDB, filterRecipes, getRecipeById } from "../utils/db";
 import { CUISINES, MEAL_TYPES, SPICE_LEVELS } from "../types/client/Recipe";
 import { filterObject, isEmptyObject } from "../utils/object";
 
 const MCP_NAME = "ez-recipes";
-// Multiple sessions can run in parallel in HTTP mode
-const transports: Record<string, StreamableHTTPServerTransport> = {};
+const MCP_VERSION = "1.1.0";
 
 const createMcpServer = () => {
   const server = new McpServer(
     {
       name: MCP_NAME,
-      version: "1.0.0",
+      version: MCP_VERSION,
     },
     {
       capabilities: {
@@ -41,7 +40,7 @@ const createMcpServer = () => {
     `${MCP_NAME}_search_recipes`,
     {
       description: "Search recipes using a variety of filters",
-      inputSchema: {
+      inputSchema: z.object({
         query: z
           .string()
           .min(1)
@@ -110,7 +109,7 @@ const createMcpServer = () => {
           .describe(
             "The cuisine types associated with a recipe, such as American, Italian, or Latin American"
           ),
-      },
+      }),
       outputSchema: z.object({
         results: z.array(
           z.object({
@@ -140,10 +139,9 @@ const createMcpServer = () => {
       },
     },
     async (filter) => {
-      await server.sendLoggingMessage({
-        level: "debug",
-        data: `Searching recipes using the following filter: ${JSON.stringify(filter)}`,
-      });
+      console.warn(
+        `Searching recipes using the following filter: ${JSON.stringify(filter)}`
+      );
 
       if (isEmptyObject(filter)) {
         return {
@@ -217,13 +215,13 @@ const createMcpServer = () => {
     `${MCP_NAME}_get_recipe_details`,
     {
       description: "Get detailed information about a recipe by its ID",
-      inputSchema: {
+      inputSchema: z.object({
         id: z
           .number()
           .int()
           .positive()
           .describe("A unique recipe ID that maps to spoonacular's recipe ID"),
-      },
+      }),
       outputSchema: z.object({
         // Only return fields useful to an LLM to save on context & reduce hallucinations
         id: z.number(),
@@ -281,10 +279,7 @@ const createMcpServer = () => {
       },
     },
     async ({ id }) => {
-      await server.sendLoggingMessage({
-        level: "debug",
-        data: `Getting recipe by ID: ${id}`,
-      });
+      console.warn(`Getting recipe by ID: ${id}`);
 
       const recipe = await getRecipeById(id);
 
@@ -374,7 +369,10 @@ const tokenVerifier: OAuthTokenVerifier = {
       };
     } catch (error) {
       console.error("[MCP] Failed to validate token:", error);
-      throw new Error("Invalid Firebase token provided", { cause: error });
+      throw new OAuthError(
+        OAuthErrorCode.InvalidToken,
+        "Invalid Firebase token provided"
+      );
     }
   },
 };
@@ -382,87 +380,20 @@ const tokenVerifier: OAuthTokenVerifier = {
 const mcpAuth = requireBearerAuth({
   verifier: tokenVerifier,
 });
+const handler = createMcpHandler(createMcpServer);
+const nodeHandler = toNodeHandler(handler);
 
-router.post("/", mcpAuth, async (req, res) => {
-  const sessionId = req.headers["mcp-session-id"];
-  let transport: StreamableHTTPServerTransport;
-
-  if (typeof sessionId === "string" && Object.hasOwn(transports, sessionId)) {
-    // Reuse an existing connection
-    transport = transports[sessionId];
-    console.log(`[MCP] [${sessionId}] Reusing existing MCP connection`);
-  } else if (sessionId === undefined && isInitializeRequest(req.body)) {
-    // Create a new HTTP session
-    transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
-      onsessioninitialized: (sessionId) => {
-        transports[sessionId] = transport;
-        console.log(`[MCP] [${sessionId}] MCP HTTP server initialized`);
-      },
-    });
-
-    transport.onclose = () => {
-      if (transport.sessionId !== undefined) {
-        delete transports[transport.sessionId];
-        console.log(
-          `[MCP] [${transport.sessionId}] MCP HTTP connection closed`
-        );
-      }
-    };
-
-    const server = createMcpServer();
-    await server.connect(transport);
-    await server.sendLoggingMessage({
-      level: "info",
-      data: "EZ Recipes MCP Server running on streamable HTTP",
-    });
-  } else {
-    res.status(400).json({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Bad Request: No valid session ID provided",
-      },
-      id: null,
-    });
-    return;
-  }
-
-  await transport.handleRequest(req, res, req.body);
-});
-
-const handleDefaultMcpRequest = async (req: Request, res: Response) => {
-  const sessionId = req.headers["mcp-session-id"];
-  if (typeof sessionId !== "string" || !Object.hasOwn(transports, sessionId)) {
-    res.status(400).json({ error: "Invalid or missing session ID" });
-    return;
-  }
-
-  const transport = transports[sessionId];
-  await transport.handleRequest(req, res);
-};
-
-router.get("/", mcpAuth, handleDefaultMcpRequest);
-router.delete("/", mcpAuth, handleDefaultMcpRequest);
+router.all("/", mcpAuth, (req, res) => nodeHandler(req, res, req.body));
 
 const main = async () => {
   try {
     // A single session runs in STDIO mode
-    const transport = new StdioServerTransport();
-    const server = createMcpServer();
-    await server.connect(transport);
-    await server.sendLoggingMessage({
-      level: "info",
-      data: "EZ Recipes MCP Server running on stdio",
-    });
+    serveStdio(createMcpServer);
+    console.warn("EZ Recipes MCP Server running on stdio");
 
     if (connection.readyState !== ConnectionStates.connected) {
       await connectToMongoDB();
     }
-
-    transport.onclose = () => {
-      disconnectFromMongoDB();
-    };
   } catch (error) {
     console.error("Error running MCP from stdio:", error);
   }
