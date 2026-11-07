@@ -25,6 +25,13 @@ const app = createMcpExpressApp({
     "::1",
     "ez-recipes-server.onrender.com",
   ],
+  allowedOrigins: [
+    "127.0.0.1",
+    "10.0.2.2",
+    "localhost",
+    "::1",
+    "ez-recipes-web.onrender.com",
+  ],
 });
 app.disable("x-powered-by"); // disable fingerprinting
 
