@@ -1,4 +1,8 @@
 import { createMcpExpressApp } from "@modelcontextprotocol/express";
+import {
+  localhostAllowedHostnames,
+  localhostAllowedOrigins,
+} from "@modelcontextprotocol/server";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config"; // fetch secrets from .env
@@ -19,17 +23,13 @@ import CronJobs from "./jobs/cron";
 
 const app = createMcpExpressApp({
   allowedHosts: [
-    "127.0.0.1",
+    ...localhostAllowedHostnames(),
     "10.0.2.2", // Android localhost
-    "localhost",
-    "::1",
     "ez-recipes-server.onrender.com",
   ],
   allowedOrigins: [
-    "127.0.0.1",
+    ...localhostAllowedOrigins(),
     "10.0.2.2",
-    "localhost",
-    "::1",
     "ez-recipes-web.onrender.com",
   ],
 });
